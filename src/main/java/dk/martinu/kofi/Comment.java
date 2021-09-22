@@ -24,53 +24,118 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class Comment extends Element<String> implements Serializable {
+/**
+ * The {@code Comment} class defines an {@link Element element} used to store a
+ * text comment in a {@link Document document}. A Comment does not store any
+ * information about what it describes, and its primary purpose is to retain
+ * human-made comments when reading a {@code Document} from a file. The
+ * {@code String} representation of a comment is equal to:
+ * <pre>
+ *     ";<i>text</i>"
+ * </pre>
+ * where <i>text</i> is equal to the string returned by
+ * {@link #getTextString()}.
+ *
+ * @author Adam Martinu
+ * @since 1.0
+ */
+public class Comment extends Element implements Cloneable, Serializable {
 
     @Serial
     private static final long serialVersionUID = 0;
 
+    /**
+     * The text of this comment.
+     */
     @NotNull
-    protected final String comment;
+    public final String text;
 
+    /**
+     * Constructs a new comment with the specified {@code text}.
+     *
+     * @param text the comment text.
+     * @throws NullPointerException if {@code text} is {@code null}.
+     */
     @Contract(pure = true)
-    public Comment(@NotNull final String comment) throws NullPointerException {
-        this.comment = Objects.requireNonNull(comment, "comment is null");
+    public Comment(@NotNull final String text) throws NullPointerException {
+        this.text = Objects.requireNonNull(text, "text is null");
     }
 
+    /**
+     * Returns a new comment with the same text as this comment.
+     */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
     public Comment clone() {
-        return new Comment(comment);
+        return new Comment(text);
     }
 
+    /**
+     * Returns {@code true} if this comment is equal to {@code obj}
+     * ({@code this == obj}), or {@code obj} is also a comment and their text
+     * is equal. Otherwise {@code false} is returned.
+     */
     @Override
     public boolean equals(final Object obj) {
         if (this == obj)
             return true;
         else if (obj instanceof Comment)
-            return comment.equals(((Comment) obj).comment);
+            return text.equals(((Comment) obj).text);
         else
             return false;
     }
 
+    /**
+     * Returns a {@code String} representation of this comment, equal to:
+     * <pre>
+     *     ";<i>text</i>"
+     * </pre>
+     * where <i>text</i> is equal to the string returned by
+     * {@link #getTextString()}.
+     */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
     public String getString() {
-        return ';' + comment;
+        return ';' + getTextString();
     }
 
+    /**
+     * Returns an escaped version of this comment's text. The following
+     * characters are escaped:
+     * <ul>
+     *     <li>{@code \n} new line, U+000A</li>
+     *     <li>{@code \r} carriage return, U+000D</li>
+     *     <li>{@code \\} reverse solidus, U+005C</li>
+     * </ul>
+     *
+     * @see Element#escape(String, char...)
+     */
+    @NotNull
+    public String getTextString() {
+        return escape(text, '\n', '\r', '\\');
+    }
+
+    /**
+     * Returns a {@code String} representation of this comment, equal to:
+     * <pre>
+     *     "<i>class-name</i>@<i>hashCode</i>{text=<i>text</i>}"
+     * </pre>
+     */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
     public String toString() {
-        return this.getClass().getName() + '@' + hashCode() + "{comment=" + comment + '}';
+        return this.getClass().getName() + '@' + hashCode() + "{text=" + text + '}';
     }
 
+    /**
+     * Returns the hash code of this comment's text.
+     */
     @Contract(pure = true)
     @Override
-    protected int getHash() {
-        return comment.hashCode();
+    protected int hashCodeImpl() {
+        return text.hashCode();
     }
 }

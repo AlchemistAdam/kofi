@@ -21,19 +21,58 @@ import org.jetbrains.annotations.*;
 
 import java.util.Objects;
 
-public abstract class Property<V> extends Element<V> {
+/**
+ * The {@code Property} class defines an abstract {@link Element element} used
+ * to store data in a {@link Document document} as a key-value pair. Property
+ * implementations provided by the API are located in the
+ * {@link dk.martinu.kofi.properties} package. Properties have a {@code String}
+ * key and a value of type {@code V}. Keys are not case-sensitive when
+ * compared. The {@code String} representation of a property is equal to:
+ * <pre>
+ *     "<i>key</i> = <i>value</i>"
+ * </pre>
+ * where <i>key</i> and <i>value</i> are equal to the strings returned by
+ * {@link #getKeyString()} and {@link #getValueString()} respectively.
+ *
+ * @param <V> the property value type
+ * @author Adam Martinu
+ * @since 1.0
+ */
+public abstract class Property<V> extends Element {
 
+    /**
+     * The property key.
+     */
     @NotNull
-    protected final String key;
+    public final String key;
+    /**
+     * The property value
+     */
     @NotNull
-    protected final V value;
+    public final V value;
 
+    /**
+     * Constructs a new property with the specified {@code key} and
+     * {@code value}. The key of a property is not case-sensitive when
+     * compared to other properties.
+     *
+     * @param key   The property key.
+     * @param value The property value.
+     * @throws NullPointerException if {@code key} or {@code value} is
+     *                              {@code null}.
+     */
     @Contract(pure = true)
     public Property(@NotNull final String key, @NotNull final V value) throws NullPointerException {
         this.key = Objects.requireNonNull(key, "key is null");
         this.value = Objects.requireNonNull(value, "value is null");
     }
 
+    /**
+     * Returns {@code true} if this property is equal to {@code obj}
+     * ({@code this == obj}), or {@code obj} is also a property and their keys
+     * are equal, ignoring case, and their values are equal. Otherwise
+     * {@code false} is returned.
+     */
     @Contract(value = "null -> false", pure = true)
     @Override
     public boolean equals(@Nullable final Object obj) {
@@ -45,25 +84,33 @@ public abstract class Property<V> extends Element<V> {
             return false;
     }
 
+    /**
+     * Returns an escaped version of this property's key. The following
+     * characters are escaped:
+     *  <ul>
+     *      <li>{@code \n} new line, U+000A</li>
+     *      <li>{@code \r} carriage return, U+000D</li>
+     *      <li>{@code ;} semicolon, U+003B</li>
+     *      <li>{@code [} left square bracket, U+005B</li>
+     *      <li>{@code \\} reverse solidus, U+005C</li>
+     * </ul>
+     *
+     * @see Element#escape(String, char...)
+     */
     @Contract(pure = true)
     @NotNull
-    public String getKey() {
-        return key;
-    }
-
-    @Contract(value = "-> new", pure = true)
-    @NotNull
     public String getKeyString() {
-        final StringBuilder keyBuilder = new StringBuilder(key.length());
-        for (int i = 0; i < key.length(); i++)
-            switch (key.charAt(i)) {
-                // TODO add missing escape sequences
-                case '[', ']', ';', '=', '\r', '\n', '\\' -> keyBuilder.append('\\').append(key.charAt(i));
-                default -> keyBuilder.append(key.charAt(i));
-            }
-        return keyBuilder.toString();
+        return escape(key, '\n', '\r', ';', '[', '\\');
     }
 
+    /**
+     * Returns a {@code String} representation of this property, equal to:
+     * <pre>
+     *     "<i>key</i> = <i>value</i>
+     * </pre>
+     * where <i>key</i> and <i>value</i> are equal to the strings returned by
+     * {@link #getKeyString()} and {@link #getValueString()} respectively.
+     */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
@@ -71,41 +118,54 @@ public abstract class Property<V> extends Element<V> {
         return getKeyString() + " = " + getValueString();
     }
 
-    @Contract(pure = true)
-    @NotNull
-    public V getValue() {
-        return value;
-    }
-
+    /**
+     * Returns the class of this property's value.
+     */
     @Contract(pure = true)
     @NotNull
     public abstract Class<? super V> getValueClass();
 
+    /**
+     * Returns a {@code String} representation of this property's value. The
+     * returned string must be valid for file output in INI-file format. E.g.
+     * properties cannot span multiple lines, so the returned string must not
+     * contain any line breaks.
+     */
     @Contract(pure = true)
     @NotNull
     public abstract String getValueString();
 
+    /**
+     * Returns {@code true} if the key of this property is equal to
+     * {@code key}, ignoring case. Otherwise {@code false} is returned.
+     *
+     * @throws NullPointerException if {@code key} is {@code null}.
+     */
     @Contract(pure = true)
     public boolean matches(@NotNull final String key) throws NullPointerException {
         Objects.requireNonNull(key, "key is null");
         return this.key.equalsIgnoreCase(key);
     }
 
-    // TODO use is assignable from if possible
+    /**
+     * Returns {@code true} if this property matches the specified {@code key}
+     * and {@code valueType}. Otherwise {@code false} is returned.
+     *
+     * @throws NullPointerException if {@code key} is {@code null}.
+     * @see #matches(String)
+     * @see #matches(Class)
+     */
     @Contract(pure = true)
     public boolean matches(@NotNull final String key, @Nullable final Class<?> valueType) throws NullPointerException {
-        Objects.requireNonNull(key, "key is null");
-        if (this.key.equalsIgnoreCase(key)) {
-            if (valueType == null)
-                return true;
-            else
-                return getValueClass().equals(valueType);
-        }
-        else
-            return false;
+        return matches(key) && matches(valueType);
     }
 
-    // TODO use is assignable from if possible
+    /**
+     * Returns {@code true} if {@code valueType} is {@code null} or the value
+     * type of this property is equal to {@code valueType}. Otherwise
+     * {@code false} is returned.
+     */
+    // TODO use isAssignableFrom if possible
     @Contract(value = "null -> true", pure = true)
     public boolean matches(@Nullable final Class<?> valueType) {
         if (valueType == null)
@@ -114,6 +174,12 @@ public abstract class Property<V> extends Element<V> {
             return getValueClass().equals(valueType);
     }
 
+    /**
+     * Returns a {@code String} representation of this property, equal to:
+     * <pre>
+     *     "<i>class-name</i>@<i>hashCode</i>{key=<i>key</i>, value=<i>value</i>}"
+     * </pre>
+     */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
@@ -121,9 +187,21 @@ public abstract class Property<V> extends Element<V> {
         return this.getClass().getName() + '@' + super.hashCode() + "{key=" + key + ", value=" + value + '}';
     }
 
+    /**
+     * Returns a hash code of this property's key, in lower-case, and value.
+     * The returned value is equal to:
+     * <pre>
+     *     key | value << 16
+     * </pre>
+     *
+     * <p><b>NOTE:</b> if the state of this property's value is mutable, then
+     * {@link #hashCode()} <em>must</em> be overridden. The default
+     * implementation caches the hash code and will not reflect changes to the
+     * value's state after the first call.
+     */
     @Contract(pure = true)
     @Override
-    protected int getHash() {
+    protected int hashCodeImpl() {
         return key.toLowerCase().hashCode() | value.hashCode() << 16;
     }
 }

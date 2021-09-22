@@ -22,16 +22,30 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Objects;
 
-public class Whitespace extends Element<String> implements Serializable {
+/**
+ * The {@code Whitespace} class defines an {@link Element element} used to mark
+ * an index as pure whitespace in a {@link Document document} (a blank line).
+ * The {@code String} representation of a {@code Whitespace} element is equal
+ * to an empty string {@code ""}.
+ *
+ * @author Adam Martinu
+ * @since 1.0
+ */
+public class Whitespace extends Element implements Cloneable, Serializable {
 
     @Serial
     private static final long serialVersionUID = 0L;
 
+    /**
+     * Constructs a new {@code Whitespace} element.
+     */
     @Contract(pure = true)
     public Whitespace() { }
 
+    /**
+     * Clones this {@code Whitespace} element.
+     */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
@@ -39,14 +53,19 @@ public class Whitespace extends Element<String> implements Serializable {
         return new Whitespace();
     }
 
+    /**
+     * Returns {@code true} if {@code obj} is a {@code Whitespace} element.
+     * Otherwise {@code false} is returned.
+     */
     @Override
     public boolean equals(final Object obj) {
-        if (this == obj)
-            return true;
-        else
-            return obj instanceof Whitespace;
+        return obj instanceof Whitespace;
     }
 
+    /**
+     * Returns a {@code String} representation of this {@code Whitespace}
+     * element, equal to an empty string {@code ""}.
+     */
     @Contract(pure = true)
     @NotNull
     @Override
@@ -54,9 +73,12 @@ public class Whitespace extends Element<String> implements Serializable {
         return "";
     }
 
+    /**
+     * Returns {@code 0}.
+     */
     @Contract(pure = true)
     @Override
-    protected int getHash() {
+    protected int hashCodeImpl() {
         return 0;
     }
 }

@@ -29,12 +29,12 @@ import dk.martinu.kofi.properties.*;
 
 /**
  * <p>The {@code Document} class is the core of the KOFI API. Documents are
- * containers for {@link Element Element elements}. Documents contain mainly
- * two types of elements; {@link Section sections} and
- * {@link Property properties}, and provides methods to add, get and remove
- * them. Elements are stored in an array, and the index of each
- * element corresponds to its position in an INI-file document; line 1 would be
- * the element at index {@code 0}, line 2 at index {@code 1}, and so on.
+ * containers for {@link Element elements}. Documents contain mainly two types
+ * of elements; {@link Section sections} and {@link Property properties}, and
+ * provides methods to add, get and remove them. Elements are stored in an
+ * array, and the index of each element corresponds to its position in an
+ * INI-file document; line 1 would be the element at index {@code 0}, line 2 at
+ * index {@code 1}, and so on.
  *
  * <p><b>Note that this implementation is not synchronized.</b> If multiple
  * threads access a {@code Document} instance concurrently, and at least one of
@@ -47,9 +47,12 @@ import dk.martinu.kofi.properties.*;
  * thought of as a global scope to access elements at the very beginning of a
  * document (which is not enclosed in a section). The name of the
  * <i>global section</i> is equal to {@code null}.
+ *
+ * @author Adam Martinu
+ * @since 1.0
  */
 @SuppressWarnings("unused")
-public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
+public class Document implements Iterable<Element>, Cloneable, Serializable {
 
     @Serial
     private static final long serialVersionUID = 0L;
@@ -61,7 +64,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
      * {@code k} for which {@code k &lt i} is {@code true}.
      */
     @NotNull
-    protected final ArrayList<Element<?>> elementList;
+    protected final ArrayList<Element> elementList;
 
     /**
      * Creates a new empty document with an initial capacity of
@@ -91,7 +94,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
      *                              contains {@code null} elements.
      */
     @Contract(pure = true)
-    public Document(@NotNull final Collection<Element<?>> elements) throws NullPointerException {
+    public Document(@NotNull final Collection<Element> elements) throws NullPointerException {
         this(Objects.requireNonNull(elements, "elements is null").size());
         if (elements.contains(null))
             throw new NullPointerException("collection contains null elements");
@@ -220,7 +223,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
      *
      * @param element the element to add.
      */
-    public void addElement(@Nullable final Element<?> element) {
+    public void addElement(@Nullable final Element element) {
         addElement(elementList.size(), element);
     }
 
@@ -235,7 +238,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
      * @throws IndexOutOfBoundsException if {@code index} is out of bounds
      *                                   {@code (index &lt 0 || index &gt size())}.
      */
-    public void addElement(@Range(from = 0, to = Integer.MAX_VALUE) final int index, @Nullable final Element<?> element)
+    public void addElement(@Range(from = 0, to = Integer.MAX_VALUE) final int index, @Nullable final Element element)
             throws IndexOutOfBoundsException {
         if (element == null)
             return;
@@ -422,7 +425,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
     public Property<?> addProperty(@Nullable final String section, @NotNull final Property<?> property) throws
             NullPointerException {
         Objects.requireNonNull(property, "property is null");
-        Element<?> element;
+        Element element;
         for (int i = section != null ? addSection(section) + 1 : 0; i < elementList.size(); i++) {
             element = elementList.get(i);
             // end of section, insert property
@@ -431,7 +434,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
                 return null;
             }
             // section already contains property, replace it
-            else if (element instanceof Property<?> p && p.matches(property.getKey())) {
+            else if (element instanceof Property<?> p && p.matches(property.key)) {
                 elementList.remove(i);
                 elementList.add(i, property);
                 return p;
@@ -584,7 +587,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
-    public List<Element<?>> elements() {
+    public List<Element> elements() {
         return Collections.unmodifiableList(elementList);
     }
 
@@ -619,7 +622,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
      * @throws NullPointerException if {@code action} is {@code null}.
      */
     @Override
-    public void forEach(@NotNull final Consumer<? super Element<?>> action) throws NullPointerException {
+    public void forEach(@NotNull final Consumer<? super Element> action) throws NullPointerException {
         Objects.requireNonNull(action, "action is null");
         elementList.forEach(action);
     }
@@ -893,7 +896,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
      */
     @Contract(pure = true)
     @NotNull
-    public Element<?> getElement(@Range(from = 0, to = Integer.MAX_VALUE) int index) throws IndexOutOfBoundsException {
+    public Element getElement(@Range(from = 0, to = Integer.MAX_VALUE) int index) throws IndexOutOfBoundsException {
         return elementList.get(index);
     }
 
@@ -1193,7 +1196,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
         if (index == -1)
             return null;
         final ArrayList<Property<V>> subList = new ArrayList<>(elements().size() - index);
-        Element<?> e;
+        Element e;
         for (int i = index; i < elements().size(); i++) {
             e = elementList.get(i);
             if (e instanceof Section)
@@ -1432,7 +1435,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
     public <V> V getValue(@Nullable final String section, @NotNull final String key,
             @Nullable final Class<V> valueType, @Nullable V def) throws NullPointerException {
         Property<V> property = getProperty(section, key, valueType);
-        return property != null ? property.getValue() : def;
+        return property != null ? property.value : def;
     }
 
     /**
@@ -1453,7 +1456,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
-    public Iterator<Element<?>> iterator() {
+    public Iterator<Element> iterator() {
         return elementList.iterator();
     }
 
@@ -1462,7 +1465,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
-    public Stream<Element<?>> parallelStream() {
+    public Stream<Element> parallelStream() {
         return elementList.parallelStream();
     }
 
@@ -1495,7 +1498,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
         final int index = getElementsIndex(section);
         if (index == -1)
             return false;
-        Element<?> element;
+        Element element;
         for (int i = index; i < elementList.size(); i++) {
             element = elementList.get(i);
             // break loop if a section is reached
@@ -1547,7 +1550,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
-    public Spliterator<Element<?>> spliterator() {
+    public Spliterator<Element> spliterator() {
         return elementList.spliterator();
     }
 
@@ -1556,7 +1559,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
-    public Stream<Element<?>> stream() {
+    public Stream<Element> stream() {
         return elementList.stream();
     }
 
@@ -1598,7 +1601,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
         if (index == -1)
             return -1;
         // iterate elements
-        Element<?> e;
+        Element e;
         for (int i = index; i < elementList.size(); i++) {
             e = elementList.get(i);
             // start of next section, property not found
@@ -1624,7 +1627,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
     @Contract(pure = true)
     protected int getSectionIndex(@NotNull final String section) {
         // iterate elements
-        Element<?> e;
+        Element e;
         for (int i = 0; i < elementList.size(); i++) {
             e = elementList.get(i);
             // section found
@@ -1664,7 +1667,7 @@ public class Document implements Iterable<Element<?>>, Cloneable, Serializable {
      */
     protected void removeProperties(@Range(from = 0, to = Integer.MAX_VALUE) final int index) throws
             IndexOutOfBoundsException {
-        Element<?> element;
+        Element element;
         for (int i = index; i < elementList.size(); ) {
             element = elementList.get(i);
             // break loop if a section is reached
