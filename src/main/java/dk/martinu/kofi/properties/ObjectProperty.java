@@ -85,6 +85,7 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
         return JsonObject.class;
     }
 
+    @SuppressWarnings("ConstantConditions")
     @NotNull
     @Override
     public String getValueString() {
@@ -95,17 +96,19 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
 
     @Override
     public int hashCode() {
-        return getHash();
+        return hashCodeImpl();
     }
 
     @NotNull
     @Override
     public Iterator<JsonObject.Entry> iterator() {
+        //noinspection ConstantConditions
         return value.iterator();
     }
 
     @Override
     public Spliterator<JsonObject.Entry> spliterator() {
+        //noinspection ConstantConditions
         return value.spliterator();
     }
 }

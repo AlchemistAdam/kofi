@@ -21,6 +21,8 @@ import org.jetbrains.annotations.*;
 
 import java.util.Objects;
 
+import dk.martinu.kofi.properties.NullProperty;
+
 /**
  * The {@code Property} class defines an abstract {@link Element element} used
  * to store data in a {@link Document document} as a key-value pair. Property
@@ -48,7 +50,7 @@ public abstract class Property<V> extends Element {
     /**
      * The property value
      */
-    @NotNull
+    @Nullable
     public final V value;
 
     /**
@@ -68,6 +70,18 @@ public abstract class Property<V> extends Element {
     }
 
     /**
+     * Protected constructor for property implementations with null values,
+     * such as {@link NullProperty}.
+     *
+     * @param key The property key.
+     * @throws NullPointerException if {@code key} is {@code null}.
+     */
+    protected Property(@NotNull final String key) throws NullPointerException {
+        this.key = Objects.requireNonNull(key, "key is null");
+        value = null;
+    }
+
+    /**
      * Returns {@code true} if this property is equal to {@code obj}
      * ({@code this == obj}), or {@code obj} is also a property and their keys
      * are equal, ignoring case, and their values are equal. Otherwise
@@ -79,7 +93,10 @@ public abstract class Property<V> extends Element {
         if (this == obj)
             return true;
         else if (obj instanceof Property<?> p)
-            return key.equalsIgnoreCase(p.key) && value.equals(p.value);
+            if (key.equalsIgnoreCase(p.key))
+                return Objects.equals(value, p.value);
+            else
+                return false;
         else
             return false;
     }
@@ -191,7 +208,7 @@ public abstract class Property<V> extends Element {
      * Returns a hash code of this property's key, in lower-case, and value.
      * The returned value is equal to:
      * <pre>
-     *     key | value << 16
+     *     keyHash | valueHash << 16
      * </pre>
      *
      * <p><b>NOTE:</b> if the state of this property's value is mutable, then
@@ -202,6 +219,9 @@ public abstract class Property<V> extends Element {
     @Contract(pure = true)
     @Override
     protected int hashCodeImpl() {
-        return key.toLowerCase().hashCode() | value.hashCode() << 16;
+        if (value != null)
+            return key.toLowerCase().hashCode() | value.hashCode() << 16;
+        else
+            return key.toLowerCase().hashCode();
     }
 }

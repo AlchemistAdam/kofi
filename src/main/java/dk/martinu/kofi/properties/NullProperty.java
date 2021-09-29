@@ -21,39 +21,38 @@ import org.jetbrains.annotations.*;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Objects;
 
+import dk.martinu.kofi.Element;
 import dk.martinu.kofi.Property;
 
-public class DoubleProperty extends Property<Double> implements Cloneable, Serializable {
+public class NullProperty extends Property<Void> implements Cloneable, Serializable {
 
     @Serial
     private static final long serialVersionUID = 0L;
 
     @Contract(pure = true)
-    public DoubleProperty(@NotNull final String key, @Nullable final Double value) throws NullPointerException {
-        super(key, Objects.requireNonNullElse(value, 0d));
+    public NullProperty(@NotNull final String key) throws NullPointerException {
+        super(key);
     }
 
     @Contract(value = "-> new", pure = true)
-    @NotNull
     @Override
-    public DoubleProperty clone() {
-        return new DoubleProperty(key, value);
+    @NotNull
+    public Element clone() {
+        return new NullProperty(key);
     }
 
     @Contract(pure = true)
-    @NotNull
     @Override
-    public Class<Double> getValueClass() {
-        return Double.class;
+    @NotNull
+    public Class<? super Void> getValueClass() {
+        return void.class;
     }
 
     @Contract(value = "-> new", pure = true)
-    @NotNull
     @Override
+    @NotNull
     public String getValueString() {
-        //noinspection ConstantConditions
-        return Double.toString(value) + 'd';
+        return "";
     }
 }

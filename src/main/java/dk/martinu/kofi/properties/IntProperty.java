@@ -53,6 +53,7 @@ public class IntProperty extends Property<Integer> implements Cloneable, Seriali
     @NotNull
     @Override
     public String getValueString() {
+        //noinspection ConstantConditions
         return Integer.toString(value);
     }
 }

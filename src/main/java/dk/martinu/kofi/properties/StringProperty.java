@@ -33,7 +33,7 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
         final char[] chars = s.toCharArray();
         final StringBuilder sb = new StringBuilder(chars.length);
         for (char c : chars) {
-            switch (c) {
+            switch (c) { // TODO use method in Element and match escaped characters with json.org
                 case '\t' -> sb.append("\\t");
                 case '\b' -> sb.append("\\b");
                 case '\n' -> sb.append("\\n");
@@ -76,6 +76,7 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
     @Override
     public String getValueString() {
         if (escapedString == null)
+            //noinspection ConstantConditions
             escapedString = escape(value);
         return '\"' + escapedString + '\"';
     }

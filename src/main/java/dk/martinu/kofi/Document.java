@@ -333,6 +333,32 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
+     * Delegate method to add a {@link NullProperty}.
+     *
+     * @param key the property key.
+     * @throws NullPointerException if {@code key} is {@code null}.
+     * @see #addProperty(Property)
+     */
+    public void addNull(@NotNull final String key) throws NullPointerException {
+        addNull(null, key);
+    }
+
+    /**
+     * Delegate method to add an {@link NullProperty} to the specified
+     * {@code section}.
+     *
+     * @param section name of the section to add the property to, or
+     *                {@code null}.
+     * @param key the property key.
+     * @throws NullPointerException if {@code key} is {@code null}.
+     * @see #addProperty(String, Property)
+     */
+    public void addNull(@Nullable final String section, @NotNull final String key) throws NullPointerException {
+        Objects.requireNonNull(key, "key is null");
+        addProperty(section, new NullProperty(key));
+    }
+
+    /**
      * Delegate method to add an {@link ObjectProperty}.
      *
      * @param key   the property key.
@@ -1673,7 +1699,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
             // break loop if a section is reached
             if (element instanceof Section)
                 break;
-            // remove element if it is a property - i is unchanged
+            // remove element if it is a property
             if (element instanceof Property<?>) {
                 elementList.remove(i);
                 // remove comments preceding the property

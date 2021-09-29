@@ -77,9 +77,9 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
 
     @Override
     public void forEach(@NotNull final Consumer<? super Object> action) throws NullPointerException {
-        for (Object o : value) {
+        //noinspection ConstantConditions
+        for (Object o : value)
             action.accept(o);
-        }
     }
 
     @Contract(pure = true)
@@ -89,6 +89,7 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
         return JsonArray.class;
     }
 
+    @SuppressWarnings("ConstantConditions")
     @NotNull
     @Override
     public String getValueString() {
@@ -99,13 +100,14 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
 
     @Override
     public int hashCode() {
-        return getHash();
+        return hashCodeImpl();
     }
 
     @Contract(value = "-> new")
     @NotNull
     @Override
     public Iterator<Object> iterator() {
+        //noinspection ConstantConditions
         return value.iterator();
     }
 
@@ -113,6 +115,7 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
     @NotNull
     @Override
     public Spliterator<Object> spliterator() {
+        //noinspection ConstantConditions
         return value.spliterator();
     }
 }

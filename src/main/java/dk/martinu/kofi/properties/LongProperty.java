@@ -53,6 +53,7 @@ public class LongProperty extends Property<Long> implements Cloneable, Serializa
     @NotNull
     @Override
     public String getValueString() {
+        //noinspection ConstantConditions
         return Long.toString(value) + 'L';
     }
 }

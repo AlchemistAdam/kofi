@@ -53,6 +53,7 @@ public class BooleanProperty extends Property<Boolean> implements Cloneable, Ser
     @NotNull
     @Override
     public String getValueString() {
+        //noinspection ConstantConditions
         return Boolean.toString(value);
     }
 }
