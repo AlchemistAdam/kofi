@@ -24,7 +24,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.IntUnaryOperator;
 
@@ -130,6 +131,7 @@ public class IniCodec
     }
 
     @Override
+    @NotNull
     public String writeString(final @NotNull String string, final @NotNull Document document) throws
             NullPointerException, IOException {
         Objects.requireNonNull(string, "string is null");
@@ -141,7 +143,7 @@ public class IniCodec
 
     @Contract(pure = true)
     @NotNull
-    protected Element<?> parseLine(@NotNull String line) throws ParseException {
+    protected Element parseLine(@NotNull String line) throws ParseException {
         // ignore leading/trailing ws
         line = line.trim();
         // line is whitespace
@@ -238,7 +240,7 @@ public class IniCodec
                         throw new ParseException("string values must be enclosed in \" quotes \"");
 
                     final int len = from.applyAsInt(end);
-                    return new Parsable.String(chars, offset, start, end, len);
+                    return new Parsable.String(chars, start, end, len);
                 }
                 // char
                 else if (c == '\'') {
@@ -252,7 +254,7 @@ public class IniCodec
                         throw new ParseException("invalid char value");
 
                     final int len = from.applyAsInt(end);
-                    return new Parsable.Char(chars, offset, start, end, len);
+                    return new Parsable.Char(chars, start, end, len);
                 }
                 // codepoint (char)
                 else if (c == '\\') {
@@ -266,7 +268,7 @@ public class IniCodec
                         throw new ParseException("invalid codepoint");
 
                     final int len = from.applyAsInt(end);
-                    return new Parsable.Codepoint(chars, offset, start, end, len);
+                    return new Parsable.Codepoint(chars, start, end, len);
                 }
                 // boolean
                 else if (c == 't' || c == 'T' || c == 'f' || c == 'F') {
@@ -282,7 +284,7 @@ public class IniCodec
                         throw new ParseException("invalid boolean value");
 
                     final int len = from.applyAsInt(end);
-                    return new Parsable.Boolean(chars, offset, start, end, len);
+                    return new Parsable.Boolean(chars, start, end, len);
                 }
                 // Number
                 else if (isDigit(c) || c == '+' || c == '-' || c == '.') {
@@ -335,12 +337,12 @@ public class IniCodec
                     final int len = from.applyAsInt(end);
                     if (hasFraction)
                         return isDouble ?
-                                new Parsable.Double(chars, offset, start, end, len) :
-                                new Parsable.Float(chars, offset, start, end, len);
+                                new Parsable.Double(chars, start, end, len) :
+                                new Parsable.Float(chars, start, end, len);
                     else
                         return isLong ?
-                                new Parsable.Long(chars, offset, start, end, len) :
-                                new Parsable.Int(chars, offset, start, end, len);
+                                new Parsable.Long(chars, start, end, len) :
+                                new Parsable.Int(chars, start, end, len);
                 }
                 // array
                 else if (c == '[') {
@@ -383,7 +385,7 @@ public class IniCodec
                             throw new ParseException("array values must be separated by a comma");
                     }
                     final int len = from.applyAsInt(end);
-                    return new Parsable.JsonArray(chars, offset, start, end, len, values);
+                    return new Parsable.JsonArray(chars, start, end, len, values);
                 }
                 // object
                 else if (c == '{') {
@@ -438,7 +440,7 @@ public class IniCodec
                             throw new ParseException("object properties must be separated by a comma");
                     }
                     final int len = from.applyAsInt(end);
-                    return new Parsable.JsonObject(chars, offset, start, end, len, properties);
+                    return new Parsable.JsonObject(chars, start, end, len, properties);
                 }
                 // unknown value type
                 else {
@@ -456,7 +458,7 @@ public class IniCodec
         final ExecutorService executor = Executors.newCachedThreadPool();
         try {
             // list to hold futures of parse tasks
-            final ArrayList<Future<Element<?>>> futures = new ArrayList<>();
+            final ArrayList<Future<Element>> futures = new ArrayList<>();
             // add parse task for each line, in line order
             try (final BufferedReader reader = readerSupplier.get()) {
                 reader.lines().forEachOrdered(line ->
@@ -464,7 +466,7 @@ public class IniCodec
             }
             // create and populate document, in line order
             final Document document = new Document(futures.size());
-            for (Future<Element<?>> future : futures) {
+            for (Future<Element> future : futures) {
                 while (!future.isDone())
                     Thread.onSpinWait();
                 if (!future.isCancelled())
@@ -521,7 +523,7 @@ public class IniCodec
         T get() throws IOException;
     }
 
-    protected class ParseTask implements Callable<Element<?>> {
+    protected class ParseTask implements Callable<Element> {
 
         @NotNull
         public final String line;
@@ -536,7 +538,7 @@ public class IniCodec
         @Contract(pure = true)
         @NotNull
         @Override
-        public Element<?> call() throws ParseException {
+        public Element call() throws ParseException {
             try {
                 return parseLine(line);
             }
@@ -553,12 +555,6 @@ public class IniCodec
          */
         public final char[] chars;
         /**
-         * First index in the {@link #chars} array (including whitespace),
-         * inclusive. Any character before this index in the array is not part
-         * of this parsable value.
-         */
-        public final int offset;
-        /**
          * First index in the {@link #chars} array, inclusive.
          */
         public final int start;
@@ -574,9 +570,8 @@ public class IniCodec
          */
         public final int length;
 
-        public Parsable(final char[] chars, final int offset, final int start, final int end, final int length) {
+        public Parsable(final char[] chars, final int start, final int end, final int length) {
             this.chars = chars;
-            this.offset = offset;
             this.start = start;
             this.end = end;
             this.length = length;
@@ -594,8 +589,8 @@ public class IniCodec
 
         public static class Boolean extends Parsable<java.lang.Boolean> {
 
-            public Boolean(final char[] chars, final int offset, final int start, final int end, final int length) {
-                super(chars, offset, start, end, length);
+            public Boolean(final char[] chars, final int start, final int end, final int length) {
+                super(chars, start, end, length);
             }
 
             @NotNull
@@ -613,8 +608,8 @@ public class IniCodec
 
         public static class Char extends Parsable<Character> {
 
-            public Char(final char[] chars, final int offset, final int start, final int end, final int length) {
-                super(chars, offset, start, end, length);
+            public Char(final char[] chars, final int start, final int end, final int length) {
+                super(chars, start, end, length);
             }
 
             @NotNull
@@ -644,8 +639,8 @@ public class IniCodec
 
         public static class Codepoint extends Parsable<Character> {
 
-            public Codepoint(final char[] chars, final int offset, final int start, final int end, final int length) {
-                super(chars, offset, start, end, length);
+            public Codepoint(final char[] chars, final int start, final int end, final int length) {
+                super(chars, start, end, length);
             }
 
             @NotNull
@@ -664,8 +659,8 @@ public class IniCodec
 
         public static class Double extends Parsable<java.lang.Double> {
 
-            public Double(final char[] chars, final int offset, final int start, final int end, final int length) {
-                super(chars, offset, start, end, length);
+            public Double(final char[] chars, final int start, final int end, final int length) {
+                super(chars, start, end, length);
             }
 
             @NotNull
@@ -685,8 +680,8 @@ public class IniCodec
 
         public static class Float extends Parsable<java.lang.Float> {
 
-            public Float(final char[] chars, final int offset, final int start, final int end, final int length) {
-                super(chars, offset, start, end, length);
+            public Float(final char[] chars, final int start, final int end, final int length) {
+                super(chars, start, end, length);
             }
 
             @NotNull
@@ -706,8 +701,8 @@ public class IniCodec
 
         public static class Int extends Parsable<Integer> {
 
-            public Int(final char[] chars, final int offset, final int start, final int end, final int length) {
-                super(chars, offset, start, end, length);
+            public Int(final char[] chars, final int start, final int end, final int length) {
+                super(chars, start, end, length);
             }
 
             @NotNull
@@ -729,9 +724,9 @@ public class IniCodec
             @NotNull
             private final java.util.List<Parsable<?>> values;
 
-            public JsonArray(final char[] chars, final int offset, final int start, final int end, final int length,
+            public JsonArray(final char[] chars, final int start, final int end, final int length,
                     @NotNull final ArrayList<Parsable<?>> values) {
-                super(chars, offset, start, end, length);
+                super(chars, start, end, length);
                 this.values = values;
             }
 
@@ -756,9 +751,9 @@ public class IniCodec
             @NotNull
             private final ArrayList<Parsable<?>> properties;
 
-            public JsonObject(final char[] chars, final int offset, final int start, final int end, final int length,
+            public JsonObject(final char[] chars, final int start, final int end, final int length,
                     @NotNull final ArrayList<Parsable<?>> properties) {
-                super(chars, offset, start, end, length);
+                super(chars, start, end, length);
                 this.properties = properties;
             }
 
@@ -783,8 +778,8 @@ public class IniCodec
 
         public static class Long extends Parsable<java.lang.Long> {
 
-            public Long(final char[] chars, final int offset, final int start, final int end, final int length) {
-                super(chars, offset, start, end, length);
+            public Long(final char[] chars, final int start, final int end, final int length) {
+                super(chars, start, end, length);
             }
 
             @NotNull
@@ -804,8 +799,8 @@ public class IniCodec
 
         public static class String extends Parsable<java.lang.String> {
 
-            public String(final char[] chars, final int offset, final int start, final int end, final int length) {
-                super(chars, offset, start, end, length);
+            public String(final char[] chars, final int start, final int end, final int length) {
+                super(chars, start, end, length);
             }
 
             @NotNull
