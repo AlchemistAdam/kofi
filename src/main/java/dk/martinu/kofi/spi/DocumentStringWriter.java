@@ -17,6 +17,7 @@
 
 package dk.martinu.kofi.spi;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -26,6 +27,8 @@ import dk.martinu.kofi.Document;
 @FunctionalInterface
 public interface DocumentStringWriter {
 
+    @Contract("_, _ -> new")
+    @NotNull
     String writeString(@NotNull final String string, @NotNull final Document document) throws NullPointerException,
             IOException;
 }
