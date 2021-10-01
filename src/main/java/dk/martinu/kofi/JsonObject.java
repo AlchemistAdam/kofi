@@ -21,19 +21,54 @@ import org.jetbrains.annotations.*;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
-public class JsonObject implements Iterable<JsonObject.Entry>, Serializable {
+public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Serializable {
 
     @Serial
     private static final long serialVersionUID = 0L;
 
+    // TODO test
     @NotNull
-    protected Entry[] entries;
+    public static JsonObject reflect(@NotNull final Object object) throws NullPointerException {
+        Objects.requireNonNull(object, "object is null");
+        // class for reflection
+        final Class<?> cl = object.getClass();
+        // list of entries in the JSON object
+        final ArrayList<Entry> entries = new ArrayList<>();
+        for (Field field : cl.getFields())
+            if (!Modifier.isStatic(field.getModifiers()) && field.canAccess(object)) {
+                final Object value;
+                try {
+                    value = field.get(object);
+                }
+                catch (IllegalAccessException e) {
+                    // reflection access is already checked, this should never happen
+                    KofiLog.severe("Field could not be accessed {object=" + object + ", field=" + field.getName() + "}");
+                    throw new RuntimeException(e);
+                }
+                entries.add(new Entry(field.getName(), value));
+            }
+        return new JsonObject(entries);
+    }
+
+    @NotNull
+    protected final Entry[] entries;
 
     public JsonObject(@Nullable final Entry... entries) {
-        //noinspection NullableProblems
-        this.entries = Objects.requireNonNullElse(entries, new Entry[0]);
+        final TreeSet<Entry> set = new TreeSet<>();
+        if (entries != null) {
+            for (Entry entry : entries)
+                if (entry != null)
+                    set.add(entry);
+        }
+        this.entries = set.toArray(new Entry[set.size()]);
+    }
+
+    private JsonObject(@NotNull final List<Entry> list) {
+        this.entries = list.toArray(new Entry[list.size()]);
     }
 
     @Contract(value = "null -> false", pure = true)
@@ -47,8 +82,25 @@ public class JsonObject implements Iterable<JsonObject.Entry>, Serializable {
             return false;
     }
 
-    @Contract(pure = true)
-    public Entry get(final int index) throws ArrayIndexOutOfBoundsException {
+    @Nullable
+    public Object get(@NotNull final String name) throws NullPointerException {
+        Objects.requireNonNull(name, "name is null");
+        int min = 0, max = size() - 1;
+        for (int i, k; min <= max; ) {
+            i = (min + max) >> 1;
+            k = entries[i].name.compareTo(name);
+            if (k < 0)
+                min = i + 1;
+            else if (k > 0)
+                max = i - 1;
+            else
+                return entries[i].value;
+        }
+        return null;
+    }
+
+    @NotNull
+    public Entry getEntry(final int index) throws ArrayIndexOutOfBoundsException {
         return entries[index];
     }
 
@@ -65,7 +117,7 @@ public class JsonObject implements Iterable<JsonObject.Entry>, Serializable {
     }
 
     @Contract(pure = true)
-    public int length() {
+    public int size() {
         return entries.length;
     }
 
@@ -75,16 +127,21 @@ public class JsonObject implements Iterable<JsonObject.Entry>, Serializable {
         return Arrays.spliterator(entries);
     }
 
-    public static class Entry {
+    public static class Entry implements Comparable<Entry> {
 
         @NotNull
-        private final String key;
-        @NotNull
+        private final String name;
+        @Nullable
         private Object value;
 
-        public Entry(@NotNull final String key, @NotNull final Object value) throws NullPointerException {
-            this.key = Objects.requireNonNull(key, "key is null");
-            this.value = Objects.requireNonNull(value, "value is null");
+        public Entry(@NotNull final String name, @Nullable final Object value) throws NullPointerException {
+            this.name = Objects.requireNonNull(name, "name is null");
+            this.value = getKnownType(value);
+        }
+
+        @Override
+        public int compareTo(@NotNull final JsonObject.Entry entry) {
+            return name.compareTo(entry.name);
         }
 
         @Contract(value = "null -> false", pure = true)
@@ -93,31 +150,41 @@ public class JsonObject implements Iterable<JsonObject.Entry>, Serializable {
             if (this == obj)
                 return true;
             else if (obj instanceof Entry entry) // TODO is JSON case sensitive?
-                return key.equals(entry.key) && value.equals(entry.value);
+                return name.equals(entry.name) && Objects.equals(value, entry.value);
             else
                 return false;
         }
 
         @Contract(pure = true)
-        @Override
-        public int hashCode() {
-            return key.toLowerCase().hashCode() | value.hashCode() << 16;
+        @NotNull
+        public String getName() {
+            return name;
         }
 
         @Contract(pure = true)
-        @NotNull
-        public String key() {
-            return key;
+        @Nullable
+        public Object getValue() {
+            return value;
+        }
+
+        @Contract(pure = true)
+        @Override
+        public int hashCode() {
+            if (value != null)
+                return name.toLowerCase().hashCode() | value.hashCode() << 16;
+            else
+                return name.toLowerCase().hashCode();
         }
 
         public void setValue(@NotNull final Object value) throws NullPointerException {
             this.value = Objects.requireNonNull(value, "value is null");
         }
 
-        @Contract(pure = true)
+        @Contract(value = "-> new", pure = true)
         @NotNull
-        public Object value() {
-            return value;
+        @Override
+        public String toString() {
+            return '\"' + name + "\": " + value;
         }
     }
 

@@ -21,19 +21,54 @@ import org.jetbrains.annotations.*;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.*;
 
-public class JsonArray implements Iterable<Object>, Serializable {
+public class JsonArray extends Json implements Iterable<Object>, Serializable {
 
     @Serial
     private static final long serialVersionUID = 0L;
 
     @NotNull
-    protected Object[] array;
+    public static JsonArray reflect(@NotNull final Object object) throws NullPointerException,
+            IllegalArgumentException {
+        Objects.requireNonNull(object, "object is null");
+        if (!object.getClass().isArray())
+            throw new IllegalArgumentException("object is not an array");
+        // list of values
+        final ArrayList<Object> list = new ArrayList<>();
+        // serialize and store values from array object in list
+        final int len = Array.getLength(object);
+        for (int i = 0; i < len; i++)
+            list.add(getKnownType(Array.get(object, i)));
+        return new JsonArray(list);
+    }
+
+    @NotNull
+    protected final Object[] array;
 
     public JsonArray(@Nullable final Object... values) {
-        //noinspection NullableProblems
-        array = Objects.requireNonNullElse(values, new Object[0]);
+        if (values != null) {
+            // list of values
+            final ArrayList<Object> list = new ArrayList<>();
+            // serialize and store values in list
+            for (final Object value : values)
+                list.add(getKnownType(value));
+            array = list.toArray(new Object[list.size()]);
+        }
+        else
+            array = new Object[0];
+    }
+
+    /**
+     * Private constructor used by {@link #reflect(Object)}. The list is
+     * guaranteed to only contain known types.
+     *
+     * @param list the list of values in this JSON array.
+     * @see Json#isKnownType(Object)
+     */
+    private JsonArray(@NotNull final List<Object> list) {
+        array = list.toArray(new Object[list.size()]);
     }
 
     @Contract(value = "null -> false", pure = true)
@@ -58,7 +93,7 @@ public class JsonArray implements Iterable<Object>, Serializable {
 
     @NotNull
     @Override
-    public ArrayIterator iterator() {
+    public Iterator<Object> iterator() {
         return new ArrayIterator();
     }
 

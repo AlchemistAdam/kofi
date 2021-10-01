@@ -31,18 +31,20 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
     @Serial
     private static final long serialVersionUID = 0L;
 
-    // TODO
     public static void getValueStringOf(@NotNull final JsonObject object, @NotNull final StringBuilder sb) {
         sb.append('{');
         JsonObject.Entry entry = null;
-        for (int index = 0; index < object.length(); index++) {
+        for (int index = 0; index < object.size(); index++) {
             if (entry != null)
                 sb.append(',');
 
-            entry = object.get(index);
-            sb.append(" \"").append(entry.key()).append("\": ");
-            final Object value = entry.value();
-            if (value instanceof String s)
+            entry = object.getEntry(index);
+            final String name = entry.getName();
+            final Object value = entry.getValue();
+            sb.append(" \"").append(name).append("\": ");
+            if (value == null)
+                sb.append("null");
+            else if (value instanceof String s)
                 sb.append('\"').append(StringProperty.escape(s)).append('\"');
             else if (value instanceof Integer i)
                 sb.append((int) i);
@@ -60,8 +62,10 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
                 ArrayProperty.getValueStringOf(jsonArray, sb);
             else if (value instanceof JsonObject jsonObject)
                 getValueStringOf(jsonObject, sb);
-            else
-                sb.append(value); // TODO should log a warning
+            else {
+                sb.append(value);
+                KofiLog.warning("Unknown value type in JSON object {name=" + name + ", value=" + value + "}");
+            }
         }
         sb.append(' ').append('}');
     }
@@ -89,7 +93,7 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
     @NotNull
     @Override
     public String getValueString() {
-        final StringBuilder sb = new StringBuilder(value.length() * 16);
+        final StringBuilder sb = new StringBuilder(value.size() * 16);
         getValueStringOf(value, sb);
         return sb.toString();
     }

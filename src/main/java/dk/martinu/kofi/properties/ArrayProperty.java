@@ -39,7 +39,9 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
             sb.append(' ');
 
             Object value = array.get(index);
-            if (value instanceof String s)
+            if (value == null)
+                sb.append("null");
+            else if (value instanceof String s)
                 sb.append('\"').append(StringProperty.escape(s)).append('\"');
             else if (value instanceof Integer i)
                 sb.append((int) i);
@@ -57,8 +59,10 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
                 getValueStringOf(jsonArray, sb);
             else if (value instanceof JsonObject jsonObject)
                 ObjectProperty.getValueStringOf(jsonObject, sb);
-            else
-                sb.append(value); // TODO should log a warning
+            else {
+                sb.append(value);
+                KofiLog.warning("Unknown value type in JSON array {index=" + index + ", value=" + value + "}");
+            }
         }
         sb.append(' ').append(']');
     }
