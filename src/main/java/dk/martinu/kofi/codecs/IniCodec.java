@@ -186,6 +186,7 @@ public class IniCodec
             if (parsableValue.length == rawValue.length) {
                 final Object value = parsableValue.parse();
                 return switch (parsableValue.getType()) {
+                    case NULL -> new NullProperty(key);
                     case STRING -> new StringProperty(key, (String) value);
                     case DOUBLE -> new DoubleProperty(key, (Double) value);
                     case FLOAT -> new FloatProperty(key, (Float) value);
@@ -222,8 +223,20 @@ public class IniCodec
             // peek first character to determine type of parsable object
             c = chars[start];
             if (!Character.isWhitespace(c)) {
+                // null
+                if (c == 'n' || c == 'N') { // todo needs testing
+                    final int remainder = l - start;
+                    final int end;
+                    if (remainder >= 4 && String.copyValueOf(chars, start, 4).equalsIgnoreCase("null"))
+                        end = start + 4;
+                    else
+                        throw new ParseException("invalid null value");
+
+                    final int len = from.applyAsInt(end);
+                    return new Parsable.Boolean(chars, start, end, len);
+                }
                 // String
-                if (c == '"') {
+                else if (c == '"') {
                     boolean hasDelimiter = false;
                     int end = start + 1;
                     char c2;
@@ -548,7 +561,7 @@ public class IniCodec
         }
     }
 
-    protected abstract static class Parsable<T extends Serializable> {
+    protected abstract static class Parsable<T> {
 
         /**
          * <code>char</code> array source.
@@ -580,11 +593,10 @@ public class IniCodec
         @NotNull
         public abstract Type getType();
 
-        @NotNull
         public abstract T parse();
 
         public enum Type {
-            STRING, INT, LONG, FLOAT, DOUBLE, CHAR, BOOLEAN, ARRAY, OBJECT
+            NULL, STRING, INT, LONG, FLOAT, DOUBLE, CHAR, BOOLEAN, ARRAY, OBJECT
         }
 
         public static class Boolean extends Parsable<java.lang.Boolean> {
@@ -794,6 +806,25 @@ public class IniCodec
                 // do not include specifier is present, e.g. 22L
                 final int count = chars[end - 1] > '9' ? end - start - 1 : end - start;
                 return java.lang.Long.parseLong(java.lang.String.copyValueOf(chars, start, count));
+            }
+        }
+
+        public static class Null extends Parsable<Void> {
+
+            public Null(final char[] chars, final int start, final int end, final int length) {
+                super(chars, start, end, length);
+            }
+
+            @Override
+            @NotNull
+            public Type getType() {
+                return Type.NULL;
+            }
+
+            @Override
+            @Nullable
+            public Void parse() {
+                return null;
             }
         }
 
