@@ -19,27 +19,43 @@ package dk.martinu.test;
 
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.InvocationTargetException;
+
 import dk.martinu.kofi.JsonObject;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JsonObjectTest {
 
     @Test
-    void numberObject() {
+    void reconstructNumberObject() {
+        final JsonObject json = new JsonObject(
+                new JsonObject.Entry("n0", 4),
+                new JsonObject.Entry("n1", 8)
+        );
+        assertDoesNotThrow(() -> {
+            final NumberObject object = JsonObject.reconstruct(json, NumberObject.class);
+            assertEquals(4, object.n0);
+            assertEquals(8, object.n1);
+        });
+    }
+
+    @Test
+    void reflectNumberObject() {
         final NumberObject object = new NumberObject();
         final JsonObject json = JsonObject.reflect(object);
 
         assertEquals(2, json.size());
         assertEquals(1, json.getEntry(0).getValue());
         assertEquals(2, json.getEntry(1).getValue());
-        assertEquals(1, json.get("one"));
-        assertEquals(2, json.get("two"));
+        assertEquals(1, json.get("n0"));
+        assertEquals(2, json.get("n1"));
     }
 
     public static class NumberObject {
 
-        public final int one = 1;
-        public final int two = 2;
+        public int n0 = 1;
+        public int n1 = 2;
     }
 }
