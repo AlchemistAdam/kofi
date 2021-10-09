@@ -21,6 +21,8 @@ import dk.martinu.kofi.spi.*;
 
 module kofi {
 
+    requires java.base;
+    requires java.logging;
     requires org.jetbrains.annotations;
 
     uses DocumentFileReader;

@@ -18,6 +18,7 @@
 package dk.martinu.kofi;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.logging.*;
 
@@ -32,6 +33,10 @@ public class KofiLog {
      * never be accessed, use {@link #getLogger()} instead.
      */
     private static volatile Logger logger = null;
+
+    public static void finest(@NotNull final String msg) {
+        getLogger().finest(msg);
+    }
 
     public static Logger getLogger() {
         if (logger == null)
@@ -51,6 +56,11 @@ public class KofiLog {
 
     public static void severe(@NotNull final String msg) {
         getLogger().severe(msg);
+    }
+
+    public static void throwing(@NotNull final String sourceClass, @Nullable final String sourceMethod,
+            @NotNull final Throwable thrown) {
+        getLogger().throwing(sourceClass, sourceMethod, thrown);
     }
 
     public static void warning(@NotNull final String msg) {
