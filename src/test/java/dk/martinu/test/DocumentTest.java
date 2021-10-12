@@ -21,48 +21,67 @@ import org.junit.jupiter.api.*;
 
 import dk.martinu.kofi.*;
 import dk.martinu.kofi.codecs.IniCodec;
+import dk.martinu.kofi.properties.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Testing {@link Document} methods on an input string with elements that have
- * different amounts of whitespace. Tests are ordered randomly.
+ * Testing {@link Document} methods on an input string that has different
+ * amounts of whitespace, and with elements of all value types. Tests are
+ * ordered randomly.
  * <p>
  * This test not only helps verify that documents work as intended, but also
- * that {@link IniCodec} parses strings to corresponding elements correctly.
+ * that {@link IniCodec} parses a string to elements correctly.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.Random.class)
 public class DocumentTest {
 
-    // TODO add empty array and empty object
-    // TODO add comments
-    // TODO add Whitespace elements
     public static final String input = """
+             
+             ; hi
               int2  = 442211  \s
              bool  = false  \s
+            empty=[      ]
+            null=null
               char =  \\u0025 \s
-            mix=["Hello","World",true,'a']
+                        
+            ; this is an array with mixed value types
+            mix=["Hello","World",true,'a',  null ]
+                        
               [abc]  \s
              double=  123.567d
             char2  =  '\\'
+               empty=[]
             string  ="Hello, World!"  \s
+                        
              object =  { "name":"John",   "age"   : 50    ,"sex" :  "male"} \s
               int=4422
+              null2 = null
+             ; this is the last section in the document
             [def] \s
+             empty={ }
               char3='A'  \s
-            object2={"animal":"cat","color":"black","age":4,"name":"Gert","friendly":true}
+            object2={"animal":"cat","color":"black","age":4,"name":"Gert","friendly":true,"owner":null}
+                        
             float  =  0.999f
               long  =  111222333444L \s
              numbers = [ 123,  567,890]  \s
+             
             """;
 
     Document document;
 
     @Test
     void containsArray() {
+        assertTrue(document.contains("empty"));
+        assertTrue(document.contains("empty", JsonArray.class));
+
         assertTrue(document.contains("mix"));
         assertTrue(document.contains("mix", JsonArray.class));
+
+        assertTrue(document.contains("abc", "empty"));
+        assertTrue(document.contains("abc", "empty", JsonArray.class));
 
         assertTrue(document.contains("def", "numbers"));
         assertTrue(document.contains("def", "numbers", JsonArray.class));
@@ -116,9 +135,18 @@ public class DocumentTest {
     }
 
     @Test
+    void containsNull() {
+        assertTrue(document.contains("null"));
+        assertTrue(document.contains("abc", "null2"));
+    }
+
+    @Test
     void containsObject() {
         assertTrue(document.contains("abc", "object"));
         assertTrue(document.contains("abc", "object", JsonObject.class));
+
+        assertTrue(document.contains("def", "empty"));
+        assertTrue(document.contains("def", "empty", JsonObject.class));
 
         assertTrue(document.contains("def", "object2"));
         assertTrue(document.contains("def", "object2", JsonObject.class));
@@ -130,14 +158,54 @@ public class DocumentTest {
         assertTrue(document.contains("abc", "string", String.class));
     }
 
-    @AfterAll
+    @SuppressWarnings("UnusedAssignment")
+    @Test
+    void documentElements() {
+        int i = 0;
+        assertEquals(Whitespace.class, document.getElement(i++).getClass());
+        assertEquals(Comment.class, document.getElement(i++).getClass());
+        assertEquals(IntProperty.class, document.getElement(i++).getClass());
+        assertEquals(BooleanProperty.class, document.getElement(i++).getClass());
+        assertEquals(ArrayProperty.class, document.getElement(i++).getClass());
+        assertEquals(NullProperty.class, document.getElement(i++).getClass());
+        assertEquals(CharProperty.class, document.getElement(i++).getClass());
+        assertEquals(Whitespace.class, document.getElement(i++).getClass());
+        assertEquals(Comment.class, document.getElement(i++).getClass());
+        assertEquals(ArrayProperty.class, document.getElement(i++).getClass());
+        assertEquals(Whitespace.class, document.getElement(i++).getClass());
+        assertEquals(Section.class, document.getElement(i++).getClass());
+        assertEquals(DoubleProperty.class, document.getElement(i++).getClass());
+        assertEquals(CharProperty.class, document.getElement(i++).getClass());
+        assertEquals(ArrayProperty.class, document.getElement(i++).getClass());
+        assertEquals(StringProperty.class, document.getElement(i++).getClass());
+        assertEquals(Whitespace.class, document.getElement(i++).getClass());
+        assertEquals(ObjectProperty.class, document.getElement(i++).getClass());
+        assertEquals(IntProperty.class, document.getElement(i++).getClass());
+        assertEquals(NullProperty.class, document.getElement(i++).getClass());
+        assertEquals(Comment.class, document.getElement(i++).getClass());
+        assertEquals(Section.class, document.getElement(i++).getClass());
+        assertEquals(ObjectProperty.class, document.getElement(i++).getClass());
+        assertEquals(CharProperty.class, document.getElement(i++).getClass());
+        assertEquals(ObjectProperty.class, document.getElement(i++).getClass());
+        assertEquals(Whitespace.class, document.getElement(i++).getClass());
+        assertEquals(FloatProperty.class, document.getElement(i++).getClass());
+        assertEquals(LongProperty.class, document.getElement(i++).getClass());
+        assertEquals(ArrayProperty.class, document.getElement(i++).getClass());
+        assertEquals(Whitespace.class, document.getElement(i++).getClass());
+    }
+
+    @Test
     void documentSize() {
-        assertEquals(16, document.elements().size());
+        assertEquals(30, document.elements().size());
     }
 
     @Test
     void getArray() {
-        assertEquals(new JsonArray("Hello", "World", true, 'a'), document.getArray("mix"));
+        assertEquals(new JsonArray(), document.getArray("empty"));
+
+        assertEquals(new JsonArray("Hello", "World", true, 'a', null), document.getArray("mix"));
+
+        assertEquals(new JsonArray(), document.getArray("abc", "empty"));
 
         assertEquals(new JsonArray(123, 567, 890), document.getArray("def", "numbers"));
     }
@@ -172,6 +240,15 @@ public class DocumentTest {
     }
 
     @Test
+    void getNull() {
+        final Object o = new Object();
+        assertNull(document.getValue("null", o));
+        assertNull(document.getValue("null", Object.class, o));
+        assertNull(document.getValue("abc", "null2", o));
+        assertNull(document.getValue("abc", "null2", Object.class, o));
+    }
+
+    @Test
     void getObject() {
         final JsonObject.Entry[] objectEntries = {
                 new JsonObject.Entry("name", "John"),
@@ -180,12 +257,15 @@ public class DocumentTest {
         };
         assertEquals(new JsonObject(objectEntries), document.getObject("abc", "object"));
 
+        assertEquals(new JsonObject(), document.getObject("def", "empty"));
+
         final JsonObject.Entry[] object2Entries = {
                 new JsonObject.Entry("animal", "cat"),
                 new JsonObject.Entry("color", "black"),
                 new JsonObject.Entry("age", 4),
                 new JsonObject.Entry("name", "Gert"),
-                new JsonObject.Entry("friendly", true)
+                new JsonObject.Entry("friendly", true),
+                new JsonObject.Entry("owner", null)
         };
         assertEquals(new JsonObject(object2Entries), document.getObject("def", "object2"));
     }
@@ -199,5 +279,13 @@ public class DocumentTest {
     void initDocument() {
         assertDoesNotThrow(() -> document = new IniCodec().readString(input));
         assertNotNull(document);
+    }
+
+    @Test
+    void matchesWithSuper() {
+        assertEquals(442211, document.getValue("int2", Number.class, 0));
+        assertEquals(123.567d, document.getValue("abc", "double", Number.class, 0.0d));
+        assertEquals("Hello, World!", document.getValue("abc", "string", CharSequence.class, ""));
+        assertNotNull(document.getValue("empty", Json.class, null));
     }
 }
