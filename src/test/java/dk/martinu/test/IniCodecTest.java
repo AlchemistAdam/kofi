@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestMethodOrder(MethodOrderer.DisplayName.class)
 public class IniCodecTest {
 
-    @BeforeAll
+    @AfterAll
     void cleanUp() {
         assertDoesNotThrow(() -> Files.deleteIfExists(Paths.get("unit-test.ini")));
     }

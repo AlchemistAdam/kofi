@@ -19,6 +19,9 @@ package dk.martinu.test;
 
 import org.junit.jupiter.api.*;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import dk.martinu.kofi.*;
 import dk.martinu.kofi.codecs.IniCodec;
 import dk.martinu.kofi.properties.*;
@@ -71,6 +74,11 @@ public class DocumentTest {
             """;
 
     Document document;
+
+    @AfterAll
+    void cleanup() {
+        assertDoesNotThrow(() -> Files.deleteIfExists(Paths.get("unit-test.ini")));
+    }
 
     @Test
     void containsArray() {

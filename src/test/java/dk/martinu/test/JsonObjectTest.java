@@ -19,8 +19,6 @@ package dk.martinu.test;
 
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.InvocationTargetException;
-
 import dk.martinu.kofi.JsonObject;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
