@@ -25,7 +25,7 @@ import java.io.Serializable;
 import dk.martinu.kofi.Element;
 import dk.martinu.kofi.Property;
 
-public class NullProperty extends Property<Void> implements Cloneable, Serializable {
+public class NullProperty extends Property<Object> implements Cloneable, Serializable {
 
     @Serial
     private static final long serialVersionUID = 0L;
@@ -45,8 +45,8 @@ public class NullProperty extends Property<Void> implements Cloneable, Serializa
     @Contract(pure = true)
     @Override
     @NotNull
-    public Class<? super Void> getValueClass() {
-        return void.class;
+    public Class<Object> getValueClass() {
+        return Object.class;
     }
 
     @Contract(value = "-> new", pure = true)
