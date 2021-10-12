@@ -72,13 +72,6 @@ public class SerFileCodec implements DocumentFileReader, DocumentFileWriter {
         return false;
     }
 
-    @Contract(value = "_ -> new", pure = true)
-    @NotNull
-    @Override
-    public Document readFile(@NotNull final Path filePath) throws NullPointerException, IOException {
-        return readFile(filePath, null);
-    }
-
     @Contract(value = "_, _ -> new", pure = true)
     @NotNull
     @Override
@@ -94,13 +87,6 @@ public class SerFileCodec implements DocumentFileReader, DocumentFileWriter {
         catch (ObjectStreamException e) {
             throw new IOException("an exception was thrown while deserializing an object", e);
         }
-    }
-
-    @Contract(pure = true)
-    @Override
-    public void writeFile(@NotNull final Path filePath, @NotNull final Document document) throws NullPointerException,
-            IOException {
-        writeFile(filePath, document, null);
     }
 
     @Contract(pure = true)

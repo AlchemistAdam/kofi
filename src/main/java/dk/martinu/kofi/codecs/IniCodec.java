@@ -90,13 +90,6 @@ public class IniCodec
         return false;
     }
 
-    @Contract(value = "_ -> new", pure = true)
-    @NotNull
-    @Override
-    public Document readFile(@NotNull final Path filePath) throws IOException {
-        return readFile(filePath, null);
-    }
-
     @Contract(value = "_, _ -> new", pure = true)
     @NotNull
     @Override
@@ -107,18 +100,12 @@ public class IniCodec
             return new Document();
     }
 
+    @Contract(value = "_ -> new", pure = true)
     @Override
     @NotNull
     public Document readString(final @NotNull String string) throws NullPointerException, IOException {
         Objects.requireNonNull(string, "string is null");
         return read(() -> new BufferedReader(new CharArrayReader(string.toCharArray())));
-    }
-
-    @Contract(pure = true)
-    @Override
-    public void writeFile(@NotNull final Path filePath, @NotNull final Document document) throws NullPointerException,
-            IOException {
-        writeFile(filePath, document, null);
     }
 
     @Contract(pure = true)
@@ -130,6 +117,7 @@ public class IniCodec
         write(() -> Files.newBufferedWriter(filePath, cs != null ? cs : StandardCharsets.UTF_8), document);
     }
 
+    @Contract(value = "_, _ -> new", pure = true)
     @Override
     @NotNull
     public String writeString(final @NotNull String string, final @NotNull Document document) throws
@@ -233,7 +221,7 @@ public class IniCodec
                         throw new ParseException("invalid null value");
 
                     final int len = from.applyAsInt(end);
-                    return new Parsable.Boolean(chars, start, end, len);
+                    return new Parsable.Null(chars, start, end, len);
                 }
                 // String
                 else if (c == '"') {
