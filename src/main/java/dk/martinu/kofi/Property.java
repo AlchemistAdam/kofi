@@ -123,7 +123,7 @@ public abstract class Property<V> extends Element {
     /**
      * Returns a {@code String} representation of this property, equal to:
      * <pre>
-     *     "<i>key</i> = <i>value</i>
+     *     "<i>key</i> = <i>value</i>"
      * </pre>
      * where <i>key</i> and <i>value</i> are equal to the strings returned by
      * {@link #getKeyString()} and {@link #getValueString()} respectively.
@@ -178,17 +178,16 @@ public abstract class Property<V> extends Element {
     }
 
     /**
-     * Returns {@code true} if {@code valueType} is {@code null} or the value
-     * type of this property is equal to {@code valueType}. Otherwise
-     * {@code false} is returned.
+     * Returns {@code true} if {@code valueType} is assignable from the value
+     * type of this property or equal to {@code null}. Otherwise {@code false}
+     * is returned.
      */
-    // TODO use isAssignableFrom if possible
     @Contract(value = "null -> true", pure = true)
     public boolean matches(@Nullable final Class<?> valueType) {
-        if (valueType == null)
-            return true;
+        if (valueType != null)
+            return valueType.isAssignableFrom(getValueClass());
         else
-            return getValueClass().equals(valueType);
+            return true;
     }
 
     /**
