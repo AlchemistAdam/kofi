@@ -349,7 +349,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      *
      * @param section name of the section to add the property to, or
      *                {@code null}.
-     * @param key the property key.
+     * @param key     the property key.
      * @throws NullPointerException if {@code key} is {@code null}.
      * @see #addProperty(String, Property)
      */
@@ -1393,7 +1393,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @throws NullPointerException if {@code key} is {@code null}.
      * @see Property#matches(String)
      */
-    @Contract(value = "_, !null -> !null", pure = true)
+    @Contract(pure = true)
     @Nullable
     public <V> V getValue(@NotNull final String key, @Nullable V def) throws NullPointerException {
         return getValue(null, key, null, def);
@@ -1413,7 +1413,6 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @throws NullPointerException if {@code key} is {@code null}.
      * @see Property#matches(String)
      */
-    @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
     public <V> V getValue(@Nullable final String section, @NotNull final String key, @Nullable V def) throws
             NullPointerException {
@@ -1434,7 +1433,6 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @throws NullPointerException if {@code key} is {@code null}.
      * @see Property#matches(String, Class)
      */
-    @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
     public <V> V getValue(@NotNull final String key, @Nullable final Class<V> valueType, @Nullable V def) throws
             NullPointerException {
@@ -1456,7 +1454,6 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @throws NullPointerException if {@code key} is {@code null}.
      * @see Property#matches(String, Class)
      */
-    @Contract(value = "_, _, _, !null -> !null", pure = true)
     @Nullable
     public <V> V getValue(@Nullable final String section, @NotNull final String key,
             @Nullable final Class<V> valueType, @Nullable V def) throws NullPointerException {
