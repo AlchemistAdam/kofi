@@ -27,13 +27,16 @@ import dk.martinu.kofi.Document;
 
 public interface DocumentFileReader {
 
+    @Contract(pure = true)
     boolean canRead(@NotNull final Path filePath) throws NullPointerException;
 
-    @Contract("_ -> new")
+    @Contract(value = "_ -> new", pure = true)
     @NotNull
-    Document readFile(@NotNull final Path filePath) throws NullPointerException, IOException;
+    default Document readFile(@NotNull final Path filePath) throws NullPointerException, IOException {
+        return readFile(filePath, null);
+    }
 
-    @Contract("_, _ -> new")
+    @Contract(value = "_, _ -> new", pure = true)
     @NotNull
     Document readFile(@NotNull final Path filePath, @Nullable final Charset cs) throws NullPointerException,
             IOException;

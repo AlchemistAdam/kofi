@@ -17,8 +17,7 @@
 
 package dk.martinu.kofi.spi;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -28,11 +27,16 @@ import dk.martinu.kofi.Document;
 
 public interface DocumentFileWriter {
 
+    @Contract(pure = true)
     boolean canWrite(@NotNull final Path filePath, @Nullable final Document document) throws NullPointerException;
 
-    void writeFile(@NotNull final Path filePath, @NotNull final Document document) throws NullPointerException,
-            IOException;
+    @Contract(pure = true)
+    default void writeFile(@NotNull final Path filePath, @NotNull final Document document) throws NullPointerException,
+            IOException {
+        writeFile(filePath, document, null);
+    }
 
+    @Contract(pure = true)
     void writeFile(@NotNull final Path filePath, @NotNull final Document document, @Nullable final Charset cs) throws
             NullPointerException, IOException;
 }

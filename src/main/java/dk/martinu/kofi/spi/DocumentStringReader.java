@@ -27,7 +27,7 @@ import dk.martinu.kofi.Document;
 @FunctionalInterface
 public interface DocumentStringReader {
 
-    @Contract("_ -> new")
+    @Contract(value = "_ -> new", pure = true)
     @NotNull
     Document readString(@NotNull final String string) throws NullPointerException, IOException;
 }
