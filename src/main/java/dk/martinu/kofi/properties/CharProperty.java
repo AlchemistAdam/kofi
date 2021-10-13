@@ -55,7 +55,12 @@ public class CharProperty extends Property<Character> implements Cloneable, Seri
     public String getValueString() {
         //noinspection ConstantConditions
         return switch (value) {
-            case '\t', '\b', '\n', '\r', '\f', '\0' -> String.copyValueOf(new char[] {'\'', '\\', value, '\''});
+            case '\t' -> "'\\t'";
+            case '\b' -> "'\\b'";
+            case '\n' -> "'\\n'";
+            case '\r' -> "'\\r'";
+            case '\f' -> "'\\f'";
+            case '\0' -> "'\\0'";
             default -> String.copyValueOf(new char[] {'\'', value, '\''});
         };
 //        final String s = Integer.toString(value, 16);
