@@ -25,6 +25,12 @@ import java.util.Objects;
 
 import dk.martinu.kofi.Property;
 
+/**
+ * {@link Property} implementation that holds an {@code String} value.
+ *
+ * @author Adam Martinu
+ * @since 1.0
+ */
 public class StringProperty extends Property<String> implements Cloneable, Serializable {
 
     // TODO find usages and determine best enclosing class for this method
@@ -50,13 +56,26 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
     private static final long serialVersionUID = 0L;
 
     @Nullable
-    protected String escapedString = null;
+    protected String valueString = null;
 
+    /**
+     * Constructs a new property with the specified {@code key} and
+     * {@code value}. The key is not case-sensitive when compared to other
+     * properties. If {@code value} is {@code null}, then the property value
+     * will default to {@code ""} (an empty string).
+     *
+     * @param key   The property key.
+     * @param value The property value, or {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}.
+     */
     @Contract(pure = true)
     public StringProperty(@NotNull final String key, @Nullable final String value) throws NullPointerException {
         super(key, Objects.requireNonNullElse(value, ""));
     }
 
+    /**
+     * Returns a copy of this property with the same property key and value.
+     */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
@@ -64,6 +83,9 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
         return new StringProperty(key, value);
     }
 
+    /**
+     * Returns {@code String.class}.
+     */
     @Contract(pure = true)
     @NotNull
     @Override
@@ -71,13 +93,22 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
         return String.class;
     }
 
+    /**
+     * Returns a {@code String} representation of this property's value. The
+     * returned string is equal to:
+     * <pre>
+     *     '"' + valueString + '"'
+     * </pre>
+     * where <i>valueString</i> is the escaped version of this property's
+     * value.
+     */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
     public String getValueString() {
-        if (escapedString == null)
+        if (valueString == null)
             //noinspection ConstantConditions
-            escapedString = escape(value);
-        return '\"' + escapedString + '\"';
+            valueString = '"' + escape(value) + '"';
+        return valueString;
     }
 }

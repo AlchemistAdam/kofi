@@ -24,54 +24,38 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
 
-import dk.martinu.kofi.*;
+import dk.martinu.kofi.JsonArray;
+import dk.martinu.kofi.Property;
 
+/**
+ * {@link Property} implementation that holds a {@link JsonArray} value.
+ *
+ * @author Adam Martinu
+ * @since 1.0
+ */
 public class ArrayProperty extends Property<JsonArray> implements Cloneable, Serializable, Iterable<Object> {
 
     @Serial
     private static final long serialVersionUID = 0L;
 
-    protected static void getValueStringOf(@NotNull final JsonArray array, @NotNull final StringBuilder sb) {
-        sb.append('[');
-        for (int index = 0; index < array.length(); index++) {
-            if (index > 0)
-                sb.append(',');
-            sb.append(' ');
-
-            Object value = array.get(index);
-            if (value == null)
-                sb.append("null");
-            else if (value instanceof String s)
-                sb.append('\"').append(StringProperty.escape(s)).append('\"');
-            else if (value instanceof Integer i)
-                sb.append((int) i);
-            else if (value instanceof Long l)
-                sb.append((long) l).append('L');
-            else if (value instanceof Float f)
-                sb.append((float) f).append('f');
-            else if (value instanceof Double d)
-                sb.append((double) d).append('d');
-            else if (value instanceof Character c)
-                sb.append('\'').append((char) c).append('\'');
-            else if (value instanceof Boolean b)
-                sb.append((boolean) b);
-            else if (value instanceof JsonArray jsonArray)
-                getValueStringOf(jsonArray, sb);
-            else if (value instanceof JsonObject jsonObject)
-                ObjectProperty.getValueStringOf(jsonObject, sb);
-            else {
-                sb.append(value);
-                KofiLog.warning("Unknown value type in JSON array {index=" + index + ", value=" + value + "}");
-            }
-        }
-        sb.append(' ').append(']');
-    }
-
+    /**
+     * Constructs a new property with the specified {@code key} and
+     * {@code value}. The key is not case-sensitive when compared to other
+     * properties. If {@code value} is {@code null}, then the property value
+     * will default to an empty {@code JsonArray}.
+     *
+     * @param key   The property key.
+     * @param value The property value, or {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}.
+     */
     @Contract(pure = true)
-    public ArrayProperty(@NotNull final String key, @Nullable final JsonArray array) throws NullPointerException {
-        super(key, Objects.requireNonNullElse(array, new JsonArray()));
+    public ArrayProperty(@NotNull final String key, @Nullable final JsonArray value) throws NullPointerException {
+        super(key, Objects.requireNonNullElse(value, new JsonArray()));
     }
 
+    /**
+     * Returns a copy of this property with the same property key and value.
+     */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
@@ -79,13 +63,25 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
         return new ArrayProperty(key, value);
     }
 
+    /**
+     * Performs the given action for each element in the {@code JsonArray}
+     * until  all elements have been processed or the action throws an
+     * exception. Exceptions thrown by the action are relayed to the caller.
+     *
+     * @param action The action to be performed for each element.
+     * @throws NullPointerException if {@code action} is {@code null}.
+     */
     @Override
     public void forEach(@NotNull final Consumer<? super Object> action) throws NullPointerException {
+        Objects.requireNonNull(action, "action is null");
         //noinspection ConstantConditions
         for (Object o : value)
             action.accept(o);
     }
 
+    /**
+     * Returns {@code JsonArray.class}.
+     */
     @Contract(pure = true)
     @NotNull
     @Override
@@ -93,20 +89,32 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
         return JsonArray.class;
     }
 
+    /**
+     * Returns a {@code String} representation of this property's value.
+     *
+     * @see JsonArray#toJson()
+     */
     @SuppressWarnings("ConstantConditions")
     @NotNull
     @Override
     public String getValueString() {
-        final StringBuilder sb = new StringBuilder(value.length() * 8);
-        getValueStringOf(value, sb);
-        return sb.toString();
+        return value.toJson();
     }
 
+    /**
+     * Returns the hash code of this property.
+     */
     @Override
     public int hashCode() {
         return hashCodeImpl();
     }
 
+    /**
+     * Returns an iterator over the elements in this property's
+     * {@code JsonArray}.
+     *
+     * @see JsonArray#iterator()
+     */
     @Contract(value = "-> new")
     @NotNull
     @Override
@@ -115,6 +123,12 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
         return value.iterator();
     }
 
+    /**
+     * Returns a spliterator over the elements in this property's
+     * {@code JsonArray}.
+     *
+     * @see JsonArray#spliterator()
+     */
     @Contract(value = "-> new")
     @NotNull
     @Override

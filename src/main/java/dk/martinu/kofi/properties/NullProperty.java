@@ -25,16 +25,36 @@ import java.io.Serializable;
 import dk.martinu.kofi.Element;
 import dk.martinu.kofi.Property;
 
+/**
+ * {@link Property} implementation whose value is always {@code null}. Because 
+ * a {@code null} value does not inherently belong to a specific value type,
+ * the value type of {@code NullProperty} is {@code Object}. This means that
+ * all (except primitive) types will {@link #matches(Class) match} against an
+ * instance of this class.
+ *
+ * @author Adam Martinu
+ * @since 1.0
+ */
 public class NullProperty extends Property<Object> implements Cloneable, Serializable {
 
     @Serial
     private static final long serialVersionUID = 0L;
 
+    /**
+     * Constructs a new property with the specified {@code key}. The key is not
+     * case-sensitive when compared to other properties.
+     *
+     * @param key The property key.
+     * @throws NullPointerException if {@code key} is {@code null}.
+     */
     @Contract(pure = true)
     public NullProperty(@NotNull final String key) throws NullPointerException {
         super(key);
     }
 
+    /**
+     * Returns a copy of this property with the same property key.
+     */
     @Contract(value = "-> new", pure = true)
     @Override
     @NotNull
@@ -42,6 +62,9 @@ public class NullProperty extends Property<Object> implements Cloneable, Seriali
         return new NullProperty(key);
     }
 
+    /**
+     * Returns {@code Object.class}.
+     */
     @Contract(pure = true)
     @Override
     @NotNull
@@ -49,10 +72,13 @@ public class NullProperty extends Property<Object> implements Cloneable, Seriali
         return Object.class;
     }
 
+    /**
+     * Returns the string {@code "null"}.
+     */
     @Contract(value = "-> new", pure = true)
     @Override
     @NotNull
     public String getValueString() {
-        return "";
+        return "null";
     }
 }

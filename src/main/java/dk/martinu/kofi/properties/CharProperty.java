@@ -25,16 +25,35 @@ import java.util.Objects;
 
 import dk.martinu.kofi.Property;
 
+/**
+ * {@link Property} implementation that holds an {@code Character} value.
+ *
+ * @author Adam Martinu
+ * @since 1.0
+ */
 public class CharProperty extends Property<Character> implements Cloneable, Serializable {
 
     @Serial
     private static final long serialVersionUID = 0L;
 
+    /**
+     * Constructs a new property with the specified {@code key} and
+     * {@code value}. The key is not case-sensitive when compared to other
+     * properties. If {@code value} is {@code null}, then the property value
+     * will default to the null character ({@code U+0000}).
+     *
+     * @param key   The property key.
+     * @param value The property value, or {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}.
+     */
     @Contract(pure = true)
     public CharProperty(@NotNull final String key, @Nullable final Character value) throws NullPointerException {
         super(key, Objects.requireNonNullElse(value, (char) 0));
     }
 
+    /**
+     * Returns a copy of this property with the same property key and value.
+     */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
@@ -42,6 +61,9 @@ public class CharProperty extends Property<Character> implements Cloneable, Seri
         return new CharProperty(key, value);
     }
 
+    /**
+     * Returns {@code Character.class}.
+     */
     @Contract(pure = true)
     @NotNull
     @Override
@@ -49,6 +71,29 @@ public class CharProperty extends Property<Character> implements Cloneable, Seri
         return Character.class;
     }
 
+    /**
+     * <p>Returns a {@code String} representation of this property's value. The
+     * returned string is equal to (with some exceptions):
+     * <pre>
+     *     "'" + value + "'"
+     * </pre>
+     * <p>If this property's value is equal to any of the escapable characters in
+     * the Java language, then the escaped version is used instead. E.g. if
+     * {@code value} is equal to {@code '\t'} then the returned string is equal
+     * to:
+     * <pre>
+     *     "'\\t'"
+     * </pre>
+     * The following is a list of all such characters:
+     * <ul>
+     *     <li>{@code \t} horizontal tabulation, U+0009</li>
+     *     <li>{@code \b} backspace, U+0008</li>
+     *     <li>{@code \n} new line, U+000A</li>
+     *     <li>{@code \r} carriage return, U+000D</li>
+     *     <li>{@code \f} form feed, U+000C</li>
+     *     <li>{@code \0} null, U+0000</li>
+     * </ul>
+     */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
@@ -63,13 +108,5 @@ public class CharProperty extends Property<Character> implements Cloneable, Seri
             case '\0' -> "'\\0'";
             default -> String.copyValueOf(new char[] {'\'', value, '\''});
         };
-//        final String s = Integer.toString(value, 16);
-//        if (s.length() < 4) {
-//            final char[] chars = new char[4 - s.length()];
-//            Arrays.fill(chars, '0');
-//            return "\\u" + String.valueOf(chars) + s;
-//        }
-//        else
-//            return "\\u" + s;
     }
 }

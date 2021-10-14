@@ -22,59 +22,40 @@ import org.jetbrains.annotations.*;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Consumer;
 
 import dk.martinu.kofi.*;
 
+/**
+ * {@link Property} implementation that holds a {@link JsonObject} value.
+ *
+ * @author Adam Martinu
+ * @since 1.0
+ */
 public class ObjectProperty extends Property<JsonObject> implements Cloneable, Serializable,
         Iterable<JsonObject.Entry> {
 
     @Serial
     private static final long serialVersionUID = 0L;
 
-    public static void getValueStringOf(@NotNull final JsonObject object, @NotNull final StringBuilder sb) {
-        sb.append('{');
-        JsonObject.Entry entry = null;
-        for (int index = 0; index < object.size(); index++) {
-            if (entry != null)
-                sb.append(',');
-
-            entry = object.getEntry(index);
-            final String name = entry.getName();
-            final Object value = entry.getValue();
-            sb.append(" \"").append(name).append("\": ");
-            if (value == null)
-                sb.append("null");
-            else if (value instanceof String s)
-                sb.append('\"').append(StringProperty.escape(s)).append('\"');
-            else if (value instanceof Integer i)
-                sb.append((int) i);
-            else if (value instanceof Long l)
-                sb.append((long) l).append('L');
-            else if (value instanceof Float f)
-                sb.append((float) f).append('f');
-            else if (value instanceof Double d)
-                sb.append((double) d).append('d');
-            else if (value instanceof Character c)
-                sb.append('\'').append((char) c).append('\'');
-            else if (value instanceof Boolean b)
-                sb.append((boolean) b);
-            else if (value instanceof JsonArray jsonArray)
-                ArrayProperty.getValueStringOf(jsonArray, sb);
-            else if (value instanceof JsonObject jsonObject)
-                getValueStringOf(jsonObject, sb);
-            else {
-                sb.append(value);
-                KofiLog.warning("Unknown value type in JSON object {name=" + name + ", value=" + value + "}");
-            }
-        }
-        sb.append(' ').append('}');
-    }
-
+    /**
+     * Constructs a new property with the specified {@code key} and
+     * {@code value}. The key is not case-sensitive when compared to other
+     * properties. If {@code value} is {@code null}, then the property value
+     * will default to an empty {@code JsonObject}.
+     *
+     * @param key   The property key.
+     * @param value The property value, or {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}.
+     */
     @Contract(pure = true)
-    public ObjectProperty(@NotNull final String key, @Nullable final JsonObject object) throws NullPointerException {
-        super(key, Objects.requireNonNullElse(object, new JsonObject()));
+    public ObjectProperty(@NotNull final String key, @Nullable final JsonObject value) throws NullPointerException {
+        super(key, Objects.requireNonNullElse(value, new JsonObject()));
     }
 
+    /**
+     * Returns a copy of this property with the same property key and value.
+     */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
@@ -82,6 +63,25 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
         return new ObjectProperty(key, value);
     }
 
+    /**
+     * Performs the given action for each entry in the {@code JsonObject} until
+     * all entries have been processed or the action throws an exception.
+     * Exceptions thrown by the action are relayed to the caller.
+     *
+     * @param action The action to be performed for each entry.
+     * @throws NullPointerException if {@code action} is {@code null}.
+     */
+    @Override
+    public void forEach(final Consumer<? super JsonObject.Entry> action) {
+        Objects.requireNonNull(action, "action is null");
+        //noinspection ConstantConditions
+        for (JsonObject.Entry o : value)
+            action.accept(o);
+    }
+
+    /**
+     * Returns {@code JsonObject.class}.
+     */
     @Contract(pure = true)
     @NotNull
     @Override
@@ -89,20 +89,32 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
         return JsonObject.class;
     }
 
+    /**
+     * Returns a {@code String} representation of this property's value.
+     *
+     * @see JsonObject#toJson()
+     */
     @SuppressWarnings("ConstantConditions")
     @NotNull
     @Override
     public String getValueString() {
-        final StringBuilder sb = new StringBuilder(value.size() * 16);
-        getValueStringOf(value, sb);
-        return sb.toString();
+        return value.toJson();
     }
 
+    /**
+     * Returns the hash code of this property.
+     */
     @Override
     public int hashCode() {
         return hashCodeImpl();
     }
 
+    /**
+     * Returns an iterator over the entries in this property's
+     * {@code JsonObject}.
+     *
+     * @see JsonObject#iterator()
+     */
     @NotNull
     @Override
     public Iterator<JsonObject.Entry> iterator() {
@@ -110,6 +122,12 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
         return value.iterator();
     }
 
+    /**
+     * Returns a spliterator over the entries in this property's
+     * {@code JsonObject}.
+     *
+     * @see JsonObject#spliterator()
+     */
     @Override
     public Spliterator<JsonObject.Entry> spliterator() {
         //noinspection ConstantConditions
