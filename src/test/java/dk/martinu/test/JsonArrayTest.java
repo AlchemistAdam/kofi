@@ -37,7 +37,10 @@ public class JsonArrayTest {
 
         assertEquals(objects.length, json.length());
         for (int i = 0; i < objects.length; i++)
-            assertEquals(objects[i], json.get(i));
+            if (objects[i] instanceof String s)
+                assertEquals('"' + s + '"', json.get(i));
+            else
+                assertEquals(objects[i], json.get(i));
     }
 
     @Test

@@ -26,6 +26,7 @@ import dk.martinu.kofi.codecs.IniCodec;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+// TODO add whitespace, comments, null values
 /**
  * Testing write and read of {@link IniCodec} with all property types in
  * {@link dk.martinu.kofi.properties}. This test consists of two subtests;
@@ -36,9 +37,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestMethodOrder(MethodOrderer.DisplayName.class)
 public class IniCodecTest {
 
+    final String filePath = "inicodectest.ini";
+
     @AfterAll
     void cleanUp() {
-        assertDoesNotThrow(() -> Files.deleteIfExists(Paths.get("unit-test.ini")));
+        assertDoesNotThrow(() -> Files.deleteIfExists(Paths.get(filePath)));
     }
 
     @DisplayName("B) ReadTest")
@@ -53,7 +56,7 @@ public class IniCodecTest {
         void containsArray() {
             assertTrue(document.contains("mix"));
             assertTrue(document.contains("mix", JsonArray.class));
-            assertEquals(new JsonArray("Hello", "World", true, 'a'), document.getArray("mix"));
+            assertEquals(new JsonArray("Hello", "World", true, 97), document.getArray("mix"));
 
             assertTrue(document.contains("abc", "numbers"));
             assertTrue(document.contains("abc", "numbers", JsonArray.class));
@@ -120,7 +123,7 @@ public class IniCodecTest {
 
         @BeforeAll
         void readDocument() {
-            assertDoesNotThrow(() -> document = DocumentIO.readFile(Paths.get("unit-test.ini")));
+            assertDoesNotThrow(() -> document = DocumentIO.readFile(Paths.get(filePath)));
         }
     }
 
@@ -135,10 +138,10 @@ public class IniCodecTest {
 
         @Test
         void addArray() {
-            assertDoesNotThrow(() -> document.addArray("mix", new JsonArray("Hello", "World", true, 'a')));
+            assertDoesNotThrow(() -> document.addArray("mix", new JsonArray("Hello", "World", true, 97)));
             assertTrue(document.contains("mix"));
             assertTrue(document.contains("mix", JsonArray.class));
-            assertEquals(new JsonArray("Hello", "World", true, 'a'), document.getArray("mix"));
+            assertEquals(new JsonArray("Hello", "World", true, 97), document.getArray("mix"));
 
             assertDoesNotThrow(() -> document.addArray("abc", "numbers", new JsonArray(123, 567, 890)));
             assertTrue(document.contains("abc", "numbers"));
@@ -250,7 +253,7 @@ public class IniCodecTest {
 
         @BeforeAll
         void init() {
-            path = Paths.get("unit-test.ini");
+            path = Paths.get(filePath);
             document = new Document();
         }
 

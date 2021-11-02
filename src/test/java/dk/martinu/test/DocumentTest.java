@@ -19,14 +19,13 @@ package dk.martinu.test;
 
 import org.junit.jupiter.api.*;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 import dk.martinu.kofi.*;
 import dk.martinu.kofi.codecs.IniCodec;
 import dk.martinu.kofi.properties.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+// TODO add remove tests
 
 /**
  * Testing {@link Document} methods on an input string that has different
@@ -34,12 +33,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * ordered randomly.
  * <p>
  * This test not only helps verify that documents work as intended, but also
- * that {@link IniCodec} parses a string to elements correctly.
+ * that {@link IniCodec} parses strings to elements correctly.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.Random.class)
 public class DocumentTest {
 
+    // TODO add some nested json
     public static final String input = """
              
              ; hi
@@ -50,7 +50,7 @@ public class DocumentTest {
               char =  \\u0025 \s
                         
             ; this is an array with mixed value types
-            mix=["Hello","World",true,'a',  null ]
+            mix=["Hello","World",true, 2 ,  null ]
                         
               [abc]  \s
              double=  123.567d
@@ -74,11 +74,6 @@ public class DocumentTest {
             """;
 
     Document document;
-
-    @AfterAll
-    void cleanup() {
-        assertDoesNotThrow(() -> Files.deleteIfExists(Paths.get("unit-test.ini")));
-    }
 
     @Test
     void containsArray() {
@@ -211,7 +206,7 @@ public class DocumentTest {
     void getArray() {
         assertEquals(new JsonArray(), document.getArray("empty"));
 
-        assertEquals(new JsonArray("Hello", "World", true, 'a', null), document.getArray("mix"));
+        assertEquals(new JsonArray("Hello", "World", true, 2, null), document.getArray("mix"));
 
         assertEquals(new JsonArray(), document.getArray("abc", "empty"));
 
@@ -258,24 +253,24 @@ public class DocumentTest {
 
     @Test
     void getObject() {
-        final JsonObject.Entry[] objectEntries = {
-                new JsonObject.Entry("name", "John"),
-                new JsonObject.Entry("age", 50),
-                new JsonObject.Entry("sex", "male")
-        };
-        assertEquals(new JsonObject(objectEntries), document.getObject("abc", "object"));
+        assertEquals(new JsonObject.Builder()
+                        .put("name", "John")
+                        .put("age", 50)
+                        .put("sex", "male")
+                        .build(),
+                document.getObject("abc", "object"));
 
         assertEquals(new JsonObject(), document.getObject("def", "empty"));
 
-        final JsonObject.Entry[] object2Entries = {
-                new JsonObject.Entry("animal", "cat"),
-                new JsonObject.Entry("color", "black"),
-                new JsonObject.Entry("age", 4),
-                new JsonObject.Entry("name", "Gert"),
-                new JsonObject.Entry("friendly", true),
-                new JsonObject.Entry("owner", null)
-        };
-        assertEquals(new JsonObject(object2Entries), document.getObject("def", "object2"));
+        assertEquals(new JsonObject.Builder()
+                        .put("animal", "cat")
+                        .put("color", "black")
+                        .put("age", 4)
+                        .put("name", "Gert")
+                        .put("friendly", true)
+                        .put("owner", null)
+                        .build(),
+                document.getObject("def", "object2"));
     }
 
     @Test

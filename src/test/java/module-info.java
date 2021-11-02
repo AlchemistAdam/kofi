@@ -21,6 +21,7 @@ module Kofi.test {
 
     requires kofi;
     requires org.junit.jupiter.api;
+    requires org.jetbrains.annotations;
 
     uses IniCodec;
 

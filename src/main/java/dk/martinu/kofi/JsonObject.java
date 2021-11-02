@@ -26,9 +26,11 @@ import java.util.*;
 
 public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Serializable {
 
+    protected static final Entry[] EMPTY = new Entry[0];
     @Serial
     private static final long serialVersionUID = 0L;
 
+    // TODO ensure that java strings are (un)escaped correctly when reflecting/reconstructing
     // TODO check for a JSON array named "0" and if found use as constructer args
     //  (this is safe because field names cannot begin with numbers
     public static <V> V reconstruct(@NotNull final JsonObject json, @NotNull final Class<V> objectClass) throws
@@ -62,7 +64,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
             throw exc;
         }
 
-        // object assign field values and return
+        // object to assign field values and return
         final V obj;
         try {
             obj = constructor.newInstance();
@@ -86,6 +88,9 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
                     if (entry.value != null) {
                         // assignable Object type
                         if (fieldType.isAssignableFrom(entry.value.getClass())) {
+                            if (fieldType.equals(String.class)) {
+                                field.set(obj, json.getJavaString((String) entry.value));
+                            }
                             field.set(obj, entry.value);
                             unassigned = false;
                         }
@@ -126,13 +131,10 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
                                 unassigned = false;
                             }
                         }
+                        // characters are not defined in the JSON specification,
+                        // use java style assignment of integers to chars
                         else if (fieldType.equals(char.class)) {
-                            if (entry.value instanceof Character c) {
-                                field.setChar(obj, c);
-                                unassigned = false;
-                            }
-                            // special case, allow java style assignment of numbers to chars
-                            else if (entry.value instanceof Number n) {
+                            if (entry.value instanceof Number n) {
                                 field.setChar(obj, (char) n.intValue());
                                 unassigned = false;
                             }
@@ -170,14 +172,15 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         return obj;
     }
 
-    // TODO test
+    // TODO ensure that java strings are (un)escaped correctly when reflecting/reconstructing
+    // TODO char is not specified in JSON
     @NotNull
     public static JsonObject reflect(@NotNull final Object object) throws NullPointerException {
         Objects.requireNonNull(object, "object is null");
         // class for reflection
         final Class<?> cl = object.getClass();
-        // list of entries in the JSON object
-        final ArrayList<Entry> entries = new ArrayList<>();
+        // map of field names and values
+        final HashMap<String, Object> map = new HashMap<>();
         for (Field field : cl.getFields())
             if (!Modifier.isStatic(field.getModifiers()))
                 if (field.canAccess(object) || field.trySetAccessible()) {
@@ -192,30 +195,28 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
                                 + ", " + field.getName() + "}");
                         throw new RuntimeException(e);
                     }
-                    // store field as an entry
-                    entries.add(new Entry(field.getName(), value));
+                    map.put(field.getName(), value);
                 }
                 else
                     KofiLog.finest("field could not be accessed {" + object.getClass().getName()
                             + ", " + field.getName() + "}");
-        return new JsonObject(entries);
+        return new JsonObject(map);
     }
 
     @NotNull
     protected final Entry[] entries;
 
-    public JsonObject(@Nullable final Entry... entries) {
-        final TreeSet<Entry> set = new TreeSet<>();
-        if (entries != null) {
-            for (Entry entry : entries)
-                if (entry != null)
-                    set.add(entry);
-        }
-        this.entries = set.toArray(new Entry[set.size()]);
+    public JsonObject() {
+        entries = EMPTY;
     }
 
-    private JsonObject(@NotNull final List<Entry> list) {
-        this.entries = list.toArray(new Entry[list.size()]);
+    protected JsonObject(@NotNull final Map<String, Object> map) {
+        if (map.size() > 0)
+            entries = map.entrySet().parallelStream()
+                    .map(entry -> new Entry(entry.getKey(), entry.getValue()))
+                    .toArray(Entry[]::new);
+        else
+            entries = EMPTY;
     }
 
     @Contract(value = "null -> false", pure = true)
@@ -223,8 +224,15 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
     public boolean equals(@Nullable final Object obj) {
         if (this == obj)
             return true;
-        else if (obj instanceof JsonObject jsonObject)
-            return Arrays.equals(entries, jsonObject.entries);
+        else if (obj instanceof JsonObject json && entries.length == json.entries.length) {
+            for (int i = 0; i < entries.length; i++)
+                if (!Objects.equals(entries[i].value, json.getEntry(i).value)
+                        && !(entries[i].value instanceof Number n0
+                        && json.getEntry(i).value instanceof Number n1
+                        && areNumbersEqual(n0, n1)))
+                    return false;
+            return true;
+        }
         else
             return false;
     }
@@ -274,16 +282,38 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         return Arrays.spliterator(entries);
     }
 
-    public static class Entry implements Comparable<Entry> {
+    @NotNull
+    @Override
+    public String toJson() {
+        final StringBuilder sb = new StringBuilder(size() * 16);
+        toJson(sb);
+        return sb.toString();
+    }
+
+    // TODO javadoc
+    @Contract(pure = true)
+    @Override
+    protected void toJson(@NotNull final StringBuilder sb) {
+        sb.append('{');
+        for (int index = 0; index < entries.length; index++) {
+            if (index > 0)
+                sb.append(',');
+            sb.append(" \"").append(entries[index].getName()).append("\": ");
+            toJson(entries[index].getValue(), sb);
+        }
+        sb.append(" }");
+    }
+
+    public class Entry implements Comparable<Entry> {
 
         @NotNull
-        private final String name;
+        public final String name;
         @Nullable
-        private Object value;
+        protected Object value;
 
         public Entry(@NotNull final String name, @Nullable final Object value) throws NullPointerException {
             this.name = Objects.requireNonNull(name, "name is null");
-            this.value = getKnownType(value);
+            this.value = getDefinedObject(value);
         }
 
         @Override
@@ -296,7 +326,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         public boolean equals(@Nullable final Object obj) {
             if (this == obj)
                 return true;
-            else if (obj instanceof Entry entry) // TODO is JSON case sensitive?
+            else if (obj instanceof Entry entry) // TODO should not be case sensitive
                 return name.equals(entry.name) && Objects.equals(value, entry.value);
             else
                 return false;
@@ -332,6 +362,42 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         @Override
         public String toString() {
             return '\"' + name + "\": " + value;
+        }
+    }
+
+    public static class Builder {
+
+        protected final TreeMap<String, Object> map = new TreeMap<>();
+
+        @NotNull
+        public JsonObject build() {
+            return new JsonObject(map);
+        }
+
+        public void clear() {
+            map.clear();
+        }
+
+        @Nullable
+        public Object get(@NotNull final String key) throws NullPointerException {
+            Objects.requireNonNull(key, "key is null");
+            return map.get(key);
+        }
+
+        public Builder put(@NotNull final String key, @Nullable final Object value) throws NullPointerException {
+            Objects.requireNonNull(key, "key is null");
+            map.put(key, value);
+            return this;
+        }
+
+        public Builder remove(@NotNull final String key) throws NullPointerException {
+            Objects.requireNonNull(key, "key is null");
+            map.remove(key);
+            return this;
+        }
+
+        public int size() {
+            return map.size();
         }
     }
 

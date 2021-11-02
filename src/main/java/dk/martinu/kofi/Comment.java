@@ -80,8 +80,8 @@ public class Comment extends Element implements Cloneable, Serializable {
     public boolean equals(final Object obj) {
         if (this == obj)
             return true;
-        else if (obj instanceof Comment)
-            return text.equals(((Comment) obj).text);
+        else if (obj instanceof Comment comment)
+            return text.equals(comment.text);
         else
             return false;
     }

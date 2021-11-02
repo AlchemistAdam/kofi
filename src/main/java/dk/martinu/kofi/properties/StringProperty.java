@@ -33,25 +33,6 @@ import dk.martinu.kofi.Property;
  */
 public class StringProperty extends Property<String> implements Cloneable, Serializable {
 
-    // TODO find usages and determine best enclosing class for this method
-    @NotNull
-    public static String escape(@NotNull final String s) {
-        final char[] chars = s.toCharArray();
-        final StringBuilder sb = new StringBuilder(chars.length);
-        for (char c : chars) {
-            switch (c) { // TODO use method in Element and match escaped characters with json.org
-                case '\t' -> sb.append("\\t");
-                case '\b' -> sb.append("\\b");
-                case '\n' -> sb.append("\\n");
-                case '\r' -> sb.append("\\r");
-                case '\f' -> sb.append("\\f");
-                case '\0' -> sb.append("\\0");
-                default -> sb.append(c);
-            }
-        }
-        return sb.toString();
-    }
-
     @Serial
     private static final long serialVersionUID = 0L;
 
@@ -108,7 +89,7 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
     public String getValueString() {
         if (valueString == null)
             //noinspection ConstantConditions
-            valueString = '"' + escape(value) + '"';
+            valueString = '"' + escape(value, '\n', '\r', '\\') + '"';
         return valueString;
     }
 }

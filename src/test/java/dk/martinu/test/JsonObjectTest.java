@@ -28,10 +28,10 @@ public class JsonObjectTest {
 
     @Test
     void reconstructNumberObject() {
-        final JsonObject json = new JsonObject(
-                new JsonObject.Entry("n0", 4),
-                new JsonObject.Entry("n1", 8)
-        );
+        final JsonObject json = new JsonObject.Builder()
+                .put("n0", 4)
+                .put("n1", 8)
+                .build();
         assertDoesNotThrow(() -> {
             final NumberObject object = JsonObject.reconstruct(json, NumberObject.class);
             assertEquals(4, object.n0);

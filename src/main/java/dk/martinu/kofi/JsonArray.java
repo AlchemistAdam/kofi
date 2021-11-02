@@ -23,9 +23,11 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 public class JsonArray extends Json implements Iterable<Object>, Serializable {
 
+    protected static final Object[] EMPTY = new Object[0];
     @Serial
     private static final long serialVersionUID = 0L;
 
@@ -35,40 +37,43 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
         Objects.requireNonNull(object, "object is null");
         if (!object.getClass().isArray())
             throw new IllegalArgumentException("object is not an array");
-        // list of values
-        final ArrayList<Object> list = new ArrayList<>();
-        // serialize and store values from array object in list
         final int len = Array.getLength(object);
+        // list of reflected array values
+        final ArrayList<Object> list = new ArrayList<>(len);
         for (int i = 0; i < len; i++)
-            list.add(getKnownType(Array.get(object, i)));
+            list.add(Array.get(object, i));
         return new JsonArray(list);
     }
 
-    @NotNull
     protected final Object[] array;
 
+    public JsonArray() {
+        array = EMPTY;
+    }
+
     public JsonArray(@Nullable final Object... values) {
-        if (values != null) {
-            // list of values
+        if (values != null && values.length != 0) {
             final ArrayList<Object> list = new ArrayList<>();
-            // serialize and store values in list
             for (final Object value : values)
-                list.add(getKnownType(value));
+                list.add(getDefinedObject(value));
             array = list.toArray(new Object[list.size()]);
         }
         else
-            array = new Object[0];
+            array = EMPTY;
     }
 
     /**
-     * Private constructor used by {@link #reflect(Object)}. The list is
-     * guaranteed to only contain known types.
-     *
-     * @param list the list of values in this JSON array.
-     * @see Json#isKnownType(Object)
+     * Constructs a {@code JsonArray} wrapping the values in the specified
+     * {@code list}.
      */
-    private JsonArray(@NotNull final List<Object> list) {
-        array = list.toArray(new Object[list.size()]);
+    public JsonArray(@NotNull final List<Object> list) throws NullPointerException {
+        Objects.requireNonNull(list, "list is null");
+        if (!list.isEmpty())
+            array = list.parallelStream()
+                    .map(this::getDefinedObject)
+                    .toArray(Object[]::new);
+        else
+            array = EMPTY;
     }
 
     @Contract(value = "null -> false", pure = true)
@@ -76,8 +81,15 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
     public boolean equals(@Nullable final Object obj) {
         if (this == obj)
             return true;
-        else if (obj instanceof JsonArray JsonArray)
-            return Arrays.equals(array, JsonArray.array);
+        else if (obj instanceof JsonArray json && array.length == json.length()) {
+            for (int i = 0; i < array.length; i++)
+                if (!Objects.equals(array[i], json.get(i))
+                        && !(array[i] instanceof Number n0
+                        && json.get(i) instanceof Number n1
+                        && areNumbersEqual(n0, n1)))
+                    return false;
+            return true;
+        }
         else
             return false;
     }
@@ -106,6 +118,29 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
         return Arrays.spliterator(array);
     }
 
+    @Contract(value = "-> new", pure = true)
+    @NotNull
+    @Override
+    public String toJson() {
+        final StringBuilder sb = new StringBuilder(length() * 8);
+        toJson(sb);
+        return sb.toString();
+    }
+
+    // TODO javadoc
+    @Contract(pure = true)
+    @Override
+    public void toJson(@NotNull final StringBuilder sb) {
+        sb.append('[');
+        for (int index = 0; index < array.length; index++) {
+            if (index > 0)
+                sb.append(',');
+            sb.append(' ');
+            toJson(array[index], sb);
+        }
+        sb.append(" ]");
+    }
+
     public class ArrayIterator implements Iterator<Object> {
 
         private int index = 0;
@@ -116,7 +151,9 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
         }
 
         @Override
-        public Object next() {
+        public Object next() throws NoSuchElementException {
+            if (!hasNext())
+                throw new NoSuchElementException();
             return array[index++];
         }
     }

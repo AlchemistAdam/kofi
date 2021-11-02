@@ -24,8 +24,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.IntUnaryOperator;
 
@@ -51,8 +50,10 @@ public class IniCodec
     protected static boolean isHexDigit(final char c) {
         if (isDigit(c))
             return true;
+        else if (c >= 'A' && c <= 'F')
+            return true;
         else
-            return (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+            return c >= 'a' && c <= 'f';
     }
 
     @Contract(pure = true)
@@ -168,7 +169,7 @@ public class IniCodec
             throw new ParseException("property key is empty");
         // get parsable value
         final char[] rawValue = line.substring(delimiter + 1).toCharArray();
-        final Parsable<?> parsableValue = parseValue(rawValue, 0, -1);
+        final Parsable<?> parsableValue = parseValue(rawValue, 0, -1, false);
         // return property
         if (parsableValue != null) {
             if (parsableValue.length == rawValue.length) {
@@ -193,10 +194,10 @@ public class IniCodec
             throw new ParseException("property value is empty");
     }
 
-    @Contract(value = "null, _, _ -> fail", pure = true)
+    @Contract(value = "null, _, _, _ -> fail", pure = true)
     @Nullable
-    protected IniCodec.Parsable<?> parseValue(final char[] chars, final int offset, final int length) throws
-            ParseException {
+    protected IniCodec.Parsable<?> parseValue(final char[] chars, final int offset, final int length,
+            final boolean json) throws ParseException {
         assert chars != null;
         char c;
         // max length of value to iterate
@@ -212,7 +213,7 @@ public class IniCodec
             c = chars[start];
             if (!Character.isWhitespace(c)) {
                 // null
-                if (c == 'n' || c == 'N') { // todo needs testing
+                if (c == 'n' || c == 'N') {
                     final int remainder = l - start;
                     final int end;
                     if (remainder >= 4 && String.copyValueOf(chars, start, 4).equalsIgnoreCase("null"))
@@ -221,7 +222,7 @@ public class IniCodec
                         throw new ParseException("invalid null value");
 
                     final int len = from.applyAsInt(end);
-                    return new Parsable.Null(chars, start, end, len);
+                    return new ParsableNull(chars, start, end, len);
                 }
                 // String
                 else if (c == '"') {
@@ -241,10 +242,10 @@ public class IniCodec
                         throw new ParseException("string values must be enclosed in \" quotes \"");
 
                     final int len = from.applyAsInt(end);
-                    return new Parsable.String(chars, start, end, len);
+                    return new ParsableString(chars, start, end, len);
                 }
-                // char
-                else if (c == '\'') {
+                // char - not specified in JSON
+                else if (c == '\'' && !json) {
                     final int remainder = l - start;
                     final int end;
                     if (remainder >= 4 && chars[start + 1] == '\\' && chars[start + 3] == '\'')
@@ -255,10 +256,10 @@ public class IniCodec
                         throw new ParseException("invalid char value");
 
                     final int len = from.applyAsInt(end);
-                    return new Parsable.Char(chars, start, end, len);
+                    return new ParsableChar(chars, start, end, len);
                 }
-                // codepoint (char)
-                else if (c == '\\') {
+                // codepoint (char) - not specified in JSON
+                else if (c == '\\' && !json) {
                     final int remainder = l - start;
                     final int end;
                     if (remainder >= 6 && chars[start + 1] == 'u'
@@ -269,7 +270,7 @@ public class IniCodec
                         throw new ParseException("invalid codepoint");
 
                     final int len = from.applyAsInt(end);
-                    return new Parsable.Codepoint(chars, start, end, len);
+                    return new ParsableCodepoint(chars, start, end, len);
                 }
                 // boolean
                 else if (c == 't' || c == 'T' || c == 'f' || c == 'F') {
@@ -285,8 +286,10 @@ public class IniCodec
                         throw new ParseException("invalid boolean value");
 
                     final int len = from.applyAsInt(end);
-                    return new Parsable.Boolean(chars, start, end, len);
+                    return new ParsableBoolean(chars, start, end, len);
                 }
+                // TODO implement exponent (scientific notation) when parsing numbers
+                // TODO ensure JSON grammar is correct
                 // Number
                 else if (isDigit(c) || c == '+' || c == '-' || c == '.') {
                     boolean hasDigits = false, hasFraction = false, isLong = false, isDouble = false;
@@ -314,8 +317,8 @@ public class IniCodec
                             else
                                 throw new ParseException("number values can only have a sign character at the beginning");
                         }
-                        // allow type specifiers for double, float and long
-                        else if (hasDigits) {
+                        // allow type specifiers for double, float and long - not specified in JSON
+                        else if (hasDigits && !json) {
                             if (c == 'd' || c == 'D') {
                                 isDouble = true;
                                 break;
@@ -329,7 +332,7 @@ public class IniCodec
                                 break;
                             }
                         }
-                        // unknown character - not part of number
+                        // unknown number character - not part of number
                         end--;
                         break;
                     }
@@ -337,13 +340,18 @@ public class IniCodec
                         throw new ParseException("number values must have at least one digit");
                     final int len = from.applyAsInt(end);
                     if (hasFraction)
-                        return isDouble ?
-                                new Parsable.Double(chars, start, end, len) :
-                                new Parsable.Float(chars, start, end, len);
+                        if (json)
+                            return new ParsableDouble(chars, start, end, len);
+                        else
+                            return isDouble ?
+                                    new ParsableDouble(chars, start, end, len) :
+                                    new ParsableFloat(chars, start, end, len);
+                    else if (json)
+                        return new ParsableLong(chars, start, end, len);
                     else
                         return isLong ?
-                                new Parsable.Long(chars, start, end, len) :
-                                new Parsable.Int(chars, start, end, len);
+                                new ParsableLong(chars, start, end, len) :
+                                new ParsableInt(chars, start, end, len);
                 }
                 // array
                 else if (c == '[') {
@@ -364,14 +372,14 @@ public class IniCodec
                     boolean parse = true;
                     for (int i = start + 1; i < end - 1; ) {
                         if (parse) {
-                            final Parsable<?> pv = parseValue(chars, i, end - 1);
+                            final Parsable<?> pv = parseValue(chars, i, end - 1, true);
                             // add value to list
                             if (pv != null) {
                                 values.add(pv);
                                 i = pv.length;
                                 parse = false;
                             }
-                            // allow empty arrays, but not null values in populated arrays
+                            // allow empty arrays, but not empty values in populated arrays
                             else if (values.isEmpty()) {
                                 break;
                             }
@@ -386,7 +394,7 @@ public class IniCodec
                             throw new ParseException("array values must be separated by a comma");
                     }
                     final int len = from.applyAsInt(end);
-                    return new Parsable.JsonArray(chars, start, end, len, values);
+                    return new ParsableJsonArray(chars, start, end, len, values);
                 }
                 // object
                 else if (c == '{') {
@@ -408,7 +416,7 @@ public class IniCodec
                     for (int i = start + 1; i < end - 1; ) {
                         if (parse) {
                             // get property key
-                            final Parsable<?> key = parseValue(chars, i, end - 1);
+                            final Parsable<?> key = parseValue(chars, i, end - 1, true);
                             if (key != null && key.getType() != Parsable.Type.STRING)
                                 throw new ParseException("object properties must begin with a string key");
                             if (key != null) {
@@ -417,7 +425,7 @@ public class IniCodec
                                 if (chars[key.length] != ':')
                                     throw new ParseException("object properties must contain a : delimiter");
                                 // get property value
-                                final Parsable<?> value = parseValue(chars, key.length + 1, end - 1);
+                                final Parsable<?> value = parseValue(chars, key.length + 1, end - 1, true);
                                 if (value == null)
                                     throw new ParseException("object property values must not be empty");
                                 // add property to map
@@ -441,7 +449,7 @@ public class IniCodec
                             throw new ParseException("object properties must be separated by a comma");
                     }
                     final int len = from.applyAsInt(end);
-                    return new Parsable.JsonObject(chars, start, end, len, properties);
+                    return new ParsableJsonObject(chars, start, end, len, properties);
                 }
                 // unknown value type
                 else {
@@ -587,274 +595,275 @@ public class IniCodec
             NULL, STRING, INT, LONG, FLOAT, DOUBLE, CHAR, BOOLEAN, ARRAY, OBJECT
         }
 
-        public static class Boolean extends Parsable<java.lang.Boolean> {
+    }
 
-            public Boolean(final char[] chars, final int start, final int end, final int length) {
-                super(chars, start, end, length);
-            }
+    protected static class ParsableBoolean extends Parsable<Boolean> {
 
-            @NotNull
-            @Override
-            public Type getType() {
-                return Type.BOOLEAN;
-            }
-
-            @NotNull
-            @Override
-            public java.lang.Boolean parse() {
-                return java.lang.Boolean.valueOf(java.lang.String.copyValueOf(chars, start, end - start));
-            }
+        public ParsableBoolean(final char[] chars, final int start, final int end, final int length) {
+            super(chars, start, end, length);
         }
 
-        public static class Char extends Parsable<Character> {
-
-            public Char(final char[] chars, final int start, final int end, final int length) {
-                super(chars, start, end, length);
-            }
-
-            @NotNull
-            @Override
-            public Type getType() {
-                return Type.CHAR;
-            }
-
-            @NotNull
-            @Override
-            public Character parse() {
-                if (end - start == 3)
-                    return chars[start + 1];
-                else
-                    return switch (chars[start + 2]) {
-                        case 't' -> '\t';
-                        case 'b' -> '\b';
-                        case 'n' -> '\n';
-                        case 'r' -> '\r';
-                        case 'f' -> '\f';
-                        case '0' -> '\0';
-                        // character is escaped but does not require special handling
-                        default -> chars[start + 2];
-                    };
-            }
+        @NotNull
+        @Override
+        public Type getType() {
+            return Type.BOOLEAN;
         }
 
-        public static class Codepoint extends Parsable<Character> {
+        @NotNull
+        @Override
+        public Boolean parse() {
+            return Boolean.valueOf(String.copyValueOf(chars, start, end - start));
+        }
+    }
 
-            public Codepoint(final char[] chars, final int start, final int end, final int length) {
-                super(chars, start, end, length);
-            }
+    protected static class ParsableChar extends Parsable<Character> {
 
-            @NotNull
-            @Override
-            public Type getType() {
-                return Type.CHAR;
-            }
-
-            @NotNull
-            @Override
-            public Character parse() {
-                return (char) Integer.parseInt(java.lang.String.copyValueOf(
-                        chars, start + 2, 4), 16);
-            }
+        public ParsableChar(final char[] chars, final int start, final int end, final int length) {
+            super(chars, start, end, length);
         }
 
-        public static class Double extends Parsable<java.lang.Double> {
-
-            public Double(final char[] chars, final int start, final int end, final int length) {
-                super(chars, start, end, length);
-            }
-
-            @NotNull
-            @Override
-            public Type getType() {
-                return Type.DOUBLE;
-            }
-
-            @NotNull
-            @Override
-            public java.lang.Double parse() {
-                // do not include specifier is present, e.g. 1.5d
-                final int count = chars[end - 1] > '9' ? end - start - 1 : end - start;
-                return java.lang.Double.parseDouble(java.lang.String.copyValueOf(chars, start, count));
-            }
+        @NotNull
+        @Override
+        public Type getType() {
+            return Type.CHAR;
         }
 
-        public static class Float extends Parsable<java.lang.Float> {
+        @NotNull
+        @Override
+        public Character parse() {
+            if (end - start == 3)
+                return chars[start + 1];
+            else
+                return switch (chars[start + 2]) {
+                    case 't' -> '\t';
+                    case 'b' -> '\b';
+                    case 'n' -> '\n';
+                    case 'r' -> '\r';
+                    case 'f' -> '\f';
+                    case '0' -> '\0';
+                    // character is escaped but does not require special handling
+                    default -> chars[start + 2];
+                };
+        }
+    }
 
-            public Float(final char[] chars, final int start, final int end, final int length) {
-                super(chars, start, end, length);
-            }
+    protected static class ParsableCodepoint extends Parsable<Character> {
 
-            @NotNull
-            @Override
-            public Type getType() {
-                return Type.FLOAT;
-            }
-
-            @NotNull
-            @Override
-            public java.lang.Float parse() {
-                // do not include specifier is present, e.g. 1.5F
-                final int count = chars[end - 1] > '9' ? end - start - 1 : end - start;
-                return java.lang.Float.parseFloat(java.lang.String.copyValueOf(chars, start, count));
-            }
+        public ParsableCodepoint(final char[] chars, final int start, final int end, final int length) {
+            super(chars, start, end, length);
         }
 
-        public static class Int extends Parsable<Integer> {
-
-            public Int(final char[] chars, final int start, final int end, final int length) {
-                super(chars, start, end, length);
-            }
-
-            @NotNull
-            @Override
-            public Type getType() {
-                return Type.INT;
-            }
-
-            @NotNull
-            @Override
-            public java.lang.Integer parse() {
-                return java.lang.Integer.parseInt(java.lang.String.copyValueOf(
-                        chars, start, end - start));
-            }
+        @NotNull
+        @Override
+        public Type getType() {
+            return Type.CHAR;
         }
 
-        public static class JsonArray extends Parsable<dk.martinu.kofi.JsonArray> {
+        @NotNull
+        @Override
+        public Character parse() {
+            return (char) Integer.parseInt(String.copyValueOf(
+                    chars, start + 2, 4), 16);
+        }
+    }
 
-            @NotNull
-            private final java.util.List<Parsable<?>> values;
+    protected static class ParsableDouble extends Parsable<Double> {
 
-            public JsonArray(final char[] chars, final int start, final int end, final int length,
-                    @NotNull final ArrayList<Parsable<?>> values) {
-                super(chars, start, end, length);
-                this.values = values;
-            }
-
-            @NotNull
-            @Override
-            public Type getType() {
-                return Type.ARRAY;
-            }
-
-            @NotNull
-            @Override
-            public dk.martinu.kofi.JsonArray parse() {
-                final Object[] array = new Object[values.size()];
-                for (int i = 0; i < array.length; i++)
-                    array[i] = values.get(i).parse();
-                return new dk.martinu.kofi.JsonArray(array);
-            }
+        public ParsableDouble(final char[] chars, final int start, final int end, final int length) {
+            super(chars, start, end, length);
         }
 
-        public static class JsonObject extends Parsable<dk.martinu.kofi.JsonObject> {
-
-            @NotNull
-            private final ArrayList<Parsable<?>> properties;
-
-            public JsonObject(final char[] chars, final int start, final int end, final int length,
-                    @NotNull final ArrayList<Parsable<?>> properties) {
-                super(chars, start, end, length);
-                this.properties = properties;
-            }
-
-            @NotNull
-            @Override
-            public Type getType() {
-                return Type.OBJECT;
-            }
-
-            @NotNull
-            @Override
-            public dk.martinu.kofi.JsonObject parse() {
-                final dk.martinu.kofi.JsonObject.Entry[] entries
-                        = new dk.martinu.kofi.JsonObject.Entry[properties.size() / 2];
-                for (int i = 0; i < entries.length; i++) // TODO indexing can most likely be done more efficiently
-                    entries[i] = new dk.martinu.kofi.JsonObject.Entry(
-                            (java.lang.String) properties.get(i * 2).parse(),
-                            properties.get(i * 2 + 1).parse());
-                return new dk.martinu.kofi.JsonObject(entries);
-            }
+        @NotNull
+        @Override
+        public Type getType() {
+            return Type.DOUBLE;
         }
 
-        public static class Long extends Parsable<java.lang.Long> {
+        @NotNull
+        @Override
+        public Double parse() {
+            // do not include specifier is present, e.g. 1.5d
+            final int count = chars[end - 1] > '9' ? end - start - 1 : end - start;
+            return Double.parseDouble(String.copyValueOf(chars, start, count));
+        }
+    }
 
-            public Long(final char[] chars, final int start, final int end, final int length) {
-                super(chars, start, end, length);
-            }
+    protected static class ParsableFloat extends Parsable<Float> {
 
-            @NotNull
-            @Override
-            public Type getType() {
-                return Type.LONG;
-            }
-
-            @NotNull
-            @Override
-            public java.lang.Long parse() {
-                // do not include specifier is present, e.g. 22L
-                final int count = chars[end - 1] > '9' ? end - start - 1 : end - start;
-                return java.lang.Long.parseLong(java.lang.String.copyValueOf(chars, start, count));
-            }
+        public ParsableFloat(final char[] chars, final int start, final int end, final int length) {
+            super(chars, start, end, length);
         }
 
-        public static class Null extends Parsable<Void> {
-
-            public Null(final char[] chars, final int start, final int end, final int length) {
-                super(chars, start, end, length);
-            }
-
-            @Override
-            @NotNull
-            public Type getType() {
-                return Type.NULL;
-            }
-
-            @Override
-            @Nullable
-            public Void parse() {
-                return null;
-            }
+        @NotNull
+        @Override
+        public Type getType() {
+            return Type.FLOAT;
         }
 
-        public static class String extends Parsable<java.lang.String> {
+        @NotNull
+        @Override
+        public Float parse() {
+            // do not include specifier is present, e.g. 1.5F
+            final int count = chars[end - 1] > '9' ? end - start - 1 : end - start;
+            return Float.parseFloat(String.copyValueOf(chars, start, count));
+        }
+    }
 
-            public String(final char[] chars, final int start, final int end, final int length) {
-                super(chars, start, end, length);
-            }
+    protected static class ParsableInt extends Parsable<Integer> {
 
-            @NotNull
-            @Override
-            public Type getType() {
-                return Type.STRING;
-            }
+        public ParsableInt(final char[] chars, final int start, final int end, final int length) {
+            super(chars, start, end, length);
+        }
 
-            // TODO needs testing
-            @NotNull
-            @Override
-            public java.lang.String parse() {
-                final StringBuilder sb = new StringBuilder(end - start - 2);
-                for (int i = start + 1; i < end - 1; ) {
-                    if (i < end - 2 && chars[i] == '\\') {
-                        switch (chars[i + 1]) {
-                            case 't' -> sb.append('\t');
-                            case 'b' -> sb.append('\b');
-                            case 'n' -> sb.append('\n');
-                            case 'r' -> sb.append('\r');
-                            case 'f' -> sb.append('\f');
-                            case '0' -> sb.append('\0');
-                            default -> {
-                                // escape sequence is unknown - do not unescape
-                                sb.append('\\');
-                                sb.append(chars[i + 1]);
-                            }
+        @NotNull
+        @Override
+        public Type getType() {
+            return Type.INT;
+        }
+
+        @NotNull
+        @Override
+        public Integer parse() {
+            return Integer.parseInt(String.copyValueOf(
+                    chars, start, end - start));
+        }
+    }
+
+    protected static class ParsableJsonArray extends Parsable<JsonArray> {
+
+        @NotNull
+        private final List<Parsable<?>> values;
+
+        public ParsableJsonArray(final char[] chars, final int start, final int end, final int length,
+                @NotNull final ArrayList<Parsable<?>> values) {
+            super(chars, start, end, length);
+            this.values = values;
+        }
+
+        @NotNull
+        @Override
+        public Type getType() {
+            return Type.ARRAY;
+        }
+
+        @NotNull
+        @Override
+        public JsonArray parse() {
+            final Object[] array = new Object[values.size()];
+            for (int i = 0; i < array.length; i++)
+                array[i] = values.get(i).parse();
+            return new JsonArray(array);
+        }
+    }
+
+    protected static class ParsableJsonObject extends Parsable<JsonObject> {
+
+        @NotNull
+        private final ArrayList<Parsable<?>> properties;
+
+        public ParsableJsonObject(final char[] chars, final int start, final int end, final int length,
+                @NotNull final ArrayList<Parsable<?>> properties) {
+            super(chars, start, end, length);
+            this.properties = properties;
+        }
+
+        @NotNull
+        @Override
+        public Type getType() {
+            return Type.OBJECT;
+        }
+
+        @NotNull
+        @Override
+        public JsonObject parse() {
+            final JsonObject.Builder builder = new JsonObject.Builder();
+            for (int i = 0; i < properties.size(); i += 2)
+                builder.put((String) properties.get(i).parse(),
+                        properties.get(i + 1).parse());
+            return builder.build();
+        }
+    }
+
+    protected static class ParsableLong extends Parsable<Long> {
+
+        public ParsableLong(final char[] chars, final int start, final int end, final int length) {
+            super(chars, start, end, length);
+        }
+
+        @NotNull
+        @Override
+        public Type getType() {
+            return Type.LONG;
+        }
+
+        @NotNull
+        @Override
+        public Long parse() {
+            // do not include specifier is present, e.g. 22L
+            final int count = chars[end - 1] > '9' ? end - start - 1 : end - start;
+            return Long.parseLong(String.copyValueOf(chars, start, count));
+        }
+    }
+
+    // TODO maybe Object can be used as parameter type instead?
+    protected static class ParsableNull extends Parsable<Void> {
+
+        public ParsableNull(final char[] chars, final int start, final int end, final int length) {
+            super(chars, start, end, length);
+        }
+
+        @Override
+        @NotNull
+        public Type getType() {
+            return Type.NULL;
+        }
+
+        @Override
+        @Nullable
+        public Void parse() {
+            return null;
+        }
+    }
+
+    protected static class ParsableString extends Parsable<String> {
+
+        public ParsableString(final char[] chars, final int start, final int end, final int length) {
+            super(chars, start, end, length);
+        }
+
+        @NotNull
+        @Override
+        public Type getType() {
+            return Type.STRING;
+        }
+
+        // TODO needs testing
+        // TODO unicode escape sequences (\\uXXXX) must be preserved
+        @NotNull
+        @Override
+        public String parse() {
+            final StringBuilder sb = new StringBuilder(end - start - 2);
+            for (int i = start + 1; i < end - 1; ) {
+                if (i < end - 2 && chars[i] == '\\') {
+                    switch (chars[i + 1]) {
+                        case 't' -> sb.append('\t');
+                        case 'b' -> sb.append('\b');
+                        case 'n' -> sb.append('\n');
+                        case 'r' -> sb.append('\r');
+                        case 'f' -> sb.append('\f');
+                        case '0' -> sb.append('\0');
+                        default -> {
+                            // escape sequence is unknown - do not unescape
+                            sb.append('\\');
+                            sb.append(chars[i + 1]);
                         }
-                        i += 2;
                     }
-                    else
-                        sb.append(chars[i++]);
+                    i += 2;
                 }
-                return sb.toString();
+                else
+                    sb.append(chars[i++]);
             }
+            return sb.toString();
         }
     }
 }

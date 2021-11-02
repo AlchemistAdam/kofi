@@ -26,10 +26,11 @@ import dk.martinu.kofi.properties.NullProperty;
 /**
  * The {@code Property} class defines an abstract {@link Element element} used
  * to store data in a {@link Document document} as a key-value pair. Property
- * implementations provided by the API are located in the
+ * implementations provided by this API are located in the
  * {@link dk.martinu.kofi.properties} package. Properties have a {@code String}
  * key and a value of type {@code V}. Keys are not case-sensitive when
- * compared. The {@code String} representation of a property is equal to:
+ * compared. The {@code String} representation of a property, as returned by
+ * {@link #getString()}, is equal to:
  * <pre>
  *     "<i>key</i> = <i>value</i>"
  * </pre>
@@ -55,8 +56,8 @@ public abstract class Property<V> extends Element {
 
     /**
      * Constructs a new property with the specified {@code key} and
-     * {@code value}. The key of a property is not case-sensitive when
-     * compared to other properties.
+     * {@code value}. The key is not case-sensitive when compared to other
+     * properties.
      *
      * @param key   The property key.
      * @param value The property value.
@@ -181,6 +182,8 @@ public abstract class Property<V> extends Element {
      * Returns {@code true} if {@code valueType} is assignable from the value
      * type of this property or equal to {@code null}. Otherwise {@code false}
      * is returned.
+     *
+     * @see Class#isAssignableFrom(Class)
      */
     @Contract(value = "null -> true", pure = true)
     public boolean matches(@Nullable final Class<?> valueType) {
@@ -211,9 +214,9 @@ public abstract class Property<V> extends Element {
      * </pre>
      *
      * <p><b>NOTE:</b> if the state of this property's value is mutable, then
-     * {@link #hashCode()} <em>must</em> be overridden. The default
-     * implementation caches the hash code and will not reflect changes to the
-     * value's state after the first call.
+     * {@link #hashCode()} should be overridden. The default implementation
+     * caches the hash code and will not reflect changes to the value's state
+     * after the first call.
      */
     @Contract(pure = true)
     @Override

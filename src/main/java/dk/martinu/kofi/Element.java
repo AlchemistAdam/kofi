@@ -75,6 +75,7 @@ public abstract class Element {
      *
      * @throws CloneNotSupportedException if this element cannot be cloned.
      */
+    @SuppressWarnings("RedundantThrows")
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
