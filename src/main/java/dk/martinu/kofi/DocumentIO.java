@@ -27,13 +27,19 @@ import java.util.concurrent.locks.ReentrantLock;
 import dk.martinu.kofi.spi.DocumentFileReader;
 import dk.martinu.kofi.spi.DocumentFileWriter;
 
+// TODO javadoc
 public class DocumentIO {
 
+    // TODO javadoc
     private static final ReentrantLock readLock = new ReentrantLock();
+    // TODO javadoc
     private static final ReentrantLock writeLock = new ReentrantLock();
+    // TODO javadoc
     private static ServiceLoader<DocumentFileReader> readers;
+    // TODO javadoc
     private static ServiceLoader<DocumentFileWriter> writers;
 
+    // TODO javadoc
     @Nullable
     public static DocumentFileReader getReader(@NotNull final Path filePath) throws NullPointerException {
         Objects.requireNonNull(filePath, "filePath is null");
@@ -56,6 +62,7 @@ public class DocumentIO {
         return null;
     }
 
+    // TODO javadoc
     @Nullable
     public static DocumentFileWriter getWriter(@NotNull final Path filePath, @NotNull final Document document) throws
             NullPointerException {
@@ -79,6 +86,7 @@ public class DocumentIO {
         return null;
     }
 
+    // TODO javadoc
     @Contract("_ -> new")
     @NotNull
     public static Document readFile(@NotNull final Path filePath) throws NullPointerException,
@@ -91,6 +99,7 @@ public class DocumentIO {
             throw new ServiceUnavailableException("no available readers for " + filePath + " (file might not exist)");
     }
 
+    // TODO javadoc
     public static void writeFile(@NotNull final Path filePath, @NotNull final Document document) throws
             NullPointerException, ServiceConfigurationError, IOException, ServiceUnavailableException {
         Objects.requireNonNull(filePath, "filePath is null");

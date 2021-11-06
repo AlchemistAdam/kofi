@@ -22,11 +22,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * <p>Abstract implementation of an element in a {@link Document}. An element can
- * be represented as a {@code String}, as is returned by {@link #getString()}.
- *
- * <p>This class also overrides the {@link #hashCode()} method, caching the
- * hash code from {@link #hashCodeImpl()} on the first call. This implies that
- * the state of an element is inherently immutable.
+ * be represented as a {@code String} returned by {@link #getString()}.
  *
  * @author Adam Martinu
  * @see Comment
@@ -60,16 +56,6 @@ public abstract class Element {
     }
 
     /**
-     * Cached hash code. Set on first call to {@link #hashCode()}.
-     */
-    private transient int hash = 0;
-    /**
-     * {@code true} if the computed hash code of this element is {@code 0}. Set
-     * on first call to {@link #hashCode()}.
-     */
-    private transient boolean hashIsZero = false;
-
-    /**
      * Returns a copy of this element or throws a
      * {@code CloneNotSupportedException} if this element cannot be cloned.
      *
@@ -89,33 +75,4 @@ public abstract class Element {
     @NotNull
     public abstract String getString();
 
-    /**
-     * Returns the hash code for this element. This method is overridden to
-     * cache the hash code, which is computed by the {@link #hashCodeImpl()}
-     * method.
-     *
-     * @see Element
-     */
-    @Contract(pure = true)
-    @Override
-    public int hashCode() {
-        // implementation derived from String.hashCode()
-        int h = hash;
-        if (h == 0 && !hashIsZero) {
-            h = hashCodeImpl();
-            if (h == 0)
-                hashIsZero = true;
-            else
-                hash = h;
-        }
-        return h;
-    }
-
-    /**
-     * Computes and returns a hash code for this element.
-     *
-     * @see Element
-     */
-    @Contract(pure = true)
-    protected abstract int hashCodeImpl();
 }

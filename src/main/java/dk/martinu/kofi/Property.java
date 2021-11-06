@@ -19,6 +19,7 @@ package dk.martinu.kofi;
 
 import org.jetbrains.annotations.*;
 
+import java.util.Locale;
 import java.util.Objects;
 
 import dk.martinu.kofi.properties.NullProperty;
@@ -26,7 +27,7 @@ import dk.martinu.kofi.properties.NullProperty;
 /**
  * The {@code Property} class defines an abstract {@link Element element} used
  * to store data in a {@link Document document} as a key-value pair. Property
- * implementations provided by this API are located in the
+ * implementations provided by the KOFI API are located in the
  * {@link dk.martinu.kofi.properties} package. Properties have a {@code String}
  * key and a value of type {@code V}. Keys are not case-sensitive when
  * compared. The {@code String} representation of a property, as returned by
@@ -53,6 +54,15 @@ public abstract class Property<V> extends Element {
      */
     @Nullable
     public final V value;
+    /**
+     * Cached hash code. Set on first call to {@link #hashCode()}.
+     */
+    protected transient int hash = 0;
+    /**
+     * {@code true} if the computed hash code is {@code 0}. Set on first call
+     * to {@link #hashCode()}.
+     */
+    protected transient boolean hashIsZero = false;
 
     /**
      * Constructs a new property with the specified {@code key} and
@@ -154,6 +164,34 @@ public abstract class Property<V> extends Element {
     public abstract String getValueString();
 
     /**
+     * Returns a combined hash code of this property's key, in upper-case, and
+     * value. The returned value is equal to:
+     * <pre>
+     *     keyHash | valueHash << 16
+     * </pre>
+     *
+     * <p><b>NOTE:</b> if the state of this property's value is mutable, then
+     * this method should be overridden. The default implementation caches the
+     * hash code and will not reflect changes to the value's state after the
+     * first call.
+     */
+    @Contract(pure = true)
+    @Override
+    public int hashCode() {
+        int h = hash;
+        if (h == 0 && !hashIsZero) {
+            h = value != null ?
+                    key.toUpperCase(Locale.ROOT).hashCode() | value.hashCode() << 16 :
+                    key.toUpperCase(Locale.ROOT).hashCode();
+            if (h == 0)
+                hashIsZero = true;
+            else
+                hash = h;
+        }
+        return h;
+    }
+
+    /**
      * Returns {@code true} if the key of this property is equal to
      * {@code key}, ignoring case. Otherwise {@code false} is returned.
      *
@@ -204,26 +242,5 @@ public abstract class Property<V> extends Element {
     @Override
     public String toString() {
         return this.getClass().getName() + '@' + super.hashCode() + "{key=" + key + ", value=" + value + '}';
-    }
-
-    /**
-     * Returns a hash code of this property's key, in lower-case, and value.
-     * The returned value is equal to:
-     * <pre>
-     *     keyHash | valueHash << 16
-     * </pre>
-     *
-     * <p><b>NOTE:</b> if the state of this property's value is mutable, then
-     * {@link #hashCode()} should be overridden. The default implementation
-     * caches the hash code and will not reflect changes to the value's state
-     * after the first call.
-     */
-    @Contract(pure = true)
-    @Override
-    protected int hashCodeImpl() {
-        if (value != null)
-            return key.toLowerCase().hashCode() | value.hashCode() << 16;
-        else
-            return key.toLowerCase().hashCode();
     }
 }

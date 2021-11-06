@@ -21,6 +21,7 @@ import org.jetbrains.annotations.*;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -49,6 +50,15 @@ public class Section extends Element implements Cloneable, Serializable {
      */
     @NotNull
     public final String name;
+    /**
+     * Cached hash code. Set on first call to {@link #hashCode()}.
+     */
+    protected transient int hash = 0;
+    /**
+     * {@code true} if the computed hash code of this element is {@code 0}. Set
+     * on first call to {@link #hashCode()}.
+     */
+    protected transient boolean hashIsZero = false;
 
     /**
      * Constructs a new section with the specified {@code name}. The name of a
@@ -120,6 +130,23 @@ public class Section extends Element implements Cloneable, Serializable {
     }
 
     /**
+     * Returns the hash code of this section's name in upper-case.
+     */
+    @Contract(pure = true)
+    @Override
+    public int hashCode() {
+        int h = hash;
+        if (h == 0 && !hashIsZero) {
+            h = name.toUpperCase(Locale.ROOT).hashCode();
+            if (h == 0)
+                hashIsZero = true;
+            else
+                hash = h;
+        }
+        return h;
+    }
+
+    /**
      * Returns {@code true} if the name of this section is equal to
      * {@code name}, ignoring case. Otherwise {@code false} is returned.
      */
@@ -139,14 +166,5 @@ public class Section extends Element implements Cloneable, Serializable {
     @Override
     public String toString() {
         return this.getClass().getName() + '@' + hashCode() + "{name=" + name + '}';
-    }
-
-    /**
-     * Returns the hash code of this section's name in lower-case.
-     */
-    @Contract(pure = true)
-    @Override
-    protected int hashCodeImpl() {
-        return name.toLowerCase().hashCode();
     }
 }

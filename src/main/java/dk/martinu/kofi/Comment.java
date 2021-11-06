@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -49,6 +50,15 @@ public class Comment extends Element implements Cloneable, Serializable {
      */
     @NotNull
     public final String text;
+    /**
+     * Cached hash code. Set on first call to {@link #hashCode()}.
+     */
+    protected transient int hash = 0;
+    /**
+     * {@code true} if the computed hash code of this element is {@code 0}. Set
+     * on first call to {@link #hashCode()}.
+     */
+    protected transient boolean hashIsZero = false;
 
     /**
      * Constructs a new comment with the specified {@code text}.
@@ -118,6 +128,23 @@ public class Comment extends Element implements Cloneable, Serializable {
     }
 
     /**
+     * Returns the hash code of this comment's text.
+     */
+    @Contract(pure = true)
+    @Override
+    public int hashCode() {
+        int h = hash;
+        if (h == 0 && !hashIsZero) {
+            h = text.hashCode();
+            if (h == 0)
+                hashIsZero = true;
+            else
+                hash = h;
+        }
+        return h;
+    }
+
+    /**
      * Returns a {@code String} representation of this comment, equal to:
      * <pre>
      *     "<i>class-name</i>@<i>hashCode</i>{text=<i>text</i>}"
@@ -128,14 +155,5 @@ public class Comment extends Element implements Cloneable, Serializable {
     @Override
     public String toString() {
         return this.getClass().getName() + '@' + hashCode() + "{text=" + text + '}';
-    }
-
-    /**
-     * Returns the hash code of this comment's text.
-     */
-    @Contract(pure = true)
-    @Override
-    protected int hashCodeImpl() {
-        return text.hashCode();
     }
 }

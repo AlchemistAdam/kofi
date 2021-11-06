@@ -24,7 +24,8 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
 
-import dk.martinu.kofi.*;
+import dk.martinu.kofi.JsonObject;
+import dk.martinu.kofi.Property;
 
 /**
  * {@link Property} implementation that holds a {@link JsonObject} value.
@@ -106,7 +107,18 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
      */
     @Override
     public int hashCode() {
-        return hashCodeImpl();
+        // key hash is immutable and is cached
+        int h = hash;
+        if (h == 0 && !hashIsZero) {
+            h = key.toUpperCase(Locale.ROOT).hashCode();
+            if (h == 0)
+                hashIsZero = true;
+            else
+                hash = h;
+        }
+        // value hash is mutable and must be computed each time
+        //noinspection ConstantConditions
+        return h | value.hashCode() << 16;
     }
 
     /**

@@ -27,6 +27,8 @@ import java.util.function.Consumer;
 import dk.martinu.kofi.JsonArray;
 import dk.martinu.kofi.Property;
 
+// TODO arrays are mutable, override hashCode()
+
 /**
  * {@link Property} implementation that holds a {@link JsonArray} value.
  *
@@ -106,7 +108,18 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
      */
     @Override
     public int hashCode() {
-        return hashCodeImpl();
+        // key hash is immutable and is cached
+        int h = hash;
+        if (h == 0 && !hashIsZero) {
+            h = key.toUpperCase(Locale.ROOT).hashCode();
+            if (h == 0)
+                hashIsZero = true;
+            else
+                hash = h;
+        }
+        // value hash is mutable and must be computed each time
+        //noinspection ConstantConditions
+        return h | value.hashCode() << 16;
     }
 
     /**

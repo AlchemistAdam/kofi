@@ -78,7 +78,7 @@ public class Whitespace extends Element implements Cloneable, Serializable {
      */
     @Contract(pure = true)
     @Override
-    protected int hashCodeImpl() {
+    public int hashCode() {
         return 0;
     }
 }
