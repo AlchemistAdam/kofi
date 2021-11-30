@@ -289,70 +289,128 @@ public class KofiCodec
                     final int len = from.applyAsInt(end);
                     return new ParsableBoolean(chars, start, end, len);
                 }
-                // TODO implement exponent (scientific notation) when parsing numbers
-                // TODO ensure JSON grammar is correct
                 // Number
-                else if (isDigit(c) || c == '+' || c == '-' || c == '.') {
-                    boolean hasDigits = false, hasFraction = false, isLong = false, isDouble = false;
+                else if (isDigit(c) || c == '-' || c == '+' || c == '.') {
+                    boolean hasDigits = false;
+                    // flags for fraction, exponent and bit precision (set with type specifiers)
+                    NumFlag fraction = null;
+                    NumFlag exponent = null;
+                    NumFlag precision = null;
                     int end = start;
-                    while (end < l) {
-                        c = chars[end++];
-                        // digits are always allowed
-                        if (isDigit(c)) {
+                    for (; end < l; end++) {
+                        c = chars[end];
+                        // ws or JSON separator - not part of number
+                        if (Character.isWhitespace(c) || (c == ',' && json)) {
+                            break;
+                        }
+                        // characters not allowed after type specifier
+                        else if (precision != null) {
+                            throw new ParseException("significant characters not allowed after type specifier");
+                        }
+                        // digits 0-9
+                        else if (isDigit(c)) {
+                            if (exponent != null)
+                                exponent = NumFlag.EXP_NUM;
+                            else if (fraction != null)
+                                fraction = NumFlag.FRAC_NUM;
+                            else if (c == '0' && !hasDigits && end < l - 1 && isDigit(chars[end + 1]) && json)
+                                throw new ParseException("JSON numbers cannot have leading zeros");
                             hasDigits = true;
-                            continue;
                         }
-                        // only allow decimal separator if unique
+                        // decimal separator
                         else if (c == '.') {
-                            if (!hasFraction) {
-                                hasFraction = true;
-                                continue;
-                            }
+                            if (!hasDigits && json)
+                                throw new ParseException("JSON numbers must have at least one digit before a decimal separator");
+                            else if (exponent != null)
+                                throw new ParseException("exponents cannot have decimal separators");
+                            else if (fraction != null)
+                                throw new ParseException("numbers can only have one decimal separator");
+                            else if ((end == l - 1 || !isDigit(chars[end + 1])) && json)
+                                throw new ParseException("JSON numbers must have at least one digit after a decimal separator");
                             else
-                                throw new ParseException("number values can only have one decimal separator");
+                                fraction = NumFlag.FRAC_SEP;
                         }
-                        // only allow sign at index 0
-                        else if (c == '+' || c == '-') {
-                            if (end == start)
-                                continue;
+                        // signs
+                        else if (c == '-' || c == '+') {
+                            if (exponent == null) {
+                                if (end != start)
+                                    throw new ParseException("sign characters must be at the start of a number or after an exponent prefix");
+                                else if (c == '+' && json)
+                                    throw new ParseException("JSON numbers cannot have a plus sign");
+                            }
+                            else if (exponent != NumFlag.EXP_PREFIX)
+                                throw new ParseException("exponents can only have a sign right after the exponent prefix");
                             else
-                                throw new ParseException("number values can only have a sign character at the beginning");
+                                exponent = NumFlag.EXP_SIGN;
                         }
-                        // allow type specifiers for double, float and long - not specified in JSON
-                        else if (hasDigits && !json) {
-                            if (c == 'd' || c == 'D') {
-                                isDouble = true;
-                                break;
+                        // exponent
+                        else if (c == 'e' || c == 'E') {
+                            if (!hasDigits)
+                                throw new ParseException("numbers must have at least one digit before an exponent");
+                            else if (exponent != null)
+                                throw new ParseException("numbers can only have one exponent");
+                            else if (end == l - 1 || (!isDigit(chars[end + 1]) && chars[end + 1] != '-' && chars[end + 1] != '+'))
+                                throw new ParseException("numbers must have at least one digit after an exponent");
+                            else
+                                exponent = NumFlag.EXP_PREFIX;
+                        }// Java/KOFI number logic
+                        else if (!json) {
+                            if (c == 'L' || c == 'l') {
+                                if (fraction != null)
+                                    throw new ParseException("numbers of type long cannot have fractions");
+                                else if (exponent != null)
+                                    throw new ParseException("numbers of type long cannot have exponents");
+                                else if (!hasDigits)
+                                    throw new ParseException("numbers must have at least one digit before a type specifier");
+                                precision = NumFlag.P64;
                             }
-                            else if ((c == 'F' || c == 'f'))
-                                break;
-                            else if (c == 'L' || c == 'l') {
-                                if (hasFraction)
-                                    throw new ParseException("number values of type long must not have fractions");
-                                isLong = true;
-                                break;
+                            else if (c == 'd' || c == 'D') {
+                                if (!hasDigits)
+                                    throw new ParseException("numbers must have at least one digit before a type specifier");
+                                precision = NumFlag.P64;
+                            }
+                            else if (c == 'F' || c == 'f') {
+                                if (!hasDigits)
+                                    throw new ParseException("numbers must have at least one digit before a type specifier");
+                                precision = NumFlag.P32;
+                            }
+                            else {
+                                throw new ParseException("invalid number character");
                             }
                         }
-                        // unknown number character - not part of number
-                        end--;
-                        break;
+                        else {
+                            throw new ParseException("invalid number character");
+                        }
                     }
                     if (!hasDigits)
-                        throw new ParseException("number values must have at least one digit");
+                        throw new ParseException("numbers must have at least one digit");
+                    else if (exponent != null && exponent != NumFlag.EXP_NUM)
+                        throw new ParseException("exponents must have at least one digit");
+
                     final int len = from.applyAsInt(end);
-                    if (hasFraction)
+
+                    // double and float
+                    if (fraction != null || exponent != null) {
                         if (json)
                             return new ParsableDouble(chars, start, end, len);
-                        else
-                            return isDouble ?
+                        else if (precision != null)
+                            return precision == NumFlag.P64 ?
                                     new ParsableDouble(chars, start, end, len) :
                                     new ParsableFloat(chars, start, end, len);
-                    else if (json)
-                        return new ParsableLong(chars, start, end, len);
-                    else
-                        return isLong ?
-                                new ParsableLong(chars, start, end, len) :
-                                new ParsableInt(chars, start, end, len);
+                        else
+                            return new ParsableFloat(chars, start, end, len);
+                    }
+                    // long and int
+                    else {
+                        if (json)
+                            return new ParsableLong(chars, start, end, len);
+                        else if (precision != null)
+                            return precision == NumFlag.P64 ?
+                                    new ParsableLong(chars, start, end, len) :
+                                    new ParsableInt(chars, start, end, len);
+                        else
+                            return new ParsableInt(chars, start, end, len);
+                    }
                 }
                 // array
                 else if (c == '[') {
@@ -524,6 +582,10 @@ public class KofiCodec
         public String getExtension() {
             return extension;
         }
+    }
+
+    protected enum NumFlag {
+        FRAC_SEP, FRAC_NUM, EXP_PREFIX, EXP_SIGN, EXP_NUM, P32, P64
     }
 
     /**
