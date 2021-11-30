@@ -232,10 +232,21 @@ public class IniCodec
                     while (end < l) {
                         c2 = chars[end - 1];
                         c = chars[end++];
-                        if (c == '\"' && c2 != '\\') {
-                            hasDelimiter = true;
-                            break;
-                        }
+                        if (c == '\"')
+                            if (c2 != '\\') {
+                                hasDelimiter = true;
+                                break;
+                            }
+                            // the second last character is a backslash
+                            else {
+                                // count joined backslashes
+                                int n = 1, i = end - 3;
+                                while (i > start && chars[i--] == '\\')
+                                    n++;
+                                // if n is even then the string has a delimiter
+                                hasDelimiter = (n & 0x1) == 0;
+                                break;
+                            }
                     }
 
                     if (!hasDelimiter)
