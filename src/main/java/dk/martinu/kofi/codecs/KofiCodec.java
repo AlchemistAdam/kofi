@@ -182,6 +182,8 @@ public class KofiCodec
             throw new ParseException("property value is empty");
     }
 
+    // TODO improve the way error information is propagated up to read() such
+    //  that useful exception messages can be constructed
     @Contract(value = "null, _, _, _ -> fail", pure = true)
     @Nullable
     protected KofiCodec.Parsable<?> parseValue(final char[] chars, final int offset, final int length,
@@ -356,6 +358,7 @@ public class KofiCodec
                 else if (c == '[') {
                     // find index of closing array bracket
                     int end = -1;
+                    // TODO nested arrays can give some trouble
                     for (int i = l - 1; i > start; i--) {
                         c = chars[i];
                         if (!Character.isWhitespace(c)) {
@@ -399,6 +402,7 @@ public class KofiCodec
                 else if (c == '{') {
                     // find index of closing object bracket
                     int end = -1;
+                    // TODO nested objects can give some trouble
                     for (int i = l - 1; i > start; i--) {
                         c = chars[i];
                         if (!Character.isWhitespace(c)) {
