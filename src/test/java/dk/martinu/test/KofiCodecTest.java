@@ -22,29 +22,32 @@ import org.junit.jupiter.api.*;
 import java.nio.file.*;
 
 import dk.martinu.kofi.*;
-import dk.martinu.kofi.codecs.IniCodec;
+import dk.martinu.kofi.codecs.KofiCodec;
+import dk.martinu.kofi.spi.DocumentFileReader;
+import dk.martinu.kofi.spi.DocumentFileWriter;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 // TODO add whitespace, comments, null values
+
 /**
- * Testing write and read of {@link IniCodec} with all property types in
+ * Testing write and read of {@link KofiCodec} with all property types in
  * {@link dk.martinu.kofi.properties}. This test consists of two subtests;
  * {@link WriteTest} and {@link ReadTest}. First properties are written, then
  * read, both in random order.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.DisplayName.class)
-public class IniCodecTest {
+public class KofiCodecTest {
 
-    final String filePath = "inicodectest.ini";
+    final Path path = Paths.get("inicodectest.kofi");
 
     @AfterAll
     void cleanUp() {
-        assertDoesNotThrow(() -> Files.deleteIfExists(Paths.get(filePath)));
+        assertDoesNotThrow(() -> Files.deleteIfExists(path));
     }
 
-    @DisplayName("B) ReadTest")
+    @DisplayName("B ReadTest")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @TestMethodOrder(MethodOrderer.Random.class)
@@ -116,24 +119,22 @@ public class IniCodecTest {
             assertEquals("Hello, World!", document.getString("abc", "string", "12"));
         }
 
-        @AfterAll
-        void documentSize() {
-            assertEquals(12, document.elements().size());
-        }
-
         @BeforeAll
         void readDocument() {
-            assertDoesNotThrow(() -> document = DocumentIO.readFile(Paths.get(filePath)));
+            final DocumentFileReader reader = DocumentIO.getReader(path);
+            assertTrue(reader instanceof KofiCodec);
+            assertDoesNotThrow(() -> document = reader.readFile(path));
+
+            assertEquals(12, document.elements().size());
         }
     }
 
-    @DisplayName("A) WriteTest")
+    @DisplayName("A WriteTest")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @TestMethodOrder(MethodOrderer.Random.class)
     public class WriteTest {
 
-        Path path;
         Document document;
 
         @Test
@@ -246,20 +247,18 @@ public class IniCodecTest {
 
         }
 
-        @AfterAll
-        void documentSize() {
-            assertEquals(12, document.elements().size());
-        }
-
         @BeforeAll
         void init() {
-            path = Paths.get(filePath);
             document = new Document();
         }
 
-        @AfterEach
+        @AfterAll
         void writeDocument() {
-            assertDoesNotThrow(() -> DocumentIO.writeFile(path, document));
+            final DocumentFileWriter writer = DocumentIO.getWriter(path, document);
+            assertTrue(writer instanceof KofiCodec);
+            assertDoesNotThrow(() -> writer.writeFile(path, document));
+
+            assertEquals(12, document.elements().size());
         }
     }
 }

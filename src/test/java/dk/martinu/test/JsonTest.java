@@ -20,8 +20,6 @@ package dk.martinu.test;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import dk.martinu.kofi.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,8 +27,18 @@ import static org.junit.jupiter.api.Assertions.*;
 public class JsonTest {
 
     final JsonTestImpl instance = new JsonTestImpl();
-    final String javaString = "\0Hello,\r\nWorld!\u001F";
-    final String jsonString = "\"\\u0000Hello,\\r\\nWorld!\\u001F\"";
+    final String[] javaStrings = {
+            "\0Hello,\r\nWorld!\u001F",
+            "",
+            "\\\r\n\\\0\\\"",
+            "Two muffins sat in an oven.\r\n\nOne muffin said \"Wow, it's getting pretty hot!\"\r\n\nThen the other muffin said \"Wow, a talking muffin!\""
+    };
+    final String[] jsonStrings = {
+            "\"\\u0000Hello,\\r\\nWorld!\\u001F\"",
+            "\"\"",
+            "\"\\\\\\r\\n\\\\\\u0000\\\\\\\"\"",
+            "\"Two muffins sat in an oven.\\r\\n\\nOne muffin said \\\"Wow, it's getting pretty hot!\\\"\\r\\n\\nThen the other muffin said \\\"Wow, a talking muffin!\\\"\""
+    };
 
     @Test
     public void getDefinedObject() {
@@ -52,26 +60,14 @@ public class JsonTest {
 
     @Test
     public void getJavaString() {
-        final String java = instance.getJavaString(jsonString);
-        assertEquals(javaString, java);
+        for (int i = 0; i < javaStrings.length; i++)
+            assertEquals(javaStrings[i], instance.getJavaString(jsonStrings[i]));
     }
 
     @Test
     public void getJsonString() {
-        final String json = instance.getJsonString(javaString);
-        assertEquals(jsonString, json);
-    }
-
-    @Test
-    public void isHexDigit() {
-        final String hexDigits = "0123456789ABCDEFabcdef";
-        for (char c : hexDigits.toCharArray())
-            assertTrue(instance.isHexDigitImpl(c));
-
-        // this string is not meant to be exhaustive
-        final String other = "QWRTYUIOPSGHJKLZXVNMqwrtyuiopsghjklzxvnm!\"#¤%&/()=?`´,.-;:_¨'^*<>\\";
-        for (char c : other.toCharArray())
-            assertFalse(instance.isHexDigitImpl(c));
+        for (int i = 0; i < jsonStrings.length; i++)
+            assertEquals(jsonStrings[i], instance.getJsonString(javaStrings[i]));
     }
 
     @Test
@@ -82,7 +78,6 @@ public class JsonTest {
         assertTrue(instance.isTypeDefined(new JsonArray()));
         assertTrue(instance.isTypeDefined("Hello, World!"));
         assertTrue(instance.isTypeDefined(123));
-        assertTrue(instance.isTypeDefined(new AtomicLong()));
         assertTrue(instance.isTypeDefined(true));
 
         assertFalse(instance.isTypeDefined('A'));
@@ -107,10 +102,6 @@ public class JsonTest {
             return super.getJsonString(s);
         }
 
-        public boolean isHexDigitImpl(final char c) {
-            return isHexDigit(c);
-        }
-
         @Override
         public boolean isTypeDefined(final Object o) {
             return super.isTypeDefined(o);
@@ -124,7 +115,7 @@ public class JsonTest {
         @Override
         @NotNull
         public String toJson() {
-            return "";
+            return "null";
         }
 
         @Override

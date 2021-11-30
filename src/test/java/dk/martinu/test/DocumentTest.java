@@ -20,7 +20,7 @@ package dk.martinu.test;
 import org.junit.jupiter.api.*;
 
 import dk.martinu.kofi.*;
-import dk.martinu.kofi.codecs.IniCodec;
+import dk.martinu.kofi.codecs.KofiCodec;
 import dk.martinu.kofi.properties.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * ordered randomly.
  * <p>
  * This test not only helps verify that documents work as intended, but also
- * that {@link IniCodec} parses strings to elements correctly.
+ * that {@link KofiCodec} parses strings to elements correctly.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.Random.class)
@@ -45,6 +45,7 @@ public class DocumentTest {
              ; hi
               int2  = 442211  \s
              bool  = false  \s
+            negative=-8
             empty=[      ]
             null=null
               char =  \\u0025 \s
@@ -169,6 +170,7 @@ public class DocumentTest {
         assertEquals(Comment.class, document.getElement(i++).getClass());
         assertEquals(IntProperty.class, document.getElement(i++).getClass());
         assertEquals(BooleanProperty.class, document.getElement(i++).getClass());
+        assertEquals(IntProperty.class, document.getElement(i++).getClass());
         assertEquals(ArrayProperty.class, document.getElement(i++).getClass());
         assertEquals(NullProperty.class, document.getElement(i++).getClass());
         assertEquals(CharProperty.class, document.getElement(i++).getClass());
@@ -199,7 +201,8 @@ public class DocumentTest {
 
     @Test
     void documentSize() {
-        assertEquals(30, document.elements().size());
+        final long count = input.chars().filter(i -> i == '\n').count();
+        assertEquals(count, document.elements().size());
     }
 
     @Test
@@ -280,7 +283,7 @@ public class DocumentTest {
 
     @BeforeAll
     void initDocument() {
-        assertDoesNotThrow(() -> document = new IniCodec().readString(input));
+        assertDoesNotThrow(() -> document = new KofiCodec().readString(input));
         assertNotNull(document);
     }
 

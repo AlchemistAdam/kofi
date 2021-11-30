@@ -32,28 +32,17 @@ import dk.martinu.kofi.*;
 import dk.martinu.kofi.properties.*;
 import dk.martinu.kofi.spi.*;
 
-public class IniCodec
+import static dk.martinu.kofi.KofiUtil.isDigit;
+import static dk.martinu.kofi.KofiUtil.isHexDigit;
+
+// TODO change use of Character.isWhitespace(c) with a faster custom implementation
+public class KofiCodec
         implements DocumentFileReader, DocumentFileWriter, DocumentStringReader, DocumentStringWriter {
 
     @Contract(value = "-> new", pure = true)
     @NotNull
-    public static IniCodec provider() {
-        return new IniCodec();
-    }
-
-    @Contract(pure = true)
-    protected static boolean isDigit(final char c) {
-        return c >= '0' && c <= '9';
-    }
-
-    @Contract(pure = true)
-    protected static boolean isHexDigit(final char c) {
-        if (isDigit(c))
-            return true;
-        else if (c >= 'A' && c <= 'F')
-            return true;
-        else
-            return c >= 'a' && c <= 'f';
+    public static KofiCodec provider() {
+        return new KofiCodec();
     }
 
     @Contract(pure = true)
@@ -118,12 +107,11 @@ public class IniCodec
         write(() -> Files.newBufferedWriter(filePath, cs != null ? cs : StandardCharsets.UTF_8), document);
     }
 
-    @Contract(value = "_, _ -> new", pure = true)
+    @Contract(value = "_ -> new", pure = true)
     @Override
     @NotNull
-    public String writeString(final @NotNull String string, final @NotNull Document document) throws
+    public String writeString(final @NotNull Document document) throws
             NullPointerException, IOException {
-        Objects.requireNonNull(string, "string is null");
         Objects.requireNonNull(document, "document is null");
         final CharArrayWriter writer = new CharArrayWriter();
         write(() -> new BufferedWriter(writer), document);
@@ -196,7 +184,7 @@ public class IniCodec
 
     @Contract(value = "null, _, _, _ -> fail", pure = true)
     @Nullable
-    protected IniCodec.Parsable<?> parseValue(final char[] chars, final int offset, final int length,
+    protected KofiCodec.Parsable<?> parseValue(final char[] chars, final int offset, final int length,
             final boolean json) throws ParseException {
         assert chars != null;
         char c;
@@ -472,6 +460,7 @@ public class IniCodec
         return null;
     }
 
+    @Contract(value = "_ -> new", pure = true)
     @NotNull
     protected Document read(@NotNull final Supplier<BufferedReader> readerSupplier) throws IOException {
         // executor to parse lines in parallel
@@ -481,10 +470,9 @@ public class IniCodec
             final ArrayList<Future<Element>> futures = new ArrayList<>();
             // add parse task for each line, in line order
             try (final BufferedReader reader = readerSupplier.get()) {
-                reader.lines().forEachOrdered(line ->
-                        futures.add(executor.submit(new ParseTask(line, futures.size() + 1))));
+                reader.lines().forEachOrdered(
+                        line -> futures.add(executor.submit(new ParseTask(line, futures.size() + 1))));
             }
-            // create and populate document, in line order
             final Document document = new Document(futures.size());
             for (Future<Element> future : futures) {
                 while (!future.isDone())
@@ -518,7 +506,7 @@ public class IniCodec
 
     public enum Extension {
 
-        INI(".ini"), CF(".cf"), CFG(".cfg"), CNF(".cnf"), CONF(".conf");
+        KOFI(".kofi");
 
         @NotNull
         private final String extension;
@@ -535,7 +523,7 @@ public class IniCodec
     }
 
     /**
-     * Specialized supplier that can throw {@link <code>IOException</code>}
+     * Specialized supplier that can throw {@link IOException}.
      */
     @FunctionalInterface
     protected interface Supplier<T> {
@@ -816,8 +804,7 @@ public class IniCodec
         }
     }
 
-    // TODO maybe Object can be used as parameter type instead?
-    protected static class ParsableNull extends Parsable<Void> {
+    protected static class ParsableNull extends Parsable<Object> {
 
         public ParsableNull(final char[] chars, final int start, final int end, final int length) {
             super(chars, start, end, length);
@@ -831,7 +818,7 @@ public class IniCodec
 
         @Override
         @Nullable
-        public Void parse() {
+        public Object parse() {
             return null;
         }
     }
@@ -848,33 +835,10 @@ public class IniCodec
             return Type.STRING;
         }
 
-        // TODO needs testing
-        // TODO unicode escape sequences (\\uXXXX) must be preserved
         @NotNull
         @Override
         public String parse() {
-            final StringBuilder sb = new StringBuilder(end - start - 2);
-            for (int i = start + 1; i < end - 1; ) {
-                if (i < end - 2 && chars[i] == '\\') {
-                    switch (chars[i + 1]) {
-                        case 't' -> sb.append('\t');
-                        case 'b' -> sb.append('\b');
-                        case 'n' -> sb.append('\n');
-                        case 'r' -> sb.append('\r');
-                        case 'f' -> sb.append('\f');
-                        case '0' -> sb.append('\0');
-                        default -> {
-                            // escape sequence is unknown - do not unescape
-                            sb.append('\\');
-                            sb.append(chars[i + 1]);
-                        }
-                    }
-                    i += 2;
-                }
-                else
-                    sb.append(chars[i++]);
-            }
-            return sb.toString();
+            return KofiUtil.unescape(chars, start, end);
         }
     }
 }

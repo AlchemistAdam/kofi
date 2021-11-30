@@ -15,15 +15,15 @@
  * under the License.
  */
 
-import dk.martinu.kofi.codecs.IniCodec;
+import dk.martinu.kofi.codecs.KofiCodec;
 
-module Kofi.test {
+module dk.martinu.kofi.test {
 
-    requires kofi;
+    requires dk.martinu.kofi;
     requires org.junit.jupiter.api;
     requires org.jetbrains.annotations;
 
-    uses IniCodec;
+    uses KofiCodec;
 
     exports dk.martinu.test;
     opens dk.martinu.test;
