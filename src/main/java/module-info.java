@@ -15,11 +15,11 @@
  * under the License.
  */
 
-import dk.martinu.kofi.codecs.IniCodec;
+import dk.martinu.kofi.codecs.KofiCodec;
 import dk.martinu.kofi.codecs.SerFileCodec;
 import dk.martinu.kofi.spi.*;
 
-module kofi {
+module dk.martinu.kofi {
 
     requires java.base;
     requires java.logging;
@@ -35,8 +35,8 @@ module kofi {
     exports dk.martinu.kofi.codecs;
     exports dk.martinu.kofi.properties;
 
-    provides DocumentFileReader with IniCodec, SerFileCodec;
-    provides DocumentFileWriter with IniCodec, SerFileCodec;
-    provides DocumentStringReader with IniCodec;
-    provides DocumentStringWriter with IniCodec;
+    provides DocumentFileReader with KofiCodec, SerFileCodec;
+    provides DocumentFileWriter with KofiCodec, SerFileCodec;
+    provides DocumentStringReader with KofiCodec;
+    provides DocumentStringWriter with KofiCodec;
 }
