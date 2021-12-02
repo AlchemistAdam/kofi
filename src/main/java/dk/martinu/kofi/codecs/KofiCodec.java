@@ -34,8 +34,8 @@ import dk.martinu.kofi.spi.*;
 
 import static dk.martinu.kofi.KofiUtil.isDigit;
 import static dk.martinu.kofi.KofiUtil.isHexDigit;
+import static dk.martinu.kofi.KofiUtil.isWhitespace;
 
-// TODO change use of Character.isWhitespace(c) with a faster custom implementation
 public class KofiCodec
         implements DocumentFileReader, DocumentFileWriter, DocumentStringReader, DocumentStringWriter {
 
@@ -194,14 +194,14 @@ public class KofiCodec
         final int l = length != -1 ? length : chars.length;
         // lambda expression used to get the length of a parsable
         final IntUnaryOperator from = len -> {
-            while (len < l && Character.isWhitespace(chars[len]))
+            while (len < l && isWhitespace(chars[len]))
                 len++;
             return len;
         };
         for (int start = offset; start < l; start++) {
             // peek first character to determine type of parsable object
             c = chars[start];
-            if (!Character.isWhitespace(c)) {
+            if (!isWhitespace(c)) {
                 // null
                 if (c == 'n' || c == 'N') {
                     final int remainder = l - start;
@@ -300,7 +300,7 @@ public class KofiCodec
                     for (; end < l; end++) {
                         c = chars[end];
                         // ws or JSON separator - not part of number
-                        if (Character.isWhitespace(c) || (c == ',' && json)) {
+                        if (isWhitespace(c) || (c == ',' && json)) {
                             break;
                         }
                         // characters not allowed after type specifier
@@ -419,14 +419,14 @@ public class KofiCodec
                     // TODO nested arrays can give some trouble
                     for (int i = l - 1; i > start; i--) {
                         c = chars[i];
-                        if (!Character.isWhitespace(c)) {
+                        if (!isWhitespace(c)) {
                             if (c == ']')
                                 end = i + 1;
                             break;
                         }
                     }
                     if (end == -1)
-                        throw new ParseException("array values must be enclosed in brackets");
+                        throw new ParseException("array values must be enclosed in [ brackets ]");
                     // list of parsable values in the array - they are parsed when the array itself is parsed
                     final ArrayList<Parsable<?>> values = new ArrayList<>();
                     boolean parse = true;
@@ -463,14 +463,14 @@ public class KofiCodec
                     // TODO nested objects can give some trouble
                     for (int i = l - 1; i > start; i--) {
                         c = chars[i];
-                        if (!Character.isWhitespace(c)) {
+                        if (!isWhitespace(c)) {
                             if (c == '}')
                                 end = i + 1;
                             break;
                         }
                     }
                     if (end == -1)
-                        throw new ParseException("object properties must be enclosed in brackets");
+                        throw new ParseException("object properties must be enclosed in { brackets }");
                     // list of parsable key/value pairs in the object - they are parsed when the object itself is parsed
                     final ArrayList<Parsable<?>> properties = new ArrayList<>();
                     boolean parse = true;

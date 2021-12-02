@@ -82,6 +82,13 @@ public class KofiUtil {
             return c >= 'a' && c <= 'f';
     }
 
+    public static boolean isWhitespace(final char c) {
+        if (c > ' ')
+            return false;
+        else
+            return c == ' ' || c == '\n' || c == '\r' || c == '\t';
+    }
+
     // TODO needs testing
     // TODO javadoc
     @Contract(value = "null, _, _ -> fail; _, _, _ -> new", pure = true)
