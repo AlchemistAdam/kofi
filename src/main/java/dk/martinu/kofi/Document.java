@@ -844,8 +844,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public Character getChar(@Nullable final String section, @NotNull final String key, final Character def) throws
-            NullPointerException {
+    public Character getChar(@Nullable final String section, @NotNull final String key, @Nullable final Character def)
+            throws NullPointerException {
         return getValue(section, key, Character.class, def);
     }
 
@@ -909,8 +909,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public Double getDouble(@Nullable final String section, @NotNull final String key, final Double def) throws
-            NullPointerException {
+    public Double getDouble(@Nullable final String section, @NotNull final String key, @Nullable final Double def)
+            throws NullPointerException {
         return getValue(section, key, Double.class, def);
     }
 
@@ -986,7 +986,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public Float getFloat(@Nullable final String section, @NotNull final String key, final Float def) throws
+    public Float getFloat(@Nullable final String section, @NotNull final String key, @Nullable final Float def) throws
             NullPointerException {
         return getValue(section, key, Float.class, def);
     }
@@ -1051,7 +1051,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public Integer getInt(@Nullable final String section, @NotNull final String key, final Integer def) throws
+    public Integer getInt(@Nullable final String section, @NotNull final String key, @Nullable final Integer def) throws
             NullPointerException {
         return getValue(section, key, Integer.class, def);
     }
@@ -1116,7 +1116,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public Long getLong(@Nullable final String section, @NotNull final String key, final Long def) throws
+    public Long getLong(@Nullable final String section, @NotNull final String key, @Nullable final Long def) throws
             NullPointerException {
         return getValue(section, key, Long.class, def);
     }
@@ -1182,8 +1182,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public JsonObject getObject(@Nullable final String section, @NotNull final String key, @Nullable final JsonObject def)
-            throws NullPointerException {
+    public JsonObject getObject(@Nullable final String section, @NotNull final String key,
+            @Nullable final JsonObject def) throws NullPointerException {
         return getValue(section, key, JsonObject.class, def);
     }
 
