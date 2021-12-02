@@ -103,7 +103,11 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
     }
 
     /**
-     * Returns the hash code of this property.
+     * Returns a combined hash code of this property's key, in upper-case, and
+     * value. The returned value is equal to:
+     * <pre>
+     *     keyHash | valueHash << 16
+     * </pre>
      */
     @Override
     public int hashCode() {
