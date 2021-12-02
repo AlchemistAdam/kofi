@@ -19,9 +19,19 @@ package dk.martinu.kofi;
 
 import org.jetbrains.annotations.*;
 
-import java.util.concurrent.atomic.*;
+import static dk.martinu.kofi.KofiUtil.isHexDigit;
 
-// TODO javadoc
+/**
+ * <p>Abstract implementation of a JSON value, which can be represented as a
+ * string with {@link #toJson()}. The string representation must conform to the
+ * IETF RFC 8259 specification.
+ *
+ * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259"> RFC 8259</a>
+ * for more details.
+ *
+ * @author Adam Martinu
+ * @since 1.0
+ */
 public abstract class Json {
 
     /**
@@ -30,7 +40,7 @@ public abstract class Json {
      * which are allowed to be escaped as a two-character sequence.
      *
      * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-7">
-     * RFC 8259</a> for more details.
+     * RFC 8259, section 7</a> for more details.
      */
     protected static final String[] ESCAPED_CHARS_00_1F = {
             "\\u0000", "\\u0001", "\\u0002",
@@ -63,42 +73,71 @@ public abstract class Json {
             "\\u009D", "\\u009E", "\\u009F"
     };
 
-    protected static boolean isHexDigit(final char c) {
-        if (c >= '0' && c <= '9')
-            return true;
-        else if (c >= 'A' && c <= 'F')
-            return true;
-        else
-            return c >= 'a' && c <= 'f';
-    }
-
     /**
      * <p>Returns a string representation of this object as JSON text that
      * conforms with the IETF RFC 8259 specification.
      *
      * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-2">
-     * RFC 8259</a> for more details.
+     * RFC 8259, section 2</a> for more details.
      */
     @NotNull
     public abstract String toJson();
 
+    /**
+     * Returns {@code true} if the two numbers {@code n0} and {@code n1} have
+     * equal values. Comparison of floating-point numbers with integer numbers
+     * and vice-versa will always return false.
+     *
+     * @param n0 The first number.
+     * @param n1 The second number.
+     * @return {@code true} if {@code n0} and {@code n1} have equal values,
+     * otherwise {@code false}.
+     */
     protected boolean areNumbersEqual(@NotNull final Number n0, @NotNull final Number n1) {
-        if (n0 instanceof Double || n1 instanceof Double
-                || n0 instanceof DoubleAccumulator || n0 instanceof DoubleAdder
-                || n1 instanceof DoubleAccumulator || n1 instanceof DoubleAdder)
-            return n0.doubleValue() == n1.doubleValue();
-        else if (n0 instanceof Float || n1 instanceof Float)
-            return n0.floatValue() == n1.floatValue();
-        else if (n0 instanceof Long || n1 instanceof Long
-                || n0 instanceof LongAccumulator || n0 instanceof LongAdder
-                || n1 instanceof LongAccumulator || n1 instanceof LongAdder)
-            return n0.longValue() == n1.longValue();
-        else if (n0 instanceof Integer || n1 instanceof Integer)
-            return n0.intValue() == n1.intValue();
-        else if (n0 instanceof Short || n1 instanceof Short)
-            return n0.shortValue() == n1.shortValue();
-        else
+        // decimals
+        if (n0 instanceof Double) {
+            if (n1 instanceof Double || n1 instanceof Float)
+                return n0.doubleValue() == n1.doubleValue();
+        }
+        else if (n1 instanceof Double) {
+            if (n0 instanceof Float)
+                return n0.doubleValue() == n1.doubleValue();
+        }
+        else if (n0 instanceof Float) {
+            if (n1 instanceof Float)
+                return n0.floatValue() == n1.floatValue();
+            else
+                return false;
+        }
+        // integers
+        else if (n0 instanceof Long) {
+            if (n1 instanceof Long || n1 instanceof Integer || n1 instanceof Short || n1 instanceof Byte)
+                return n0.longValue() == n1.longValue();
+        }
+        else if (n1 instanceof Long) {
+            if (n0 instanceof Integer || n0 instanceof Short || n0 instanceof Byte)
+                return n0.longValue() == n1.longValue();
+        }
+        else if (n0 instanceof Integer) {
+            if (n1 instanceof Integer || n1 instanceof Short || n1 instanceof Byte)
+                return n0.intValue() == n1.intValue();
+        }
+        else if (n1 instanceof Integer) {
+            if (n0 instanceof Short || n0 instanceof Byte)
+                return n0.intValue() == n1.intValue();
+        }
+        else if (n0 instanceof Short) {
+            if (n1 instanceof Short || n1 instanceof Byte)
+                return n0.shortValue() == n1.shortValue();
+        }
+        else if (n1 instanceof Short) {
+            if (n0 instanceof Byte)
+                return n0.shortValue() == n1.shortValue();
+        }
+        else if (n0 instanceof Byte && n1 instanceof Byte) {
             return n0.byteValue() == n1.byteValue();
+        }
+        return false;
     }
 
     /**
@@ -143,71 +182,23 @@ public abstract class Json {
             return JsonObject.reflect(o);
     }
 
-    // TODO needs testing
+    /**
+     * <p>Parses the specified string {@code s}, as if it was a JSON string
+     * according to the IETF RFC 8259 specification, to a plain Java string and
+     * returns it. Surrounding quotation marks are removed, and all
+     * two-character and six-character escape sequences are unescaped to their
+     * single character equivalent.
+     *
+     * <p><b>NOTE:</b> this method assumes that {@code s} is a JSON string and
+     * that it is valid. The behaviour of passing in a string that is not a
+     * JSON string or an invalid JSON string is undefined.
+     *
+     * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-7">
+     * RFC 8259, section 7</a> for more details.
+     */
     protected String getJavaString(@NotNull final String s) {
         final char[] chars = s.toCharArray();
-        final StringBuilder sb = new StringBuilder(chars.length - 2);
-        for (int i = 1; i < chars.length - 1; ) {
-            if (chars[i] == '\\') {
-                final int len = chars.length - 1 - i;
-                if (len >= 5 && chars[i + 1] == 'u') {
-                    if (isHexDigit(chars[i + 2])
-                            && isHexDigit(chars[i + 3])
-                            && isHexDigit(chars[i + 4])
-                            && isHexDigit(chars[i + 5])) {
-                        sb.append((char) Integer.valueOf(
-                                String.copyValueOf(chars, i + 2, 4), 16).intValue());
-                        i += 6;
-                    }
-                    else {
-                        KofiLog.warning("unknown six-character escape sequence {"
-                                + String.copyValueOf(chars, i, 6) + "}");
-                        sb.append(chars[i++]);
-                    }
-                }
-                else if (len >= 1) {
-                    final char c = chars[i + 1];
-                    if (c == '\\' || c == '"' || c == '/') {
-                        sb.append(c);
-                        i += 2;
-                    }
-                    else if (c == 'b') {
-                        sb.append('\b');
-                        i += 2;
-                    }
-                    else if (c == 't') {
-                        sb.append('\t');
-                        i += 2;
-                    }
-                    else if (c == 'n') {
-                        sb.append('\n');
-                        i += 2;
-                    }
-                    else if (c == 'f') {
-                        sb.append('\f');
-                        i += 2;
-                    }
-                    else if (c == 'r') {
-                        sb.append('\r');
-                        i += 2;
-                    }
-                    // unknown escape sequence
-                    else {
-                        KofiLog.warning("unknown escape sequence {"
-                                + chars[i] + chars[i + 1] + "}");
-                        sb.append(chars[i++]);
-                    }
-                }
-                // unknown escape sequence
-                else {
-                    KofiLog.warning("unknown escape sequence");
-                    sb.append(chars[i++]);
-                }
-            }
-            else
-                sb.append(chars[i++]);
-        }
-        return sb.toString();
+        return KofiUtil.unescape(chars, 0, chars.length);
     }
 
     /**
@@ -217,7 +208,7 @@ public abstract class Json {
      * range [0x7F;0x9F] are also escaped.
      *
      * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-7">
-     * RFC 8259</a> for more details.
+     * RFC 8259, section 7</a> for more details.
      */
     @NotNull
     protected String getJsonString(@NotNull final String s) {
@@ -246,23 +237,51 @@ public abstract class Json {
      *     <li>{@code null}, not specifically a type but {@code null} is a
      *     defined value.</li>
      *     <li>{@code String}</li>
-     *     <li>{@code Number}</li>
+     *     <li>{@code Number} wrapper of a primitive type, e.g. {@code Integer}</li>
      *     <li>{@code Boolean}</li>
-     *     <li>{@link Json}</li>
+     *     <li>{@link Json}. The KOFI API provides implementations for objects
+     *     and arrays (the only structures defined in the specification), but
+     *     any implementation of {@code Json} will be accepted as a defined
+     *     type.</li>
      * </ul>
      *
      * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-3">
-     * RFC 8259</a> for more details.
+     * RFC 8259, section 3</a> for more details.
      */
     @Contract(value = "null -> true", pure = true)
     protected boolean isTypeDefined(@Nullable final Object o) {
-        return o == null
+        if (o == null
                 || o instanceof String
-                || o instanceof Number
                 || o instanceof Boolean
-                || o instanceof Json;
+                || o instanceof Json)
+            return true;
+        else if (o instanceof Number)
+            return o instanceof Integer
+                    || o instanceof Long
+                    || o instanceof Float
+                    || o instanceof Double
+                    || o instanceof Byte
+                    || o instanceof Short;
+        else
+            return false;
     }
 
+    /**
+     * <p>Creates a JSON string representation of the specified object
+     * {@code value} and appends it to the specified {@code StringBuilder}
+     * {@code sb}. This method is intended for implementations that represent
+     * an array or object which can have member values.
+     *
+     * <p><b>NOTE:</b> The IETF RFC 8259 specification does not permit
+     * irrational numbers such as {@code Infinity} or {@code NaN}; these values
+     * are represented as {@code 0.0}.
+     *
+     * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-6">
+     * RFC 8259, section 6</a> for more details.
+     *
+     * @throws IllegalArgumentException if {@code value} is not
+     *                                  {@link #isTypeDefined(Object) defined}.
+     */
     protected void toJson(@Nullable Object value, @NotNull final StringBuilder sb) throws IllegalArgumentException {
         if (isTypeDefined(value)) {
             if (value == null)
@@ -309,6 +328,9 @@ public abstract class Json {
         }
     }
 
-    // TODO javadoc
+    /**
+     * <p>Creates a JSON string representation of this JSON object and appends
+     * it to the specified {@code StringBuilder} {@code sb}.
+     */
     protected abstract void toJson(@NotNull final StringBuilder sb);
 }
