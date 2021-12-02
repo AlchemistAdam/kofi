@@ -27,8 +27,8 @@ import dk.martinu.kofi.Document;
 @FunctionalInterface
 public interface DocumentStringWriter {
 
-    @Contract(value = "_, _ -> new", pure = true)
+    @Contract(value = "_ -> new", pure = true)
     @NotNull
-    String writeString(@NotNull final String string, @NotNull final Document document) throws NullPointerException,
+    String writeString(@NotNull final Document document) throws NullPointerException,
             IOException;
 }
