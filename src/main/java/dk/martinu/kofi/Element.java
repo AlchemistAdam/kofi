@@ -34,28 +34,6 @@ import org.jetbrains.annotations.NotNull;
 public abstract class Element {
 
     /**
-     * Returns an escaped version of the specified string {@code s}. The
-     * characters to escape are specified in the {@code chars} array. If no
-     * characters were escaped, then {@code s} is returned.
-     */
-    @Contract(pure = true)
-    @NotNull
-    protected static String escape(@NotNull final String s, final char... chars) {
-        final StringBuilder sb = new StringBuilder(s.length());
-        outer:
-        for (int i = 0; i < s.length(); i++) {
-            final char c0 = s.charAt(i);
-            for (char c1 : chars)
-                if (c0 == c1) {
-                    sb.append('\\').append(c0);
-                    continue outer;
-                }
-            sb.append(c0);
-        }
-        return s.length() == sb.length() ? s : sb.toString();
-    }
-
-    /**
      * Returns a copy of this element or throws a
      * {@code CloneNotSupportedException} if this element cannot be cloned.
      *

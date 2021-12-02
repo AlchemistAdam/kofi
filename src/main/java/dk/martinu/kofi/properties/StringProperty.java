@@ -23,6 +23,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
+import dk.martinu.kofi.KofiUtil;
 import dk.martinu.kofi.Property;
 
 /**
@@ -89,7 +90,7 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
     public String getValueString() {
         if (valueString == null)
             //noinspection ConstantConditions
-            valueString = '"' + escape(value, '\n', '\r', '\\') + '"';
+            valueString = '"' + KofiUtil.escape(value, '\n', '\r', '\\') + '"';
         return valueString;
     }
 }

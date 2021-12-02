@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -120,11 +119,11 @@ public class Comment extends Element implements Cloneable, Serializable {
      *     <li>{@code \\} reverse solidus, U+005C</li>
      * </ul>
      *
-     * @see Element#escape(String, char...)
+     * @see KofiUtil#escape(String, char...)
      */
     @NotNull
     public String getTextString() {
-        return escape(text, '\n', '\r', '\\');
+        return KofiUtil.escape(text, '\n', '\r', '\\');
     }
 
     /**

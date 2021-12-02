@@ -107,11 +107,11 @@ public class Section extends Element implements Cloneable, Serializable {
      *     <li>{@code \\} reverse solidus, U+005C</li>
      * </ul>
      *
-     * @see Element#escape(String, char...)
+     * @see KofiUtil#escape(String, char...)
      */
     @Contract(pure = true)
     public String getNameString() {
-        return escape(name, '\n', '\r', '\\');
+        return KofiUtil.escape(name, '\n', '\r', '\\');
     }
 
     /**

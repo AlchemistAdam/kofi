@@ -123,12 +123,12 @@ public abstract class Property<V> extends Element {
      *      <li>{@code \\} reverse solidus, U+005C</li>
      * </ul>
      *
-     * @see Element#escape(String, char...)
+     * @see KofiUtil#escape(String, char...)
      */
     @Contract(pure = true)
     @NotNull
     public String getKeyString() {
-        return escape(key, '\n', '\r', ';', '[', '\\');
+        return KofiUtil.escape(key, '\n', '\r', ';', '[', '\\');
     }
 
     /**
