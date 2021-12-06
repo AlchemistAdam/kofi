@@ -32,9 +32,7 @@ import dk.martinu.kofi.*;
 import dk.martinu.kofi.properties.*;
 import dk.martinu.kofi.spi.*;
 
-import static dk.martinu.kofi.KofiUtil.isDigit;
-import static dk.martinu.kofi.KofiUtil.isHexDigit;
-import static dk.martinu.kofi.KofiUtil.isWhitespace;
+import static dk.martinu.kofi.KofiUtil.*;
 
 public class KofiCodec
         implements DocumentFileReader, DocumentFileWriter, DocumentStringReader, DocumentStringWriter {
@@ -216,6 +214,9 @@ public class KofiCodec
                 }
                 // String
                 else if (c == '"') {
+                    // TODO loop can be optimised
+                    //  end != -1 -> hasDelimiter (remove boolean)
+                    //  assigning c2 to c instead of reading array
                     boolean hasDelimiter = false;
                     int end = start + 1;
                     char c2;
@@ -414,26 +415,53 @@ public class KofiCodec
                 }
                 // array
                 else if (c == '[') {
-                    // find index of closing array bracket
+                    // scan for index of closing array bracket
                     int end = -1;
-                    // TODO nested arrays can give some trouble
-                    for (int i = l - 1; i > start; i--) {
-                        c = chars[i];
-                        if (!isWhitespace(c)) {
-                            if (c == ']')
-                                end = i + 1;
-                            break;
+                    {
+                        // TODO new loop = more tests
+                        int depth = 0, string = -1;
+                        char p;
+                        for (int i = start + 1; i < l; i++) {
+                            p = c;
+                            c = chars[i];
+                            if (string == -1) {
+                                if (c == '[')
+                                    depth++;
+                                else if (c == ']')
+                                    if (depth == 0) {
+                                        end = i + 1;
+                                        break;
+                                    }
+                                    else
+                                        depth--;
+                                else if (c == '\"')
+                                    string = i;
+                            }
+                            else if (c == '\"')
+                                if (p != '\\')
+                                    string = -1;
+                                else {
+                                    // count joined backslashes
+                                    int n = 1, k = i - 2;
+                                    while (k > string && chars[k--] == '\\')
+                                        n++;
+                                    // if n is even then the string is enclosed
+                                    if ((n & 0x1) == 0)
+                                        string = -1;
+                                    else
+                                        break;
+                                }
                         }
                     }
                     if (end == -1)
-                        throw new ParseException("array values must be enclosed in [ brackets ]");
-                    // list of parsable values in the array - they are parsed when the array itself is parsed
+                        throw new ParseException("arrays must be enclosed in [ brackets ]");
+                    // list of parsable values in the array
                     final ArrayList<Parsable<?>> values = new ArrayList<>();
                     boolean parse = true;
                     for (int i = start + 1; i < end - 1; ) {
                         if (parse) {
                             final Parsable<?> pv = parseValue(chars, i, end - 1, true);
-                            // add value to list
+                            // add non-empty values to list
                             if (pv != null) {
                                 values.add(pv);
                                 i = pv.length;
@@ -451,7 +479,7 @@ public class KofiCodec
                             i++;
                         }
                         else
-                            throw new ParseException("array values must be separated by a comma");
+                            throw new ParseException("array values must be separated by a , comma");
                     }
                     final int len = from.applyAsInt(end);
                     return new ParsableJsonArray(chars, start, end, len, values);
@@ -460,17 +488,44 @@ public class KofiCodec
                 else if (c == '{') {
                     // find index of closing object bracket
                     int end = -1;
-                    // TODO nested objects can give some trouble
-                    for (int i = l - 1; i > start; i--) {
-                        c = chars[i];
-                        if (!isWhitespace(c)) {
-                            if (c == '}')
-                                end = i + 1;
-                            break;
+                    {
+                        // TODO new loop = more tests
+                        int depth = 0, string = -1;
+                        char p;
+                        for (int i = start + 1; i < l; i++) {
+                            p = c;
+                            c = chars[i];
+                            if (string == -1) {
+                                if (c == '{')
+                                    depth++;
+                                else if (c == '}')
+                                    if (depth == 0) {
+                                        end = i + 1;
+                                        break;
+                                    }
+                                    else
+                                        depth--;
+                                else if (c == '\"')
+                                    string = i;
+                            }
+                            else if (c == '\"')
+                                if (p != '\\')
+                                    string = -1;
+                                else {
+                                    // count joined backslashes
+                                    int n = 1, k = i - 2;
+                                    while (k > string && chars[k--] == '\\')
+                                        n++;
+                                    // if n is even then the string is enclosed
+                                    if ((n & 0x1) == 0)
+                                        string = -1;
+                                    else
+                                        break;
+                                }
                         }
                     }
                     if (end == -1)
-                        throw new ParseException("object properties must be enclosed in { brackets }");
+                        throw new ParseException("objects must be enclosed in { brackets }");
                     // list of parsable key/value pairs in the object - they are parsed when the object itself is parsed
                     final ArrayList<Parsable<?>> properties = new ArrayList<>();
                     boolean parse = true;
@@ -484,7 +539,7 @@ public class KofiCodec
                                 if (key.length >= end - 2)
                                     throw new ParseException("object properties must contain a value");
                                 if (chars[key.length] != ':')
-                                    throw new ParseException("object properties must contain a : delimiter");
+                                    throw new ParseException("object properties must contain a : separator");
                                 // get property value
                                 final Parsable<?> value = parseValue(chars, key.length + 1, end - 1, true);
                                 if (value == null)
