@@ -369,6 +369,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
 
         protected final TreeMap<String, Object> map = new TreeMap<>();
 
+        @Contract(pure = true)
         @NotNull
         public JsonObject build() {
             return new JsonObject(map);
@@ -379,20 +380,28 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         }
 
         @Nullable
-        public Object get(@NotNull final String key) throws NullPointerException {
-            Objects.requireNonNull(key, "key is null");
-            return map.get(key);
+        public Object get(@NotNull final String name) throws NullPointerException {
+            Objects.requireNonNull(name, "name is null");
+            return map.get(name);
         }
 
-        public Builder put(@NotNull final String key, @Nullable final Object value) throws NullPointerException {
-            Objects.requireNonNull(key, "key is null");
-            map.put(key, value);
+        @NotNull
+        public Builder put(@NotNull final Entry entry) throws NullPointerException {
+            Objects.requireNonNull(entry, "entry is null");
+            return put(entry.getName(), entry.getValue());
+        }
+
+        @NotNull
+        public Builder put(@NotNull final String name, @Nullable final Object value) throws NullPointerException {
+            Objects.requireNonNull(name, "name is null");
+            map.put(name, value);
             return this;
         }
 
-        public Builder remove(@NotNull final String key) throws NullPointerException {
-            Objects.requireNonNull(key, "key is null");
-            map.remove(key);
+        @NotNull
+        public Builder remove(@NotNull final String name) throws NullPointerException {
+            Objects.requireNonNull(name, "name is null");
+            map.remove(name);
             return this;
         }
 
