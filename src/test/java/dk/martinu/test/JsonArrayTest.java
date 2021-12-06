@@ -17,91 +17,177 @@
 
 package dk.martinu.test;
 
+
 import org.junit.jupiter.api.Test;
 
+import dk.martinu.kofi.Document;
 import dk.martinu.kofi.JsonArray;
+import dk.martinu.kofi.codecs.KofiCodec;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonArrayTest {
+
+    final KofiCodec codec = KofiCodec.provider();
+    final Value<Document> value = new Value<>();
 
     @Test
     void mixedArray() {
         final Object[] objects = {
-                1,
+                1L,
                 "Hello, World!",
                 true,
-                new JsonArray(1, 2, 3)
+                new JsonArray(1L, 2L, 3L)
         };
-        final JsonArray json = new JsonArray(objects);
+        final JsonArray array = new JsonArray(objects);
 
-        assertEquals(objects.length, json.length());
+        assertEquals(objects.length, array.length());
+        for (int i = 0; i < objects.length; i++) {
+            if (objects[i] instanceof String s)
+                assertEquals('"' + s + '"', array.get(i));
+            else
+                assertEquals(objects[i], array.get(i));
+        }
+
+        assertDoesNotThrow(
+                () -> value.put(codec.readString("v = " + array.toJson())));
+        final JsonArray parsedArray = value.get().getArray("v");
+        assertNotNull(parsedArray);
+        assertEquals(array, parsedArray);
+        assertEquals(objects.length, parsedArray.length());
         for (int i = 0; i < objects.length; i++)
             if (objects[i] instanceof String s)
-                assertEquals('"' + s + '"', json.get(i));
+                assertEquals('"' + s + '"', parsedArray.get(i));
             else
-                assertEquals(objects[i], json.get(i));
+                assertEquals(objects[i], parsedArray.get(i));
     }
 
     @Test
     void nestedJsonArray() {
-        final JsonArray[] nested = {
+        final Object[] objects = {
                 new JsonArray(1, 2, 3),
                 new JsonArray(4, 5, 6),
                 new JsonArray(7, 8, 9)
         };
-        final JsonArray json = new JsonArray((Object[]) nested);
+        final JsonArray array = new JsonArray(objects);
 
-        assertEquals(nested.length, json.length());
-        for (int i = 0; i < nested.length; i++)
-            assertEquals(nested[i], json.get(i));
+        assertEquals(objects.length, array.length());
+        for (int i = 0; i < objects.length; i++)
+            assertEquals(objects[i], array.get(i));
+
+        assertDoesNotThrow(
+                () -> value.put(codec.readString("v = " + array.toJson())));
+        final JsonArray parsedArray = value.get().getArray("v");
+        assertNotNull(parsedArray);
+        assertEquals(array, parsedArray);
+        assertEquals(objects.length, parsedArray.length());
+        for (int i = 0; i < objects.length; i++)
+            if (objects[i] instanceof String s)
+                assertEquals('"' + s + '"', parsedArray.get(i));
+            else
+                assertEquals(objects[i], parsedArray.get(i));
     }
 
     @Test
     void nestedPrimitiveArray() {
-        final int[][] nested = {
-                {1, 2, 3},
-                {4, 5, 6},
-                {7, 8, 9}
+        final Object[] objects = {
+                new long[] {1, 2, 3},
+                new long[] {4, 5, 6},
+                new long[] {7, 8, 9}
         };
-        final JsonArray json = new JsonArray((Object[]) nested);
+        final JsonArray array = new JsonArray(objects);
 
-        assertEquals(nested.length, json.length());
-        for (int i = 0; i < nested.length; i++)
-            assertEquals(JsonArray.reflect(nested[i]), json.get(i));
+        assertEquals(objects.length, array.length());
+        for (int i = 0; i < objects.length; i++)
+            assertEquals(JsonArray.reflect(objects[i]), array.get(i));
+
+        assertDoesNotThrow(
+                () -> value.put(codec.readString("v = " + array.toJson())));
+        final JsonArray parsedArray = value.get().getArray("v");
+        assertNotNull(parsedArray);
+        assertEquals(array, parsedArray);
+        assertEquals(objects.length, parsedArray.length());
+        for (int i = 0; i < objects.length; i++)
+            if (objects[i] instanceof String s)
+                assertEquals('"' + s + '"', parsedArray.get(i));
+            else
+                assertEquals(JsonArray.reflect(objects[i]), parsedArray.get(i));
     }
 
     @Test
     void nestedWrapperArray() {
-        final Integer[][] nested = {
-                {1, 2, 3},
-                {4, 5, 6},
-                {7, 8, 9}
+        final Object[] objects = {
+                new Long[] {1L, 2L, 3L},
+                new Long[] {4L, 5L, 6L},
+                new Long[] {7L, 8L, 9L}
         };
-        final JsonArray json = new JsonArray((Object[]) nested);
+        final JsonArray array = new JsonArray(objects);
 
-        assertEquals(nested.length, json.length());
-        for (int i = 0; i < nested.length; i++)
-            assertEquals(JsonArray.reflect(nested[i]), json.get(i));
+        assertEquals(objects.length, array.length());
+        for (int i = 0; i < objects.length; i++)
+            assertEquals(JsonArray.reflect(objects[i]), array.get(i));
+
+        assertDoesNotThrow(
+                () -> value.put(codec.readString("v = " + array.toJson())));
+        final JsonArray parsedArray = value.get().getArray("v");
+        assertNotNull(parsedArray);
+        assertEquals(array, parsedArray);
+        assertEquals(objects.length, parsedArray.length());
+        for (int i = 0; i < objects.length; i++)
+            if (objects[i] instanceof String s)
+                assertEquals('"' + s + '"', parsedArray.get(i));
+            else
+                assertEquals(JsonArray.reflect(objects[i]), parsedArray.get(i));
     }
 
     @Test
     void primitiveArray() {
-        final int[] fibonacci = {1, 1, 2, 3, 5, 8, 13};
-        final JsonArray json = JsonArray.reflect(fibonacci);
+        final long[] fibonacci = {1, 1, 2, 3, 5, 8, 13};
+        final JsonArray array = JsonArray.reflect(fibonacci);
 
-        assertEquals(fibonacci.length, json.length());
+        assertEquals(fibonacci.length, array.length());
         for (int i = 0; i < fibonacci.length; i++)
-            assertEquals(fibonacci[i], json.get(i));
+            assertEquals(fibonacci[i], array.get(i));
+
+        assertDoesNotThrow(
+                () -> value.put(codec.readString("v = " + array.toJson())));
+        final JsonArray parsedArray = value.get().getArray("v");
+        assertNotNull(parsedArray);
+        assertEquals(array, parsedArray);
+        assertEquals(fibonacci.length, parsedArray.length());
+        for (int i = 0; i < fibonacci.length; i++)
+            assertEquals(fibonacci[i], parsedArray.get(i));
     }
 
     @Test
     void wrapperArray() {
-        final Integer[] fibonacci = {1, 1, 2, 3, 5, 8, 13};
-        final JsonArray json = JsonArray.reflect(fibonacci);
+        final Long[] fibonacci = {0L, 1L, 1L, 2L, 3L, 5L, 8L, 13L};
+        final JsonArray array = JsonArray.reflect(fibonacci);
 
-        assertEquals(fibonacci.length, json.length());
+        assertEquals(fibonacci.length, array.length());
         for (int i = 0; i < fibonacci.length; i++)
-            assertEquals(fibonacci[i], json.get(i));
+            assertEquals(fibonacci[i], array.get(i));
+
+        assertDoesNotThrow(
+                () -> value.put(codec.readString("v = " + array.toJson())));
+        final JsonArray parsedArray = value.get().getArray("v");
+        assertNotNull(parsedArray);
+        assertEquals(array, parsedArray);
+        assertEquals(fibonacci.length, parsedArray.length());
+        for (int i = 0; i < fibonacci.length; i++)
+            assertEquals(fibonacci[i], parsedArray.get(i));
+    }
+
+    static class Value<T> {
+
+        T value = null;
+
+        T get() {
+            return value;
+        }
+
+        void put(T value) {
+            this.value = value;
+        }
     }
 }

@@ -19,23 +19,99 @@ package dk.martinu.test;
 
 import org.junit.jupiter.api.Test;
 
-import dk.martinu.kofi.JsonObject;
+import dk.martinu.kofi.*;
+import dk.martinu.kofi.codecs.KofiCodec;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonObjectTest {
 
+    final KofiCodec codec = KofiCodec.provider();
+    final Value<Document> value = new Value<>();
+
+    @Test
+    void mixedObject() {
+        final JsonObject.Builder builder = new JsonObject.Builder()
+                .put("number", 1L)
+                .put("string", "Hello, World!")
+                .put("bool", true)
+                .put("array", new JsonArray(1, 2, 3));
+        final JsonObject object = builder.build();
+
+        assertEquals(builder.size(), object.size());
+        for (int i = 0; i < builder.size(); i++) {
+            final JsonObject.Entry entry = object.getEntry(i);
+            if (entry.getValue() instanceof String s)
+                assertEquals('"' + (String) builder.get(entry.getName()) + '"', s);
+            else
+                assertEquals(builder.get(entry.getName()), entry.getValue());
+        }
+
+        assertDoesNotThrow(
+                () -> value.put(codec.readString("v = " + object.toJson())));
+        final JsonObject parsedObject = value.get().getObject("v");
+        assertNotNull(parsedObject);
+        assertEquals(object, parsedObject);
+        assertEquals(builder.size(), parsedObject.size());
+        for (int i = 0; i < builder.size(); i++) {
+            final JsonObject.Entry entry = parsedObject.getEntry(i);
+            if (entry.getValue() instanceof String s)
+                assertEquals('"' + (String) builder.get(entry.getName()) + '"', s);
+            else
+                assertEquals(builder.get(entry.getName()), entry.getValue());
+        }
+    }
+
+    @Test
+    void nestedJsonObject() {
+        final JsonObject.Builder builder = new JsonObject.Builder()
+                .put("n0", new JsonObject.Builder().put("number", 1L).build())
+                .put("n1", new JsonObject.Builder().put("string", "Hello, World").build())
+                .put("n2", new JsonObject.Builder().put("bool", false).build());
+        final JsonObject object = builder.build();
+
+        assertEquals(builder.size(), object.size());
+        for (int i = 0; i < builder.size(); i++) {
+            final JsonObject.Entry entry = object.getEntry(i);
+            if (entry.getValue() instanceof String s)
+                assertEquals('"' + (String) builder.get(entry.getName()) + '"', s);
+            else
+                assertEquals(builder.get(entry.getName()), entry.getValue());
+        }
+
+        assertDoesNotThrow(
+                () -> value.put(codec.readString("v = " + object.toJson())));
+        final JsonObject parsedObject = value.get().getObject("v");
+        assertNotNull(parsedObject);
+        assertEquals(object, parsedObject);
+        assertEquals(builder.size(), parsedObject.size());
+        for (int i = 0; i < builder.size(); i++) {
+            final JsonObject.Entry entry = parsedObject.getEntry(i);
+            if (entry.getValue() instanceof String s)
+                assertEquals('"' + (String) builder.get(entry.getName()) + '"', s);
+            else
+                assertEquals(builder.get(entry.getName()), entry.getValue());
+        }
+    }
+
     @Test
     void reconstructNumberObject() {
-        final JsonObject json = new JsonObject.Builder()
-                .put("n0", 4)
-                .put("n1", 8)
-                .build();
+        final JsonObject.Builder builder = new JsonObject.Builder()
+                .put("n0", 4L)
+                .put("n1", 8L);
+        final JsonObject object = builder.build();
+
+        assertEquals(builder.size(), object.size());
+        for (int i = 0; i < builder.size(); i++) {
+            final JsonObject.Entry entry = object.getEntry(i);
+            assertEquals(builder.get(entry.getName()), entry.getValue());
+        }
+
+        // TODO use reflection when asserting equals and add more fields to NumberObject
         assertDoesNotThrow(() -> {
-            final NumberObject object = JsonObject.reconstruct(json, NumberObject.class);
-            assertEquals(4, object.n0);
-            assertEquals(8, object.n1);
+            final NumberObject numberObject = JsonObject.reconstruct(object, NumberObject.class);
+            assertEquals(4L, numberObject.n0);
+            assertEquals(8L, numberObject.n1);
         });
     }
 
@@ -51,9 +127,22 @@ public class JsonObjectTest {
         assertEquals(2, json.get("n1"));
     }
 
-    public static class NumberObject {
+    static class NumberObject {
 
-        public int n0 = 1;
-        public int n1 = 2;
+        public long n0 = 1L;
+        public long n1 = 2L;
+    }
+
+    static class Value<T> {
+
+        T value = null;
+
+        T get() {
+            return value;
+        }
+
+        void put(T value) {
+            this.value = value;
+        }
     }
 }
