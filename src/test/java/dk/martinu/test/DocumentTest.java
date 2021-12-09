@@ -277,6 +277,20 @@ public class DocumentTest {
     }
 
     @Test
+    void getPropertyCount() {
+        assertEquals(7, document.getPropertyCount(null));
+
+        assertEquals(7, document.getPropertyCount("abc"));
+
+        assertEquals(6, document.getPropertyCount("def"));
+    }
+
+    @Test
+    void getSectionCount() {
+        assertEquals(2, document.getSectionCount());
+    }
+
+    @Test
     void getString() {
         assertEquals("Hello, World!", document.getString("abc", "string", "12"));
     }
