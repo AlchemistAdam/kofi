@@ -1377,7 +1377,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * if this document contains global {@link Property properties}.
      */
     @Contract(pure = true)
-    @Range(from = -1, to = Integer.MAX_VALUE)
+    @Range(from = 0, to = Integer.MAX_VALUE)
     public int getSectionCount() {
         int count = 0;
         Element e;
