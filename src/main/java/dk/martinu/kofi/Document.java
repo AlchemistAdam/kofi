@@ -34,19 +34,19 @@ import dk.martinu.kofi.properties.*;
  * provides methods to add, get and remove them. Elements are stored in an
  * array, and the index of each element corresponds to its position in an
  * INI-file document; line 1 would be the element at index {@code 0}, line 2 at
- * index {@code 1}, and so on.
+ * index {@code 1}, and so on.</p>
  *
  * <p><b>Note that this implementation is not synchronized.</b> If multiple
  * threads access a {@code Document} instance concurrently, and at least one of
  * the threads modifies the document structurally, it <i>must</i> be
  * synchronized externally. (A structural modification is any operation that
- * adds or deletes one or more elements)
+ * adds or deletes one or more elements)</p>
  *
- * <p id="global">All documents inherently contain the <i>global section</i>, which is a
- * pseudo-section that does not exist within the document itself, but can be
- * thought of as a global scope to access elements at the very beginning of a
- * document (which is not enclosed in a section). The name of the
- * <i>global section</i> is equal to {@code null}.
+ * <p id="global">All documents inherently contain the <i>global section</i>,
+ * which is a pseudo-section that does not exist within the document itself,
+ * but can be thought of as a global scope to access elements at the very
+ * beginning of a document (which are not enclosed in a section). The name of
+ * the <i>global section</i> is equal to {@code null}.</p>
  *
  * @author Adam Martinu
  * @since 1.0
@@ -58,10 +58,11 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     private static final long serialVersionUID = 0L;
 
     /**
-     * A list of all elements in this document. The order of the elements
-     * defines how they are logically related to each other. For example, a
-     * property at index {@code i} belongs to the section at the highest index
-     * {@code k} for which {@code k &lt i} is {@code true}.
+     * A list of all {@link Element elements} in this document. The order of
+     * the elements defines how they are logically related to each other. For
+     * example, a {@link Property property}  at index {@code i} belongs to the
+     * {@link Section section}  at the highest index {@code k} for which
+     * {@code k &lt i} is {@code true}.
      */
     @NotNull
     protected final ArrayList<Element> elementList;
@@ -87,7 +88,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Creates a new document with the specified elements.
+     * Creates a new document with the specified {@link Element elements}.
      *
      * @param elements A collection of elements to add to this document.
      * @throws NullPointerException if {@code elements} is {@code null} or
@@ -218,8 +219,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Adds the specified element to the end of this document. if
-     * {@code element} is {@code null} this method does nothing.
+     * Adds the specified {@link Element element} to the end of this document.
+     * if {@code element} is {@code null} this method does nothing.
      *
      * @param element the element to add.
      */
@@ -229,8 +230,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
 
     /**
      * Inserts the {@code element} at the specified {@code index} in this
-     * document. Shifts the element currently at that position (if any) and any
-     * subsequent elements to the right (adds one to their indices). if
+     * document. Shifts any {@link Element element} currently at that position
+     * and any subsequent elements to the right (adds one to their indices). if
      * {@code element} is {@code null} this method does nothing.
      *
      * @param index   index at which the {@code element} is to be inserted.
@@ -420,9 +421,9 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     /**
      * Adds {@code property} to the
      * <a href="#global"><i>global section</i></a>. If the global section
-     * already contains a property with a matching property key, then it is
-     * replaced and the original property is returned. Otherwise
-     * {@code null} is returned.
+     * already contains a {@link Property property} with a matching property
+     * key, then it is replaced and the original property is returned.
+     * Otherwise {@code null} is returned.
      *
      * @param property the property to add.
      * @return the property that was replaced, or {@code null}.
@@ -436,9 +437,9 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     /**
      * Adds {@code property} to the specified {@code section}, or {@code null}
      * to add it to the <a href="#global"><i>global section</i></a>. If the
-     * section already contains a property with a matching property key, then
-     * it is replaced and the original property is returned. Otherwise
-     * {@code null} is returned.
+     * section already contains a {@link Property property} with a matching
+     * property key, then it is replaced and the original property is returned.
+     * Otherwise {@code null} is returned.
      *
      * @param section  name of the section to add {@code property} to, or
      *                 {@code null}.
@@ -472,8 +473,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Adds a new section with the specified name to this document if it is not
-     * already present and returns its index.
+     * Adds a new {@link Section section} with the specified name to this
+     * document if it is not already present and returns its index.
      *
      * @param section the name of the section to add.
      * @return the index of the section in this document.
@@ -515,7 +516,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Removes all elements from this document
+     * Removes all {@link Element elements} from this document
      */
     public void clear() {
         elementList.clear();
@@ -523,7 +524,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
 
     /**
      * Creates and returns a deep copy of this document. Whether the copied
-     * elements themselves are deep or shallow copies is not specified.
+     * {@link Element elements} themselves are deep or shallow copies is not
+     * specified.
      *
      * @return a copy of this document.
      * @throws CloneNotSupportedException if one of the elements in this
@@ -542,7 +544,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns {@code true} if this document contains any property in the
+     * Returns {@code true} if this document contains any
+     * {@link Property property} in the
      * <a href="#global"><i>global section</i></a> that matches the specified
      * {@code key}.
      *
@@ -557,10 +560,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns {@code true} if this document contains any property in the
-     * specified {@code section}, or {@code null} for the
-     * <a href="#global"><i>global section</i></a>, that matches the specified
-     * {@code key}.
+     * Returns {@code true} if this document contains any
+     * {@link Property property} in the specified {@code section}, or
+     * {@code null} for the <a href="#global"><i>global section</i></a>, that
+     * matches the specified {@code key}.
      *
      * @param section name of the section to search in, or {@code null}.
      * @param key     the property key to match against.
@@ -574,7 +577,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns {@code true} if this document contains any property in the
+     * Returns {@code true} if this document contains any
+     * {@link Property property} in the
      * <a href="#global"><i>global section</i></a>, that matches the specified
      * {@code key} and {@code valueType}.
      *
@@ -590,10 +594,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns {@code true} if this document contains any property in the
-     * specified {@code section}, or {@code null} for the
-     * <a href="#global"><i>global section</i></a>, that matches the specified
-     * {@code key} and {@code valueType}.
+     * Returns {@code true} if this document contains any
+     * {@link Property property} in the specified {@code section}, or
+     * {@code null} for the <a href="#global"><i>global section</i></a>, that
+     * matches the specified {@code key} and {@code valueType}.
      *
      * @param section   name of the section to search in, or {@code null}.
      * @param key       the property key to match against.
@@ -609,7 +613,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns and unmodifiable list of all the elements in this document.
+     * Returns and unmodifiable list of all the {@link Element elements} in
+     * this document.
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
@@ -619,11 +624,13 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
 
     /**
      * Compares the specified object with this document for equality. Returns
-     * {@code true} if {@code obj} is also a document and all elements in both
-     * documents are equal, otherwise {@code false}.
+     * {@code true} if {@code obj} is also a document and all
+     * {@link Element elements} in both documents are equal, otherwise
+     * {@code false}.
      *
      * @param obj the object to be compared for equality with this document.
-     * @return true if the specified object is equal to this document.
+     * @return true if the specified object is equal to this document,
+     * otherwise {@code false}.
      */
     @Contract(value = "null -> false", pure = true)
     @Override
@@ -637,12 +644,12 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Performs the given {@code action} for each element in this document
-     * until all elements have been processed or the action throws an
-     * exception. Actions are performed in the order of iteration, from index
-     * {@code 0} to {@code size() - 1}. Exceptions thrown by the action are
-     * relayed to the caller. The behavior of this method is unspecified if the
-     * action performs structural changes to this document.
+     * Performs the given {@code action} for each {@link Element element} in
+     * this document until all elements have been processed or the action
+     * throws an exception. Actions are performed in the order of iteration,
+     * from index {@code 0} to {@code size() - 1}. Exceptions thrown by the
+     * action are relayed to the caller. The behavior of this method is
+     * unspecified if the action performs structural changes to this document.
      *
      * @param action the action to perform on each element.
      * @throws NullPointerException if {@code action} is {@code null}.
@@ -915,7 +922,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns the element at the specified index in this document.
+     * Returns the {@link Element element}  at the specified index in this
+     * document.
      *
      * @throws IndexOutOfBoundsException if {@code index} is out of range
      *                                   ({@code index < 0 || index >= size()})
@@ -1188,22 +1196,23 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns an array of all properties in the specified {@code section}, or
-     * {@code null} for the <a href="#global"><i>global section</i></a>, or
-     * {@code null} if no section was found.
+     * Returns an array of all {@link Property properties} in the specified
+     * {@code section}, or {@code null} for the
+     * <a href="#global"><i>global section</i></a>, or {@code null} if no
+     * ection was found.
      *
      * @param section the name of the section to match against.
      * @return An array of all properties in the section, or {@code null}.
      * @see Section#matches(String)
      */
-    @Contract(pure = true)
+    @Contract(value = "_ -> new", pure = true)
     @Nullable
     public Property<?>[] getProperties(@Nullable final String section) {
         return getProperties(section, null);
     }
 
     /**
-     * Returns an array of all properties in the specified
+     * Returns an array of all {@link Property properties} in the specified
      * {@code section}, or {@code null} for the
      * <a href="#global"><i>global section</i></a>, that matches the specified
      * {@code valueType}, or {@code null} if no section was found.
@@ -1215,7 +1224,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @see Section#matches(String)
      */
     @SuppressWarnings({"unchecked", "ConstantConditions"})
-    @Contract(value = "null, _ -> !null", pure = true)
+    @Contract(value = "_, _ -> new", pure = true)
     @Nullable
     public <V> Property<V>[] getProperties(@Nullable final String section, @Nullable Class<V> valueType) {
         final int index = getElementsIndex(section);
@@ -1234,9 +1243,9 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns the property in the <a href="#global"><i>global section</i></a>
-     * that matches the specified {@code key}, or {@code null} if no such
-     * property was found.
+     * Returns the {@link Property property} in the
+     * <a href="#global"><i>global section</i></a> that matches the specified
+     * {@code key}, or {@code null} if no such property was found.
      *
      * @param key the property key to match against.
      * @return the property that was found, or {@code null}.
@@ -1250,9 +1259,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns the property in the specified {@code section}, or {@code null}
-     * for the <a href="#global"><i>global section</i></a>, that matches the
-     * specified {@code key}, or {@code null} if no such property was found.
+     * Returns the {@link Property property} in the specified {@code section},
+     * or {@code null} for the <a href="#global"><i>global section</i></a>,
+     * that matches the specified {@code key}, or {@code null} if no such
+     * property was found.
      *
      * @param section name of the section to search in, or {@code null}.
      * @param key     the property key to match against.
@@ -1268,9 +1278,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns the property in the <a href="#global"><i>global section</i></a>
-     * that matches the specified {@code key} and {@code valueType}, or
-     * {@code null} if no such property was found.
+     * Returns the {@link Property property} in the
+     * <a href="#global"><i>global section</i></a> that matches the specified
+     * {@code key} and {@code valueType}, or {@code null} if no such property
+     * was found.
      *
      * @param key       the property key to match against.
      * @param valueType the property value type, or {@code null}.
@@ -1287,10 +1298,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns the property in the specified {@code section}, or {@code null}
-     * for the <a href="#global"><i>global section</i></a>, that matches the
-     * specified {@code key} and {@code valueType}, or {@code null} if no such
-     * property was found.
+     * Returns the {@link Property property} in the specified {@code section},
+     * or {@code null} for the <a href="#global"><i>global section</i></a>,
+     * that matches the specified {@code key} and {@code valueType}, or
+     * {@code null} if no such property was found.
      *
      * @param section   name of the section to search in, or {@code null}.
      * @param key       the property key to match against.
@@ -1314,8 +1325,36 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns the section in this document that matches the specified section
-     * name, or {@code null} if no such section was found.
+     * Returns the number of {@link Property properties} in the
+     * {@link Section section} in this document that matches the specified
+     * section name, or {@code null} for  the
+     * <a href="#global"><i>global section</i></a>. If no section was found
+     * then {@code -1} is returned.
+     *
+     * @param section the name of the section to match against.
+     * @return the number of properties, or {@code -1}.
+     */
+    @Contract(pure = true)
+    @Range(from = -1, to = Integer.MAX_VALUE)
+    public int getPropertyCount(@Nullable final String section) {
+        final int index = getElementsIndex(section);
+        if (index == -1)
+            return -1;
+        int count = 0;
+        Element e;
+        for (int i = index; i < elementList.size(); i++) {
+            e = elementList.get(i);
+            if (e instanceof Property)
+                count++;
+            else if (e instanceof Section)
+                break;
+        }
+        return count;
+    }
+
+    /**
+     * Returns the {@link Section section} in this document that matches the
+     * specified section name, or {@code null} if no such section was found.
      *
      * @param section the name of the section to match against.
      * @return the section that was found, or {@code null}.
@@ -1330,6 +1369,42 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
             return (Section) elementList.get(index);
         else
             return null;
+    }
+
+    /**
+     * Returns the number of {@link Section sections} in this document. This
+     * count will only include the <a href="#global"><i>global section</i></a>
+     * if this document contains global {@link Property properties}.
+     */
+    @Contract(pure = true)
+    @Range(from = -1, to = Integer.MAX_VALUE)
+    public int getSectionCount() {
+        int count = 0;
+        Element e;
+        for (int i = 0; i < elementList.size(); i++) {
+            e = elementList.get(i);
+            if (e instanceof Section)
+                count++;
+        }
+        return count;
+    }
+
+    /**
+     * Returns a list of {@link Section sections} in this document. This
+     * list will only include the <a href="#global"><i>global section</i></a>
+     * if this document contains global {@link Property properties}.
+     */
+    @Contract(value = "-> new", pure = true)
+    @NotNull
+    public List<Section> getSections() {
+        final ArrayList<Section> list = new ArrayList<>();
+        Element e;
+        for (int i = 0; i < elementList.size(); i++) {
+            e = elementList.get(i);
+            if (e instanceof Section s)
+                list.add(s);
+        }
+        return list;
     }
 
     /**
@@ -1382,7 +1457,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns the value of the property in the
+     * Returns the value of the {@link Property property} in the
      * <a href="#global"><i>global section</i></a> that matches the specified
      * {@code key}, or {@code def} if no such property was found.
      *
@@ -1400,10 +1475,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns the value of the property in the specified {@code section}, or
-     * {@code null} for the <a href="#global"><i>global section</i></a>, that
-     * matches the specified {@code key}, or {@code def} if no such property
-     * was found.
+     * Returns the value of the {@link Property property} in the specified
+     * {@code section}, or {@code null} for the
+     * <a href="#global"><i>global section</i></a>, that matches the specified
+     * {@code key}, or {@code def} if no such property was found.
      *
      * @param section name of the section to search in, or {@code null}.
      * @param key     the property key to match against.
@@ -1420,7 +1495,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns the value of the property in the
+     * Returns the value of the {@link Property property} in the
      * <a href="#global"><i>global section</i></a> that matches the specified
      * {@code key} and {@code valueType}, or {@code def} if no such property
      * was found.
@@ -1440,10 +1515,11 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns the value of the property in the specified {@code section}, or
-     * {@code null} for the <a href="#global"><i>global section</i></a>, that
-     * matches the specified {@code key} and {@code valueType}, or {@code def}
-     * if no such property was found.
+     * Returns the value of the {@link Property property} in the specified
+     * {@code section}, or {@code null} for the
+     * <a href="#global"><i>global section</i></a>, that matches the specified
+     * {@code key} and {@code valueType}, or {@code def} if no such property
+     * was found.
      *
      * @param section   name of the section to search in, or {@code null}.
      * @param key       the property key to match against.
@@ -1473,8 +1549,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns an iterator over the elements in this document in proper
-     * sequence. The returned iterator is fail-fast.
+     * Returns an iterator over the {@link Element elements} in this document
+     * in proper sequence. The returned iterator is fail-fast.
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
@@ -1493,8 +1569,9 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Removes all properties from the specified {@code section}, or
-     * {@code null} for the <a href="#global"><i>global section</i></a>.
+     * Removes all {@link Property properties} from the specified
+     * {@code section}, or {@code null} for the
+     * <a href="#global"><i>global section</i></a>.
      *
      * @param section the name of the section, or {@code null}.
      */
@@ -1505,9 +1582,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Removes any property from the specified {@code section}, or {@code null}
-     * for the <a href="#global"><i>global section</i></a>, that matches the
-     * given {@code key}.
+     * Removes any {@link Property property} from the specified
+     * {@code section}, or {@code null} for the
+     * <a href="#global"><i>global section</i></a>, that matches the given
+     * {@code key}.
      *
      * @param section the name of the section, or {@code null}.
      * @param key     the key of the property to remove.
@@ -1539,8 +1617,9 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Removes the specified {@code section} and its properties, or
-     * {@code null} for the <a href="#global"><i>global section</i></a>.
+     * Removes the specified {@code section} and its
+     * {@link Property properties}, or {@code null} for the
+     * <a href="#global"><i>global section</i></a>.
      *
      * @param section the name of the section, or {@code null}
      * @see Section#matches
@@ -1557,7 +1636,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns the number of elements in this document.
+     * Returns the number of {@link Element elements} in this document.
      */
     @Contract(pure = true)
     public int size() {
@@ -1566,7 +1645,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
 
     /**
      * Returns a <em>late-binding</em> and <em>fail-fast</em> Spliterator over
-     * the elements in this document. The Spliterator reports
+     * the {@link Element elements} in this document. The Spliterator reports
      * {@link Spliterator#SIZED}, {@link Spliterator#SUBSIZED} and
      * {@link Spliterator#ORDERED}.
      */
@@ -1588,7 +1667,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
 
     /**
      * Helper method to return the index of the specified {@code section}'s
-     * elements, or {@code null} for the
+     * {@link Element elements}, or {@code null} for the
      * <a href="#global"><i>global section</i></a>.
      *
      * @param section the name of the section, or {@code null}.
@@ -1605,10 +1684,11 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Helper method to return the index of any property matching the specified
-     * {@code key} and {@code valueType} in the specified {@code section}, or
-     * null for the <a href="#global"><i>global section</i></a>. If no matching
-     * property was found, then {@code -1} is returned.
+     * Helper method to return the index of any {@link Property property}
+     * matching the specified {@code key} and {@code valueType} in the
+     * specified {@code section}, or null for the
+     * <a href="#global"><i>global section</i></a>. If no matching property was
+     * found, then {@code -1} is returned.
      *
      * @param section   the name of the section.
      * @param key       the property key.
@@ -1662,16 +1742,17 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Helper method to remove comments beginning at the specified
-     * {@code index}. The method will iterate the document in decreasing
-     * order until the document is exhausted or an element is reached that is
-     * not a comment.
+     * Helper method to remove {@link Comment comments} beginning at the
+     * specified {@code index}. The method will iterate the document in
+     * decreasing order until the document is exhausted or an
+     * {@link Element element} is reached that is not a comment.
      *
      * @param index the index of the comment.
      * @throws IndexOutOfBoundsException if {@code index &gt= size()} is
      *                                   {@code true}.
      */
-    protected void removeComments(final int index) throws IndexOutOfBoundsException {
+    protected void removeComments(@Range(from = 0, to = Integer.MAX_VALUE) final int index) throws
+            IndexOutOfBoundsException {
         for (int i = index; i >= 0; i--)
             if (elementList.get(i) instanceof Comment)
                 elementList.remove(i);
@@ -1680,9 +1761,9 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Helper method to remove all properties in the document, beginning at the
-     * specified {@code index}, until the document is exhausted or a section is
-     * reached.
+     * Helper method to remove all {@link Property properties} in the document,
+     * beginning at the specified {@code index}, until the document is
+     * exhausted or a {@link Section section} is reached.
      *
      * @param index the index to start from, inclusive.
      * @throws IndexOutOfBoundsException if {@code index &lt 0} is
