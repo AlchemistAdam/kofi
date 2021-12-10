@@ -1207,7 +1207,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_ -> new", pure = true)
     @Nullable
-    public Property<?>[] getProperties(@Nullable final String section) {
+    public List<Property<Object>> getProperties(@Nullable final String section) {
         return getProperties(section, null);
     }
 
@@ -1223,10 +1223,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @return An array of all matching properties in the section, or {@code null}.
      * @see Section#matches(String)
      */
-    @SuppressWarnings({"unchecked", "ConstantConditions"})
+    @SuppressWarnings("unchecked")
     @Contract(value = "_, _ -> new", pure = true)
     @Nullable
-    public <V> Property<V>[] getProperties(@Nullable final String section, @Nullable Class<V> valueType) {
+    public <V> List<Property<V>> getProperties(@Nullable final String section, @Nullable Class<V> valueType) {
         final int index = getElementsIndex(section);
         if (index == -1)
             return null;
@@ -1239,7 +1239,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
             else if (e instanceof Property p && p.matches(valueType))
                 subList.add((Property<V>) p);
         }
-        return (Property<V>[]) subList.toArray();
+        return subList;
     }
 
     /**
