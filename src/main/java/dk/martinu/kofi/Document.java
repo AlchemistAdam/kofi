@@ -1372,9 +1372,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns the number of {@link Section sections} in this document. This
-     * count will only include the <a href="#global"><i>global section</i></a>
-     * if this document contains global {@link Property properties}.
+     * Returns the number of {@link Section sections} in this document.
      */
     @Contract(pure = true)
     @Range(from = 0, to = Integer.MAX_VALUE)
@@ -1390,9 +1388,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Returns a list of {@link Section sections} in this document. This
-     * list will only include the <a href="#global"><i>global section</i></a>
-     * if this document contains global {@link Property properties}.
+     * Returns a list of {@link Section sections} in this document.
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
