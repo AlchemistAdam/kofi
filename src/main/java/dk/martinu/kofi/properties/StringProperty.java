@@ -81,8 +81,11 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
      * <pre>
      *     '"' + valueString + '"'
      * </pre>
-     * where <i>valueString</i> is the escaped version of this property's
-     * value.
+     * where <i>valueString</i> is an escaped version of this property's value
+     * where the characters {@code '\n'}, {@code '\r'} and {@code '\\'} are
+     * replaced with their corresponding escape sequences.
+     *
+     * @see KofiUtil#escape(String, char...).
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
