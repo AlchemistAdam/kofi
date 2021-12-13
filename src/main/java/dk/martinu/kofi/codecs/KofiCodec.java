@@ -225,35 +225,33 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                 }
                 // String
                 else if (c == '"') {
-                    // TODO loop can be optimised
-                    //  end != -1 -> hasDelimiter (remove boolean)
-                    //  assigning c2 to c instead of reading array
-                    boolean hasDelimiter = false;
-                    int end = start + 1;
-                    char c2;
-                    while (end < l) {
-                        c2 = chars[end - 1];
-                        c = chars[end++];
-                        if (c == '\"')
-                            if (c2 != '\\') {
-                                hasDelimiter = true;
-                                break;
-                            }
-                            // the second last character is a backslash
-                            else {
-                                // count joined backslashes
-                                int n = 1, i = end - 3;
-                                while (i > start && chars[i--] == '\\')
-                                    n++;
-                                // if n is even then the string has a delimiter
-                                hasDelimiter = (n & 0x1) == 0;
-                                break;
-                            }
+                    int end = -1;
+                    {
+                        char prev;
+                        for (int i = start + 1; i < l; i++) {
+                            prev = c;
+                            c = chars[i];
+                            if (c == '\"')
+                                if (prev != '\\') {
+                                    end = i + 1;
+                                    break;
+                                }
+                                // the second last character is a backslash
+                                else {
+                                    // count joined backslashes
+                                    int n = 1, k = i - 2;
+                                    while (k > start && chars[k--] == '\\')
+                                        n++;
+                                    // if n is even then the string is enclosed
+                                    if ((n & 0x1) == 0)
+                                        end = i + 1;
+                                    else
+                                        break;
+                                }
+                        }
                     }
-
-                    if (!hasDelimiter)
+                    if (end == -1)
                         throw new ParseException("string values must be enclosed in \" quotes \"");
-
                     final int len = from.applyAsInt(end);
                     return new ParsableString(chars, start, end, len);
                 }
@@ -429,11 +427,10 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                     // scan for index of closing array bracket
                     int end = -1;
                     {
-                        // TODO new loop = more tests
                         int depth = 0, string = -1;
-                        char p;
+                        char prev;
                         for (int i = start + 1; i < l; i++) {
-                            p = c;
+                            prev = c;
                             c = chars[i];
                             if (string == -1) {
                                 if (c == '[')
@@ -449,7 +446,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                                     string = i;
                             }
                             else if (c == '\"')
-                                if (p != '\\')
+                                if (prev != '\\')
                                     string = -1;
                                 else {
                                     // count joined backslashes
@@ -500,11 +497,10 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                     // find index of closing object bracket
                     int end = -1;
                     {
-                        // TODO new loop = more tests
                         int depth = 0, string = -1;
-                        char p;
+                        char prev;
                         for (int i = start + 1; i < l; i++) {
-                            p = c;
+                            prev = c;
                             c = chars[i];
                             if (string == -1) {
                                 if (c == '{')
@@ -520,7 +516,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                                     string = i;
                             }
                             else if (c == '\"')
-                                if (p != '\\')
+                                if (prev != '\\')
                                     string = -1;
                                 else {
                                     // count joined backslashes
