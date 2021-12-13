@@ -19,6 +19,8 @@ package dk.martinu.test;
 
 import org.junit.jupiter.api.*;
 
+import java.util.List;
+
 import dk.martinu.kofi.*;
 import dk.martinu.kofi.codecs.KofiCodec;
 import dk.martinu.kofi.properties.*;
@@ -42,7 +44,7 @@ public class DocumentTest {
     // TODO add some nested json
     public static final String input = """
              
-             ; hi
+             ;hi
               int2  = 442211  \s
              bool  = false  \s
             negative=-8
@@ -50,8 +52,11 @@ public class DocumentTest {
             null=null
               char =  \\u0025 \s
                         
-            ; this is an array with mixed value types
+            ;mixed
+            ;array
             mix=["Hello","World",true, 2 ,  null ]
+            
+            ;this comment is not attached to an element
                         
               [abc]  \s
              double=  123.567d
@@ -62,7 +67,7 @@ public class DocumentTest {
              object =  { "name":"John",   "age"   : 50    ,"sex" :  "male"} \s
               int=4422
               null2 = null
-             ; this is the last section in the document
+             ;last section
             [def] \s
              empty={ }
               char3='A'  \s
@@ -176,7 +181,10 @@ public class DocumentTest {
         assertEquals(CharProperty.class, document.getElement(i++).getClass());
         assertEquals(Whitespace.class, document.getElement(i++).getClass());
         assertEquals(Comment.class, document.getElement(i++).getClass());
+        assertEquals(Comment.class, document.getElement(i++).getClass());
         assertEquals(ArrayProperty.class, document.getElement(i++).getClass());
+        assertEquals(Whitespace.class, document.getElement(i++).getClass());
+        assertEquals(Comment.class, document.getElement(i++).getClass());
         assertEquals(Whitespace.class, document.getElement(i++).getClass());
         assertEquals(Section.class, document.getElement(i++).getClass());
         assertEquals(DoubleProperty.class, document.getElement(i++).getClass());
@@ -228,6 +236,35 @@ public class DocumentTest {
         assertEquals('\\', document.getChar("abc", "char2", '1'));
 
         assertEquals('A', document.getChar("def", "char3", '1'));
+    }
+
+    @Test
+    void getComments() {
+        List<Comment> comments;
+
+        comments = document.getComments(null, "int2");
+        assertNotNull(comments);
+        assertEquals(1, comments.size());
+        assertEquals("hi", comments.get(0).text);
+
+        comments = document.getComments(null, "bool");
+        assertNotNull(comments);
+        assertEquals(0, comments.size());
+
+        comments = document.getComments(null, "mix");
+        assertNotNull(comments);
+        assertEquals(2, comments.size());
+        assertEquals("mixed", comments.get(0).text);
+        assertEquals("array", comments.get(1).text);
+
+        comments = document.getComments("abc");
+        assertNotNull(comments);
+        assertEquals(0, comments.size());
+
+        comments = document.getComments("def");
+        assertNotNull(comments);
+        assertEquals(1, comments.size());
+        assertEquals("last section", comments.get(0).text);
     }
 
     @Test

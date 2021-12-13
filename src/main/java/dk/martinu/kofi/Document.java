@@ -478,9 +478,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      *
      * @param section the name of the section to add.
      * @return the index of the section in this document.
+     * @throws NullPointerException if {@code section} is {@code null}.
      */
-    public int addSection(@NotNull final String section) {
-        int index = getSectionIndex(section);
+    public int addSection(@NotNull final String section) throws NullPointerException {
+        int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
         if (index == -1)
             elementList.add(index = elementList.size(), new Section(section));
         return index;
@@ -854,6 +855,41 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     public Character getChar(@Nullable final String section, @NotNull final String key, @Nullable final Character def)
             throws NullPointerException {
         return getValue(section, key, Character.class, def);
+    }
+
+    // TODO javadoc
+    @Contract(pure = true)
+    @Nullable
+    public List<Comment> getComments(@NotNull final String section) throws NullPointerException {
+        final int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
+        if (index == -1)
+            return null;
+        final LinkedList<Comment> list = new LinkedList<>();
+        for (int i = index - 1; i >= 0; i--) {
+            if (elementList.get(i) instanceof Comment comment)
+                list.addFirst(comment);
+            else
+                break;
+        }
+        return list;
+    }
+
+    // TODO javadoc
+    @Contract(pure = true)
+    @Nullable
+    public List<Comment> getComments(@Nullable final String section, @NotNull final String key) throws
+            NullPointerException {
+        final int index = getPropertyIndex(section, key, null);
+        if (index == -1)
+            return null;
+        final LinkedList<Comment> list = new LinkedList<>();
+        for (int i = index - 1; i >= 0; i--) {
+            if (elementList.get(i) instanceof Comment comment)
+                list.addFirst(comment);
+            else
+                break;
+        }
+        return list;
     }
 
     /**
@@ -1375,8 +1411,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     @Contract(pure = true)
     @Nullable
     public Section getSection(@NotNull final String section) throws NullPointerException {
-        Objects.requireNonNull(section, "section is null");
-        final int index = getSectionIndex(section);
+        final int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
         if (index != -1)
             return (Section) elementList.get(index);
         else
