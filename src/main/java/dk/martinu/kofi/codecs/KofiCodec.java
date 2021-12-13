@@ -126,7 +126,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             return new Whitespace();
         // line is a comment
         if (line.charAt(0) == ';') {
-            return new Comment(line);
+            return new Comment(line.substring(1));
         }
         // line is a section
         else if (line.charAt(0) == '[') {
