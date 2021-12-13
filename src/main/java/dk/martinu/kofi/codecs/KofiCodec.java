@@ -32,10 +32,10 @@ import dk.martinu.kofi.*;
 import dk.martinu.kofi.properties.*;
 import dk.martinu.kofi.spi.*;
 
-import static dk.martinu.kofi.KofiUtil.*;
+import static dk.martinu.kofi.KofiUtil.isDigit;
+import static dk.martinu.kofi.KofiUtil.isHexDigit;
 
-public class KofiCodec
-        implements DocumentFileReader, DocumentFileWriter, DocumentStringReader, DocumentStringWriter {
+public class KofiCodec implements DocumentFileReader, DocumentFileWriter, DocumentStringReader, DocumentStringWriter {
 
     @Contract(value = "-> new", pure = true)
     @NotNull
@@ -116,7 +116,7 @@ public class KofiCodec
         return writer.toString();
     }
 
-    @Contract(pure = true)
+    @Contract(value = "_ -> new", pure = true)
     @NotNull
     protected Element parseLine(@NotNull String line) throws ParseException {
         // ignore leading/trailing ws
@@ -129,8 +129,11 @@ public class KofiCodec
             return new Comment(line);
         }
         // line is a section
-        else if (line.charAt(0) == '[' && line.charAt(line.length() - 1) == ']') {
-            return new Section(line.substring(1, line.length() - 1));
+        else if (line.charAt(0) == '[') {
+            if (line.charAt(line.length() - 1) == ']')
+                return new Section(line.substring(1, line.length() - 1));
+            else
+                throw new ParseException("section must be enclosed in [ brackets ]");
         }
         // attempt to parse line as a property
         else {
@@ -191,15 +194,23 @@ public class KofiCodec
         // max length of value to iterate
         final int l = length != -1 ? length : chars.length;
         // lambda expression used to get the length of a parsable
-        final IntUnaryOperator from = len -> {
-            while (len < l && isWhitespace(chars[len]))
-                len++;
-            return len;
-        };
+        final IntUnaryOperator from = json ?
+                len -> {
+                    // count whitespace and add to len
+                    while (len < l && Json.isWhitespace(chars[len]))
+                        len++;
+                    return len;
+                } :
+                len -> {
+                    // count whitespace and add to len
+                    while (len < l && chars[len] < 33)
+                        len++;
+                    return len;
+                };
         for (int start = offset; start < l; start++) {
-            // peek first character to determine type of parsable object
+            // peek first character to determine type of parsable object, whitespace is ignored
             c = chars[start];
-            if (!isWhitespace(c)) {
+            if (c > 32) {
                 // null
                 if (c == 'n' || c == 'N') {
                     final int remainder = l - start;
@@ -300,8 +311,8 @@ public class KofiCodec
                     int end = start;
                     for (; end < l; end++) {
                         c = chars[end];
-                        // ws or JSON separator - not part of number
-                        if (isWhitespace(c) || (c == ',' && json)) {
+                        // ws or separator - not part of number
+                        if (c < 33 && (!json || Json.isWhitespace(c)) || c == ',') {
                             break;
                         }
                         // characters not allowed after type specifier

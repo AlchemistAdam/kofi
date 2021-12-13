@@ -19,8 +19,6 @@ package dk.martinu.kofi;
 
 import org.jetbrains.annotations.*;
 
-import static dk.martinu.kofi.KofiUtil.isHexDigit;
-
 /**
  * <p>Abstract implementation of a JSON value, which can be represented as a
  * string with {@link #toJson()}. The string representation must conform to the
@@ -72,6 +70,14 @@ public abstract class Json {
             "\\u009A", "\\u009B", "\\u009C",
             "\\u009D", "\\u009E", "\\u009F"
     };
+
+    // TODO javadoc
+    public static boolean isWhitespace(final char c) {
+        if (c > ' ')
+            return false;
+        else
+            return c == ' ' || c == '\n' || c == '\r' || c == '\t';
+    }
 
     /**
      * <p>Returns a string representation of this object as JSON text that

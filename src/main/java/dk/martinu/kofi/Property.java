@@ -155,7 +155,7 @@ public abstract class Property<V> extends Element {
 
     /**
      * Returns a {@code String} representation of this property's value. The
-     * returned string must be valid for file output in INI-file format. E.g.
+     * returned string must be valid for file output in KOFI-file format. E.g.
      * properties cannot span multiple lines, so the returned string must not
      * contain any line breaks.
      */
