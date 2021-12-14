@@ -966,7 +966,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         @NotNull
         @Override
         public String parse() {
-            return KofiUtil.unescape(chars, start, end);
+            return KofiUtil.unescapeString(chars, start, end);
         }
     }
 }

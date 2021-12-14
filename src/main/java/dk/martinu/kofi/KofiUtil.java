@@ -20,6 +20,8 @@ package dk.martinu.kofi;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 /**
  * Contains static utility methods used the KOFI API.
  *
@@ -82,10 +84,18 @@ public class KofiUtil {
             return c >= 'a' && c <= 'f';
     }
 
-    // TODO needs testing
-    // TODO javadoc
+    /**
+     * Returns a new string with the specified {@code char[]} {@code chars} as
+     * its source. This method assumes that {@code chars} represents a valid
+     * KOFI string value. The behaviour of passing in an invalid representation
+     * of a KOFI string value is undefined.
+     *
+     * @throws NullPointerException if {@code chars} is {@code null}.
+     */
     @Contract(value = "null, _, _ -> fail; _, _, _ -> new", pure = true)
-    public static String unescape(final char[] chars, final int start, final int end) {
+    public static String unescapeString(final char[] chars, final int start, final int end) throws
+            NullPointerException {
+        Objects.requireNonNull(chars, "chars array is null");
         final StringBuilder sb = new StringBuilder(end - start - 2);
         for (int i = start + 1; i < end - 1; ) {
             if (chars[i] == '\\') {

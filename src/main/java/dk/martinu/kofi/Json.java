@@ -22,10 +22,10 @@ import org.jetbrains.annotations.*;
 /**
  * <p>Abstract implementation of a JSON value, which can be represented as a
  * string with {@link #toJson()}. The string representation must conform to the
- * IETF RFC 8259 specification.
+ * IETF RFC 8259 specification.</p>
  *
  * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259"> RFC 8259</a>
- * for more details.
+ * for more details.</p>
  *
  * @author Adam Martinu
  * @since 1.0
@@ -35,10 +35,10 @@ public abstract class Json {
     /**
      * <p>Array of precomputed strings for escaping characters in the range
      * [0x00;0x1F] as a six-character sequence, except for those characters
-     * which are allowed to be escaped as a two-character sequence.
+     * which are allowed to be escaped as a two-character sequence.</p>
      *
      * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-7">
-     * RFC 8259, section 7</a> for more details.
+     * RFC 8259, section 7</a> for more details.</p>
      */
     protected static final String[] ESCAPED_CHARS_00_1F = {
             "\\u0000", "\\u0001", "\\u0002",
@@ -71,7 +71,14 @@ public abstract class Json {
             "\\u009D", "\\u009E", "\\u009F"
     };
 
-    // TODO javadoc
+    /**
+     * <p>Returns {@code true} if the specified character {@code c} is
+     * whitespace as described in the IETF RFC 8259 specification, otherwise
+     * {@code false} is returned.</p>
+     *
+     * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-2">
+     * RFC 8259, section 2</a> for more details.</p>
+     */
     public static boolean isWhitespace(final char c) {
         if (c > ' ')
             return false;
@@ -81,10 +88,10 @@ public abstract class Json {
 
     /**
      * <p>Returns a string representation of this object as JSON text that
-     * conforms with the IETF RFC 8259 specification.
+     * conforms with the IETF RFC 8259 specification.</p>
      *
      * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-2">
-     * RFC 8259, section 2</a> for more details.
+     * RFC 8259, section 2</a> for more details.</p>
      */
     @NotNull
     public abstract String toJson();
@@ -193,28 +200,28 @@ public abstract class Json {
      * according to the IETF RFC 8259 specification, to a plain Java string and
      * returns it. Surrounding quotation marks are removed, and all
      * two-character and six-character escape sequences are unescaped to their
-     * single character equivalent.
+     * single character equivalent.</p>
      *
      * <p><b>NOTE:</b> this method assumes that {@code s} is a JSON string and
      * that it is valid. The behaviour of passing in a string that is not a
-     * JSON string or an invalid JSON string is undefined.
+     * JSON string or an invalid JSON string is undefined.</p>
      *
      * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-7">
-     * RFC 8259, section 7</a> for more details.
+     * RFC 8259, section 7</a> for more details.</p>
      */
     protected String getJavaString(@NotNull final String s) {
         final char[] chars = s.toCharArray();
-        return KofiUtil.unescape(chars, 0, chars.length);
+        return KofiUtil.unescapeString(chars, 0, chars.length);
     }
 
     /**
      * <p>Surrounds the specified string {@code s} with quotation marks and
      * escapes any characters necessary, such that it conforms to the IETF RFC
      * 8259 specification, with the addition that control characters in the
-     * range [0x7F;0x9F] are also escaped.
+     * range [0x7F;0x9F] are also escaped.</p>
      *
      * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-7">
-     * RFC 8259, section 7</a> for more details.
+     * RFC 8259, section 7</a> for more details.</p>
      */
     @NotNull
     protected String getJsonString(@NotNull final String s) {
@@ -238,7 +245,7 @@ public abstract class Json {
      * <p>Returns {@code true} if the type of the specified {@code Object}
      * {@code o} is defined in the IETF RFC 8259 specification. Otherwise
      * {@code false} is returned. The following is a
-     * list of all types for which this method returns {@code true}:
+     * list of all types for which this method returns {@code true}:</p>
      * <ul>
      *     <li>{@code null}, not specifically a type but {@code null} is a
      *     defined value.</li>
@@ -252,7 +259,7 @@ public abstract class Json {
      * </ul>
      *
      * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-3">
-     * RFC 8259, section 3</a> for more details.
+     * RFC 8259, section 3</a> for more details.</p>
      */
     @Contract(value = "null -> true", pure = true)
     protected boolean isTypeDefined(@Nullable final Object o) {
@@ -276,14 +283,14 @@ public abstract class Json {
      * <p>Creates a JSON string representation of the specified object
      * {@code value} and appends it to the specified {@code StringBuilder}
      * {@code sb}. This method is intended for implementations that represent
-     * an array or object which can have member values.
+     * an array or object which can have member values.</p>
      *
      * <p><b>NOTE:</b> The IETF RFC 8259 specification does not permit
      * irrational numbers such as {@code Infinity} or {@code NaN}; these values
-     * are represented as {@code 0.0}.
+     * are represented as {@code 0.0}.</p>
      *
      * <p>See <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-6">
-     * RFC 8259, section 6</a> for more details.
+     * RFC 8259, section 6</a> for more details.</p>
      *
      * @throws IllegalArgumentException if {@code value} is not
      *                                  {@link #isTypeDefined(Object) defined}.
