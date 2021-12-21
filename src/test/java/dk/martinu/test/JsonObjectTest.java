@@ -121,10 +121,10 @@ public class JsonObjectTest {
         final JsonObject json = JsonObject.reflect(object);
 
         assertEquals(2, json.size());
-        assertEquals(1, json.getEntry(0).getValue());
-        assertEquals(2, json.getEntry(1).getValue());
-        assertEquals(1, json.get("n0"));
-        assertEquals(2, json.get("n1"));
+        assertEquals(1L, json.getEntry(0).getValue());
+        assertEquals(2L, json.getEntry(1).getValue());
+        assertEquals(1L, json.get("n0"));
+        assertEquals(2L, json.get("n1"));
     }
 
     static class NumberObject {
