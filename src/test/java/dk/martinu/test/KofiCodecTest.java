@@ -121,7 +121,7 @@ public class KofiCodecTest {
 
         @BeforeAll
         void readDocument() {
-            final DocumentFileReader reader = DocumentIO.getReader(path);
+            final DocumentFileReader reader = DocumentIO.getFileReader(path);
             assertTrue(reader instanceof KofiCodec);
             assertDoesNotThrow(() -> document = reader.readFile(path));
 
@@ -254,7 +254,7 @@ public class KofiCodecTest {
 
         @AfterAll
         void writeDocument() {
-            final DocumentFileWriter writer = DocumentIO.getWriter(path, document);
+            final DocumentFileWriter writer = DocumentIO.getFileWriter(path, document);
             assertTrue(writer instanceof KofiCodec);
             assertDoesNotThrow(() -> writer.writeFile(path, document));
 
