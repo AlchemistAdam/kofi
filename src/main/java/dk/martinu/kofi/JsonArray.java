@@ -69,6 +69,21 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
     }
 
     /**
+     * Performs the specified action for each element in the array until all
+     * elements have been processed or the action throws an exception.
+     * Exceptions thrown by the action are relayed to the caller.
+     *
+     * @param action The action to perform on each element
+     * @throws NullPointerException if {@code action} is {@code null}
+     */
+    @Override
+    public void forEach(@NotNull final Consumer<? super Object> action) {
+        Objects.requireNonNull(action, "action is null");
+        for (Object o : array)
+            action.accept(o);
+    }
+
+    /**
      * The objects contained in this array. Each object is guaranteed to be
      * defined.
      * 
