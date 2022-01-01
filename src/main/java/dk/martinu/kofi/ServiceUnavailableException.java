@@ -23,11 +23,20 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Serial;
 import java.io.Serializable;
 
+/**
+ * Signals that no service providers were available.
+ *
+ * @author Adam Martinu
+ * @since 1.0
+ */
 public class ServiceUnavailableException extends Exception implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 0L;
 
+    /**
+     * Constructs a new exception with the specified message.
+     */
     @Contract(pure = true)
     public ServiceUnavailableException(@NotNull final String msg) {
         super(msg);

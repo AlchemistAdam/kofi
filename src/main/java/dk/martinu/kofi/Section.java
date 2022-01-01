@@ -25,17 +25,13 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * The {@code Section} class defines an {@link Element element} used to
- * categorize {@link Property properties} in a {@link Document document}.
- * Sections only have a {@code String} name and do not store any information
- * about properties they enclose in a document. Section names are not
- * case-sensitive when compared. The {@code String} representation of a section
- * is equal to:
+ * An {@link Element element} used to categorize other elements. Sections only
+ * store a string name. Section names are not case-sensitive when compared. The
+ * string representation of a section, returned by {@link #getString()}, is
+ * equal to:
  * <pre>
  *     "[<i>name</i>]"
  * </pre>
- * where <i>name</i> is equal to the string returned by
- * {@link #getNameString()}.
  *
  * @author Adam Martinu
  * @since 1.0
@@ -51,24 +47,22 @@ public class Section extends Element implements Cloneable, Serializable {
     @NotNull
     public final String name;
     /**
-     * Cached hash code. Set on first call to {@link #hashCode()}.
+     * Cached hash code.
      */
     protected transient int hash = 0;
     /**
-     * {@code true} if the computed hash code of this element is {@code 0}. Set
-     * on first call to {@link #hashCode()}.
+     * {@code true} if the computed hash code of this element is {@code 0}.
      */
     protected transient boolean hashIsZero = false;
 
     /**
-     * Constructs a new section with the specified {@code name}. The name of a
-     * section is not case-sensitive when compared to other sections.
+     * Constructs a new section with the specified name.
      *
-     * @param name the section name.
-     * @throws NullPointerException if {@code name} is {@code null}.
+     * @param name the section name
+     * @throws NullPointerException if {@code name} is {@code null}
      */
     @Contract(pure = true)
-    public Section(@NotNull final String name) throws NullPointerException {
+    public Section(@NotNull final String name) {
         this.name = Objects.requireNonNull(name, "name is null");
     }
 
@@ -99,23 +93,17 @@ public class Section extends Element implements Cloneable, Serializable {
     }
 
     /**
-     * Returns an escaped version of this section's name. The following
-     * characters are escaped:
-     * <ul>
-     *     <li>{@code \n} new line, U+000A</li>
-     *     <li>{@code \r} carriage return, U+000D</li>
-     *     <li>{@code \\} reverse solidus, U+005C</li>
-     * </ul>
+     * Returns an escaped version of this section's name.
      *
-     * @see KofiUtil#escape(String, char...)
+     * @see KofiUtil#escape(String)
      */
     @Contract(pure = true)
     public String getNameString() {
-        return KofiUtil.escape(name, '\n', '\r', '\\');
+        return KofiUtil.escape(name);
     }
 
     /**
-     * Returns a {@code String} representation of this section, equal to:
+     * Returns a string representation of this section, equal to:
      * <pre>
      *     "[<i>name</i>]"
      * </pre>
@@ -156,9 +144,9 @@ public class Section extends Element implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a {@code String} representation of this section, equal to:
+     * Returns a string representation of this section, equal to:
      * <pre>
-     *     "<i>class-name</i>@<i>hashCode</i>{name=<i>name</i>}"
+     *     "<i>className</i>@<i>hashCode</i>{name=<i>name</i>}"
      * </pre>
      */
     @Contract(value = "-> new", pure = true)

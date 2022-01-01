@@ -445,12 +445,11 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         @Nullable
         public final Object value;
         /**
-         * Cached name hash code. Set on first call to {@link #hashCode()}.
+         * Cached name hash code.
          */
         protected transient int hash = 0;
         /**
-         * {@code true} if the computed name hash code is {@code 0}. Set on
-         * first call to {@link #hashCode()}.
+         * {@code true} if the computed name hash code is {@code 0}.
          */
         protected transient boolean hashIsZero = false;
 
