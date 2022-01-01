@@ -19,22 +19,18 @@ package dk.martinu.kofi;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * The {@code Comment} class defines an {@link Element element} used to store a
- * text comment in a {@link Document document}. A Comment does not store any
- * information about what it describes, and its primary purpose is to retain
- * human-made comments when reading a {@code Document} from a file. The
- * {@code String} representation of a comment is equal to:
+ * An {@link Element element} used to store a string comment. The string
+ * representation of a comment, returned by {@link #getString()}, is equal to:
  * <pre>
  *     ";<i>text</i>"
  * </pre>
- * where <i>text</i> is equal to the string returned by
- * {@link #getTextString()}.
  *
  * @author Adam Martinu
  * @since 1.0
@@ -60,13 +56,13 @@ public class Comment extends Element implements Cloneable, Serializable {
     protected transient boolean hashIsZero = false;
 
     /**
-     * Constructs a new comment with the specified {@code text}.
+     * Constructs a new comment with the specified text.
      *
-     * @param text the comment text.
-     * @throws NullPointerException if {@code text} is {@code null}.
+     * @param text the comment text
+     * @throws NullPointerException if {@code text} is {@code null}
      */
     @Contract(pure = true)
-    public Comment(@NotNull final String text) throws NullPointerException {
+    public Comment(@NotNull final String text) {
         this.text = Objects.requireNonNull(text, "text is null");
     }
 
@@ -82,11 +78,12 @@ public class Comment extends Element implements Cloneable, Serializable {
 
     /**
      * Returns {@code true} if this comment is equal to {@code obj}
-     * ({@code this == obj}), or {@code obj} is also a comment and their text
-     * is equal. Otherwise {@code false} is returned.
+     * ({@code this == obj}), or {@code obj} is also a comment and its text is
+     * equal to this comment's text. Otherwise {@code false} is returned.
      */
+    @Contract(value = "null -> false", pure = true)
     @Override
-    public boolean equals(final Object obj) {
+    public boolean equals(@Nullable final Object obj) {
         if (this == obj)
             return true;
         else if (obj instanceof Comment comment)
@@ -96,14 +93,13 @@ public class Comment extends Element implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a {@code String} representation of this comment, equal to:
+     * Returns a string representation of this comment, equal to:
      * <pre>
      *     ";<i>text</i>"
      * </pre>
-     * where <i>text</i> is equal to the string returned by
-     * {@link #getTextString()}.
+     * where <i>text</i> is the string returned by {@link #getTextString()}.
      */
-    @Contract(value = "-> new", pure = true)
+    @Contract(pure = true)
     @NotNull
     @Override
     public String getString() {
@@ -111,19 +107,13 @@ public class Comment extends Element implements Cloneable, Serializable {
     }
 
     /**
-     * Returns an escaped version of this comment's text. The following
-     * characters are escaped:
-     * <ul>
-     *     <li>{@code \n} new line, U+000A</li>
-     *     <li>{@code \r} carriage return, U+000D</li>
-     *     <li>{@code \\} reverse solidus, U+005C</li>
-     * </ul>
+     * Returns an escaped version of this comment's text.
      *
-     * @see KofiUtil#escape(String, char...)
+     * @see KofiUtil#escape(String)
      */
     @NotNull
     public String getTextString() {
-        return KofiUtil.escape(text, '\n', '\r', '\\');
+        return KofiUtil.escape(text);
     }
 
     /**
@@ -144,12 +134,12 @@ public class Comment extends Element implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a {@code String} representation of this comment, equal to:
+     * Returns a string representation of this comment, equal to:
      * <pre>
-     *     "<i>class-name</i>@<i>hashCode</i>{text=<i>text</i>}"
+     *     "<i>className</i>@<i>hashCode</i>{text=<i>text</i>}"
      * </pre>
      */
-    @Contract(value = "-> new", pure = true)
+    @Contract(pure = true)
     @NotNull
     @Override
     public String toString() {

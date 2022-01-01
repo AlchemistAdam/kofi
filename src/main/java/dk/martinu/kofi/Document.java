@@ -919,8 +919,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     /**
      * Returns the element at the specified index in this document.
      *
-     * @throws IndexOutOfBoundsException if {@code index} is out of range
-     *                                   ({@code index < 0 || index >= size()})
+     * @throws IndexOutOfBoundsException if {@code index} is out of bounds
+     *                                   {@code (index < 0 || index >= size())}
      */
     @Contract(pure = true)
     @NotNull
