@@ -27,26 +27,22 @@ import java.util.stream.Stream;
 
 import dk.martinu.kofi.properties.*;
 
+// TODO format
+// TODO add methods for NullProperties
 /**
- * <p>The {@code Document} class is the core of the KOFI API. Documents are
- * containers for {@link Element elements}. Documents contain mainly two types
- * of elements; {@link Section sections} and {@link Property properties}, and
- * provides methods to add, get and remove them. Elements are stored in an
- * array, and the index of each element corresponds to its position in an
- * INI-file document; line 1 would be the element at index {@code 0}, line 2 at
- * index {@code 1}, and so on.</p>
- *
- * <p><b>Note that this implementation is not synchronized.</b> If multiple
- * threads access a {@code Document} instance concurrently, and at least one of
- * the threads modifies the document structurally, it <i>must</i> be
- * synchronized externally. (A structural modification is any operation that
- * adds or deletes one or more elements)</p>
- *
- * <p id="global">All documents inherently contain the <i>global section</i>,
- * which is a pseudo-section that does not exist within the document itself,
- * but can be thought of as a global scope to access elements at the very
- * beginning of a document (which are not enclosed in a section). The name of
- * the <i>global section</i> is equal to {@code null}.</p>
+ * A collection of {@link Element elements} with {@code add}, {@code get},
+ * {@code contains} and {@code remove} methods provided for {@link Section} and
+ * {@link Property} elements.
+ * <p id="global">
+ * Documents inherently contain the <i>global section</i>; a pseudo-section
+ * that does not exist within the document, but can be thought of as a global
+ * scope to access elements at the very beginning of a document (which are not
+ * enclosed in a section). In contexts where a section name is used, using
+ * {@code null} refers to the global section.
+ * <p>
+ * <b>This implementation is not synchronized.</b> Access to a document should
+ * be synchronized externally if multiple threads use it concurrently and at
+ * least one of them modifies it.
  *
  * @author Adam Martinu
  * @since 1.0
@@ -58,18 +54,16 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     private static final long serialVersionUID = 0L;
 
     /**
-     * A list of all {@link Element elements} in this document. The order of
-     * the elements defines how they are logically related to each other. For
-     * example, a {@link Property property}  at index {@code i} belongs to the
-     * {@link Section section}  at the highest index {@code k} for which
-     * {@code k &lt i} is {@code true}.
+     * A list of all elements in this document. The order of the elements in
+     * this list defines how they are logically related to each other. For 
+     * example, a property at index {@code i} belongs to the section at the 
+     * highest index {@code k} for which {@code k &lt i} is {@code true}.
      */
     @NotNull
-    protected final ArrayList<Element> elementList;
+    protected final ArrayList<Element> list;
 
     /**
-     * Creates a new empty document with an initial capacity of
-     * {@code 32}.
+     * Creates a document with an initial capacity of {@code 32}.
      */
     @Contract(pure = true)
     public Document() {
@@ -77,1505 +71,1415 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Creates a new empty document with the specified initial
-     * {@code capacity}.
+     * Creates a document with the specified initial {@code capacity}.
      *
-     * @throws IllegalArgumentException if {@code capacity} is negative.
+     * @throws IllegalArgumentException if {@code capacity} is negative
      */
     @Contract(pure = true)
-    public Document(final int capacity) throws IllegalArgumentException {
-        elementList = new ArrayList<>(capacity);
+    public Document(@Range(from = 0, to = Integer.MAX_VALUE) final int capacity) {
+        list = new ArrayList<>(capacity);
     }
 
     /**
-     * Creates a new document with the specified {@link Element elements}.
+     * Creates a new document with the specified elements.
      *
-     * @param elements A collection of elements to add to this document.
+     * @param elements A collection of elements to add to this document
      * @throws NullPointerException if {@code elements} is {@code null} or
-     *                              contains {@code null} elements.
+     *                              contains {@code null} elements
      */
     @Contract(pure = true)
-    public Document(@NotNull final Collection<Element> elements) throws NullPointerException {
-        this(Objects.requireNonNull(elements, "elements is null").size());
-        if (elements.contains(null))
-            throw new NullPointerException("collection contains null elements");
-        elementList.addAll(elements);
+    public Document(@NotNull final Collection<Element> elements) {
+        Objects.requireNonNull(elements, "elements is null");
+        final Element[] a = elements.toArray(new Element[0]);
+        list = new ArrayList<>(a.length);
+        for (Element element : a)
+            list.add(Objects.requireNonNull(element, "element is null"));
     }
 
     /**
-     * Delegate method to add an {@link ArrayProperty}.
+     * Adds an {@link ArrayProperty} to the global section.
      *
-     * @param key   the property key.
+     * @param key   the property key
      * @param value the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(Property)
      */
-    public void addArray(@NotNull final String key, @Nullable final JsonArray value) throws NullPointerException {
+    public void addArray(@NotNull final String key, @Nullable final JsonArray value) {
         addArray(null, key, value);
     }
 
     /**
-     * Delegate method to add an {@link ArrayProperty} to the specified
-     * {@code section}.
+     * Adds an {@link ArrayProperty} to the specified section.
      *
-     * @param section name of the section to add the property to, or
-     *                {@code null}.
-     * @param key     the property key.
+     * @param section name of the section to add the property to, can be
+     *                {@code null}
+     * @param key     the property key
      * @param value   the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(String, Property)
      */
-    public void addArray(@Nullable final String section, @NotNull final String key, @Nullable final JsonArray value)
-            throws NullPointerException {
+    public void addArray(@Nullable final String section, @NotNull final String key, @Nullable final JsonArray value) {
         Objects.requireNonNull(key, "key is null");
         addProperty(section, new ArrayProperty(key, value));
     }
 
     /**
-     * Delegate method to add a {@link BooleanProperty}.
+     * Adds a {@link BooleanProperty} to the global section.
      *
-     * @param key   the property key.
+     * @param key   the property key
      * @param value the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(Property)
      */
-    public void addBoolean(@NotNull final String key, final boolean value) throws NullPointerException {
+    public void addBoolean(@NotNull final String key, final boolean value) {
         addBoolean(null, key, value);
     }
 
     /**
-     * Delegate method to add a {@link BooleanProperty} to the specified
-     * {@code section}.
+     * Adds a {@link BooleanProperty} to the specified section.
      *
-     * @param section name of the section to add the property to, or
-     *                {@code null}.
-     * @param key     the property key.
+     * @param section name of the section to add the property to, can be
+     *                {@code null}
+     * @param key     the property key
      * @param value   the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(String, Property)
      */
-    public void addBoolean(@Nullable final String section, @NotNull final String key, final boolean value) throws
-            NullPointerException {
+    public void addBoolean(@Nullable final String section, @NotNull final String key, final boolean value) {
         Objects.requireNonNull(key, "key is null");
         addProperty(section, new BooleanProperty(key, value));
     }
 
     /**
-     * Delegate method to add a {@link CharProperty}.
+     * Adds a {@link CharProperty} to the global section.
      *
-     * @param key   the property key.
+     * @param key   the property key
      * @param value the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(Property)
      */
-    public void addChar(@NotNull final String key, final char value) throws NullPointerException {
+    public void addChar(@NotNull final String key, final char value) {
         addChar(null, key, value);
     }
 
     /**
-     * Delegate method to add a {@link CharProperty} to the specified
-     * {@code section}.
+     * Adds a {@link CharProperty} to the specified section.
      *
-     * @param section name of the section to add the property to, or
-     *                {@code null}.
-     * @param key     the property key.
+     * @param section name of the section to add the property to, can be
+     *                {@code null}
+     * @param key     the property key
      * @param value   the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(String, Property)
      */
-    public void addChar(@Nullable final String section, @NotNull final String key, final char value) throws
-            NullPointerException {
+    public void addChar(@Nullable final String section, @NotNull final String key, final char value) {
         Objects.requireNonNull(key, "key is null");
         addProperty(section, new CharProperty(key, value));
     }
 
     /**
-     * Delegate method to add a {@link DoubleProperty}.
+     * Adds a {@link DoubleProperty} to the global section.
      *
-     * @param key   the property key.
+     * @param key   the property key
      * @param value the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(Property)
      */
-    public void addDouble(@NotNull final String key, final double value) throws NullPointerException {
+    public void addDouble(@NotNull final String key, final double value) {
         addDouble(null, key, value);
     }
 
     /**
-     * Delegate method to add a {@link DoubleProperty} to the specified
-     * {@code section}.
+     * Adds a {@link DoubleProperty} to the specified section.
      *
-     * @param section name of the section to add the property to, or
-     *                {@code null}.
-     * @param key     the property key.
+     * @param section name of the section to add the property to, can be
+     *                {@code null}
+     * @param key     the property key
      * @param value   the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(String, Property)
      */
-    public void addDouble(@Nullable final String section, @NotNull final String key, final double value) throws
-            NullPointerException {
+    public void addDouble(@Nullable final String section, @NotNull final String key, final double value) {
         Objects.requireNonNull(key, "key is null");
         addProperty(section, new DoubleProperty(key, value));
     }
 
     /**
-     * Adds the specified {@link Element element} to the end of this document.
-     * if {@code element} is {@code null} this method does nothing.
+     * Appends {@code element} to the end of this document. This method does
+     * nothing if {@code element} is {@code null}.
      *
      * @param element the element to add.
      */
     public void addElement(@Nullable final Element element) {
-        addElement(elementList.size(), element);
+        addElement(list.size(), element);
     }
 
     /**
-     * Inserts the {@code element} at the specified {@code index} in this
-     * document. Shifts any {@link Element element} currently at that position
-     * and any subsequent elements to the right (adds one to their indices). if
-     * {@code element} is {@code null} this method does nothing.
+     * Inserts {@code element} at the specified {@code index} in this document.
+     * Shifts the element currently at that position (if any) and any
+     * subsequent elements to the right (adds one to their indices). This 
+     * method does nothing if {@code element} is {@code null}.
      *
-     * @param index   index at which the {@code element} is to be inserted.
-     * @param element the element to insert.
+     * @param index   index at which {@code element} is to be inserted
+     * @param element the element to insert
      * @throws IndexOutOfBoundsException if {@code index} is out of bounds
-     *                                   {@code (index &lt 0 || index &gt size())}.
+     *                                   {@code (index < 0 || index > size())}
      */
-    public void addElement(@Range(from = 0, to = Integer.MAX_VALUE) final int index, @Nullable final Element element)
-            throws IndexOutOfBoundsException {
+    public void addElement(@Range(from = 0, to = Integer.MAX_VALUE) final int index, @Nullable final Element element) {
         if (element == null)
             return;
-        elementList.add(index, element);
+        list.add(index, element);
     }
 
     /**
-     * Delegate method to add a {@link FloatProperty}.
+     * Adds a {@link FloatProperty} to the global section.
      *
-     * @param key   the property key.
+     * @param key   the property key
      * @param value the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(Property)
      */
-    public void addFloat(@NotNull final String key, final float value) throws NullPointerException {
+    public void addFloat(@NotNull final String key, final float value) {
         addFloat(null, key, value);
     }
 
     /**
-     * Delegate method to add a {@link FloatProperty} to the specified
-     * {@code section}.
+     * Adds a {@link FloatProperty} to the specified section.
      *
-     * @param section name of the section to add the property to, or
-     *                {@code null}.
-     * @param key     the property key.
+     * @param section name of the section to add the property to, can be
+     *                {@code null}
+     * @param key     the property key
      * @param value   the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(String, Property)
      */
-    public void addFloat(@Nullable final String section, @NotNull final String key, final float value) throws
-            NullPointerException {
+    public void addFloat(@Nullable final String section, @NotNull final String key, final float value) {
         Objects.requireNonNull(key, "key is null");
         addProperty(section, new FloatProperty(key, value));
     }
 
     /**
-     * Delegate method to add an {@link IntProperty}.
+     * Adds an {@link IntProperty} to the global section.
      *
-     * @param key   the property key.
+     * @param key   the property key
      * @param value the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(Property)
      */
-    public void addInt(@NotNull final String key, final int value) throws NullPointerException {
+    public void addInt(@NotNull final String key, final int value) {
         addInt(null, key, value);
     }
 
     /**
-     * Delegate method to add an {@link IntProperty} to the specified
-     * {@code section}.
+     * Adds an {@link IntProperty} to the specified section.
      *
-     * @param section name of the section to add the property to, or
-     *                {@code null}.
-     * @param key     the property key.
+     * @param section name of the section to add the property to, can be
+     *                {@code null}
+     * @param key     the property key
      * @param value   the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(String, Property)
      */
-    public void addInt(@Nullable final String section, @NotNull final String key, final int value) throws
-            NullPointerException {
+    public void addInt(@Nullable final String section, @NotNull final String key, final int value) {
         Objects.requireNonNull(key, "key is null");
         addProperty(section, new IntProperty(key, value));
     }
 
     /**
-     * Delegate method to add a {@link LongProperty}.
+     * Adds a {@link LongProperty} to the global section.
      *
-     * @param key   the property key.
+     * @param key   the property key
      * @param value the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(Property)
      */
-    public void addLong(@NotNull final String key, final long value) throws NullPointerException {
+    public void addLong(@NotNull final String key, final long value) {
         addLong(null, key, value);
     }
 
     /**
-     * Delegate method to add a {@link LongProperty} to the specified
-     * {@code section}.
+     * Adds a {@link LongProperty} to the specified section.
      *
-     * @param section name of the section to add the property to, or
-     *                {@code null}.
-     * @param key     the property key.
+     * @param section name of the section to add the property to, can be
+     *                {@code null}
+     * @param key     the property key
      * @param value   the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(String, Property)
      */
-    public void addLong(@Nullable final String section, @NotNull final String key, final long value) throws
-            NullPointerException {
+    public void addLong(@Nullable final String section, @NotNull final String key, final long value) {
         Objects.requireNonNull(key, "key is null");
         addProperty(section, new LongProperty(key, value));
     }
 
     /**
-     * Delegate method to add a {@link NullProperty}.
+     * Adds a {@link NullProperty} to the global section.
      *
-     * @param key the property key.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key the property key
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(Property)
      */
-    public void addNull(@NotNull final String key) throws NullPointerException {
+    public void addNull(@NotNull final String key) {
         addNull(null, key);
     }
 
     /**
-     * Delegate method to add an {@link NullProperty} to the specified
-     * {@code section}.
+     * Adds an {@link NullProperty} to the specified section.
      *
-     * @param section name of the section to add the property to, or
-     *                {@code null}.
-     * @param key     the property key.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param section name of the section to add the property to, can be
+     *                {@code null}
+     * @param key     the property key
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(String, Property)
      */
-    public void addNull(@Nullable final String section, @NotNull final String key) throws NullPointerException {
+    public void addNull(@Nullable final String section, @NotNull final String key) {
         Objects.requireNonNull(key, "key is null");
         addProperty(section, new NullProperty(key));
     }
 
     /**
-     * Delegate method to add an {@link ObjectProperty}.
+     * Adds an {@link ObjectProperty} to the global section.
      *
-     * @param key   the property key.
+     * @param key   the property key
      * @param value the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(Property)
      */
-    public void addObject(@NotNull final String key, @Nullable final JsonObject value) throws NullPointerException {
+    public void addObject(@NotNull final String key, @Nullable final JsonObject value) {
         addObject(null, key, value);
     }
 
     /**
-     * Delegate method to add an {@link ObjectProperty} to the specified
-     * {@code section}.
+     * Adds an {@link ObjectProperty} to the specified section.
      *
-     * @param section name of the section to add the property to, or
-     *                {@code null}.
-     * @param key     the property key.
+     * @param section name of the section to add the property to, can be
+     *                {@code null}
+     * @param key     the property key
      * @param value   the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(String, Property)
      */
-    public void addObject(@Nullable final String section, @NotNull final String key, @Nullable final JsonObject value)
-            throws NullPointerException {
+    public void addObject(@Nullable final String section, @NotNull final String key, @Nullable final JsonObject value) {
         Objects.requireNonNull(key, "key is null");
         addProperty(section, new ObjectProperty(key, value));
     }
 
     /**
-     * Adds all {@code properties} to the
-     * <a href="#global"><i>global section</i></a>.
+     * Adds each {@link Property} in {@code properties} to the global section.
      *
-     * @param properties the properties to add.
+     * @param properties the properties to add
      * @throws NullPointerException if {@code properties} is {@code null} or
-     *                              contains {@code null} properties.
+     *                              contains {@code null} properties
      */
-    public void addProperties(@NotNull final Property<?>... properties) throws NullPointerException {
+    public void addProperties(@NotNull final Property<?>... properties) {
         addProperties(null, properties);
     }
 
     /**
-     * Adds all {@code properties} to the specified {@code section}, or
-     * {@code null} to add them to the
-     * <a href="#global"><i>global section</i></a>.
+     * Adds each {@link Property} in {@code properties} to the specified
+     * section.
      *
-     * @param section    name of the section to add {@code property} to,
-     *                   or {@code null}.
-     * @param properties the properties to add.
+     * @param section    name of the section to add {@code property} to, can be
+     *                   {@code null}
+     * @param properties the properties to add
      * @throws NullPointerException if {@code properties} is {@code null} or
-     *                              contains {@code null} properties.
+     *                              contains {@code null} properties
      */
-    public void addProperties(@Nullable final String section, @NotNull final Property<?>... properties) throws
-            NullPointerException {
+    public void addProperties(@Nullable final String section, @NotNull final Property<?>... properties) {
         Objects.requireNonNull(properties, "properties array is null");
-        for (Property<?> property : properties)
-            addProperty(section, property);
+        final Property<?>[] a = Arrays.copyOf(properties, properties.length);
+        for (Property<?> property : a)
+            addProperty(section, property); // TODO add properties in bulk for better performance
     }
 
     /**
-     * Adds {@code property} to the
-     * <a href="#global"><i>global section</i></a>. If the global section
-     * already contains a {@link Property property} with a matching property
-     * key, then it is replaced and the original property is returned.
-     * Otherwise {@code null} is returned.
+     * Adds {@code property} to the global section. If the global section
+     * already contains a {@link Property} that matches {@code property.key},
+     * then it is replaced and the original property is returned. Otherwise
+     * {@code null} is returned.
      *
      * @param property the property to add.
-     * @return the property that was replaced, or {@code null}.
-     * @throws NullPointerException if {@code property} is {@code null}.
+     * @return the property that was replaced, or {@code null}
+     * @throws NullPointerException if {@code property} is {@code null}
      * @see Property#matches(String)
      */
-    public Property<?> addProperty(@NotNull final Property<?> property) throws NullPointerException {
+    @Nullable
+    public Property<?> addProperty(@NotNull final Property<?> property) {
         return addProperty(null, property);
     }
 
     /**
-     * Adds {@code property} to the specified {@code section}, or {@code null}
-     * to add it to the <a href="#global"><i>global section</i></a>. If the
-     * section already contains a {@link Property property} with a matching
-     * property key, then it is replaced and the original property is returned.
-     * Otherwise {@code null} is returned.
+     * Adds {@code property} to the specified section. If the section already
+     * contains a {@link Property} that matches {@code property.key}, then it
+     * is replaced and the original property is returned. Otherwise
+     * {@code null} is returned.
      *
-     * @param section  name of the section to add {@code property} to, or
-     *                 {@code null}.
+     * @param section  name of the section to add {@code property} to, can be
+     *                 {@code null}
      * @param property the property to add.
-     * @return the property that was replaced, or {@code null}.
-     * @throws NullPointerException if {@code property} is {@code null}.
+     * @return the property that was replaced, or {@code null}
+     * @throws NullPointerException if {@code property} is {@code null}
      * @see Property#matches(String)
      */
     @Nullable
-    public Property<?> addProperty(@Nullable final String section, @NotNull final Property<?> property) throws
-            NullPointerException {
+    public Property<?> addProperty(@Nullable final String section, @NotNull final Property<?> property) {
         Objects.requireNonNull(property, "property is null");
         Element element;
-        for (int i = section != null ? addSection(section) + 1 : 0; i < elementList.size(); i++) {
-            element = elementList.get(i);
+        for (int i = section != null ? addSection(section) + 1 : 0; i < list.size(); i++) {
+            element = list.get(i);
             // end of section, insert property
             if (element instanceof Section) {
-                elementList.add(i, property);
+                list.add(i, property);
                 return null;
             }
             // section already contains property, replace it
             else if (element instanceof Property<?> p && p.matches(property.key)) {
-                elementList.remove(i);
-                elementList.add(i, property);
+                list.remove(i);
+                list.add(i, property);
                 return p;
             }
         }
         // end of document, append property
-        elementList.add(property);
+        list.add(property);
         return null;
     }
 
     /**
-     * Adds a new {@link Section section} with the specified name to this
-     * document if it is not already present and returns its index.
+     * Appends a new {@link Section} with the specified name to this document 
+     * if it is not already present and returns its index (position).
      *
-     * @param section the name of the section to add.
-     * @return the index of the section in this document.
-     * @throws NullPointerException if {@code section} is {@code null}.
+     * @param section the name of the section to add
+     * @return the index of the section in this document
      */
-    public int addSection(@NotNull final String section) throws NullPointerException {
-        int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
+    @Range(from = 0, to = Integer.MAX_VALUE)
+    public int addSection(@NotNull final String section) {
+        int index = getSectionIndex(section);
         if (index == -1)
-            elementList.add(index = elementList.size(), new Section(section));
+            list.add(index = list.size(), new Section(section));
         return index;
     }
 
     /**
-     * Delegate method to add a {@link StringProperty}.
+     * Adds a {@link StringProperty} to the global section.
      *
-     * @param key   the property key.
+     * @param key   the property key
      * @param value the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(Property)
      */
-    public void addString(@NotNull final String key, @Nullable final String value) throws NullPointerException {
+    public void addString(@NotNull final String key, @Nullable final String value) {
         addString(null, key, value);
     }
 
     /**
-     * Delegate method to add a {@link StringProperty} to the specified
-     * {@code section}.
+     * Adds a {@link StringProperty} to the specified section.
      *
-     * @param section name of the section to add the property to, or
-     *                {@code null}.
-     * @param key     the property key.
+     * @param section name of the section to add the property to, can be
+     *                {@code null}
+     * @param key     the property key
      * @param value   the property value
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(String, Property)
      */
-    public void addString(@Nullable final String section, @NotNull final String key, final String value) throws
-            NullPointerException {
+    public void addString(@Nullable final String section, @NotNull final String key, final String value) {
         Objects.requireNonNull(key, "key is null");
         addProperty(section, new StringProperty(key, value));
     }
 
     /**
-     * Removes all {@link Element elements} from this document
+     * Removes all elements from this document
      */
     public void clear() {
-        elementList.clear();
+        list.clear();
     }
 
     /**
      * Creates and returns a deep copy of this document. Whether the copied
-     * {@link Element elements} themselves are deep or shallow copies is not
-     * specified.
+     * elements themselves are deep or shallow copies is unspecified.
      *
-     * @return a copy of this document.
+     * @return a copy of this document
      * @throws CloneNotSupportedException if one of the elements in this
-     *                                    document could not be cloned.
+     *                                    document could not be cloned
      */
     @SuppressWarnings("MethodDoesntCallSuperMethod")
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
     public Document clone() throws CloneNotSupportedException {
-        final Document document = new Document(elementList.size());
-        for (int i = 0; i < elementList.size(); i++)
-            document.elementList.add(i, elementList.get(i).clone());
+        final Document document = new Document(list.size());
+        for (int i = 0; i < list.size(); i++)
+            document.list.add(i, list.get(i).clone());
         return document;
 
     }
 
     /**
-     * Returns {@code true} if this document contains any
-     * {@link Property property} in the
-     * <a href="#global"><i>global section</i></a> that matches the specified
-     * {@code key}.
+     * Returns {@code true} if this document contains any property in the
+     * global section that matches {@code key}.
      *
-     * @param key the property key to match against.
-     * @return {@code true} if a property was found, otherwise {@code false}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key the property key to match against
+     * @return {@code true} if a property was found, otherwise {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String)
      */
     @Contract(pure = true)
-    public boolean contains(@NotNull final String key) throws NullPointerException {
+    public boolean contains(@NotNull final String key) {
         return contains(null, key);
     }
 
     /**
-     * Returns {@code true} if this document contains any
-     * {@link Property property} in the specified {@code section}, or
-     * {@code null} for the <a href="#global"><i>global section</i></a>, that
-     * matches the specified {@code key}.
+     * Returns {@code true} if this document contains any property in the
+     * specified section that matches {@code key}.
      *
-     * @param section name of the section to search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @return {@code true} if a property was found, otherwise {@code false}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if a property was found, otherwise {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String)
      */
     @Contract(pure = true)
-    public boolean contains(@Nullable final String section, @NotNull final String key) throws NullPointerException {
+    public boolean contains(@Nullable final String section, @NotNull final String key) {
         return contains(section, key, null);
     }
 
     /**
-     * Returns {@code true} if this document contains any
-     * {@link Property property} in the
-     * <a href="#global"><i>global section</i></a>, that matches the specified
-     * {@code key} and {@code valueType}.
+     * Returns {@code true} if this document contains any property in the
+     * global section, that matches {@code key} and {@code valueType}.
      *
-     * @param key       the property key to match against.
-     * @param valueType the property value type, or {@code null}.
-     * @return {@code true} if a property was found, otherwise {@code false}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key       the property key to match against
+     * @param valueType the property value type, can be {@code null}
+     * @return {@code true} if a property was found, otherwise {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
-    public boolean contains(@NotNull final String key, @Nullable final Class<?> valueType) throws NullPointerException {
+    public boolean contains(@NotNull final String key, @Nullable final Class<?> valueType) {
         return contains(null, key, valueType);
     }
 
     /**
-     * Returns {@code true} if this document contains any
-     * {@link Property property} in the specified {@code section}, or
-     * {@code null} for the <a href="#global"><i>global section</i></a>, that
-     * matches the specified {@code key} and {@code valueType}.
+     * Returns {@code true} if this document contains any property in the
+     * specified section that matches {@code key} and {@code valueType}.
      *
-     * @param section   name of the section to search in, or {@code null}.
-     * @param key       the property key to match against.
-     * @param valueType the property value type, or {@code null}.
-     * @return {@code true} if a property was found, otherwise {@code false}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param section   the name of the section to search in, can be
+     * {@code null}
+     * @param key       the property key to match against
+     * @param valueType the property value type, can be {@code null}
+     * @return {@code true} if a property was found, otherwise {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     public boolean contains(@Nullable final String section, @NotNull final String key,
-            @Nullable final Class<?> valueType) throws NullPointerException {
+            @Nullable final Class<?> valueType) {
         return getProperty(section, key, valueType) != null;
     }
 
     /**
-     * Returns and unmodifiable list of all the {@link Element elements} in
-     * this document.
+     * Returns an unmodifiable view of all elements in this document.
+     *
+     * @see Collections#unmodifiableList(List)
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
     public List<Element> elements() {
-        return Collections.unmodifiableList(elementList);
+        return Collections.unmodifiableList(list);
     }
 
     /**
      * Compares the specified object with this document for equality. Returns
-     * {@code true} if {@code obj} is also a document and all
-     * {@link Element elements} in both documents are equal, otherwise
-     * {@code false}.
+     * {@code true} if {@code obj} is also a document and all elements in both
+     * documents are equal, otherwise {@code false}.
      *
-     * @param obj the object to be compared for equality with this document.
-     * @return true if the specified object is equal to this document,
-     * otherwise {@code false}.
+     * @param obj the object to be compared for equality with this document
+     * @return {@code true} if the specified object is equal to this document,
+     * otherwise {@code false}
+     * @see ArrayList#equals(Object) 
      */
     @Contract(value = "null -> false", pure = true)
     @Override
     public boolean equals(final Object obj) {
         if (this == obj)
             return true;
-        if (obj instanceof Document)
-            return ((Document) obj).elementList.equals(elementList);
+        if (obj instanceof Document document)
+            return document.list.equals(list);
         else
             return false;
     }
 
     /**
-     * Performs the given {@code action} for each {@link Element element} in
-     * this document until all elements have been processed or the action
-     * throws an exception. Actions are performed in the order of iteration,
-     * from index {@code 0} to {@code size() - 1}. Exceptions thrown by the
-     * action are relayed to the caller. The behavior of this method is
-     * unspecified if the action performs structural changes to this document.
+     * Performs the specified action for each element in this document until
+     * all elements have been processed or the action throws an exception.
+     * Actions are performed in the order of iteration, from index {@code 0} to
+     * {@code size() - 1}. Exceptions thrown by the action are relayed to the
+     * caller. The behavior of this method is unspecified if the action
+     * modifies this document.
      *
-     * @param action the action to perform on each element.
-     * @throws NullPointerException if {@code action} is {@code null}.
+     * @param action the action to perform on each element
+     * @throws NullPointerException if {@code action} is {@code null}
      */
     @Override
-    public void forEach(@NotNull final Consumer<? super Element> action) throws NullPointerException {
+    public void forEach(@NotNull final Consumer<? super Element> action) {
         Objects.requireNonNull(action, "action is null");
-        elementList.forEach(action);
+        list.forEach(action);
     }
 
     /**
-     * Delegate method to get the value of an {@link ArrayProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of an {@link ArrayProperty} in the global section that
+     * matches {@code key} and {@code JsonArray}, or {@code null} if no
+     * property was found.
      *
-     * @param key the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #getValue(String, Class, Object)
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public JsonArray getArray(@NotNull final String key) throws NullPointerException {
+    public JsonArray getArray(@NotNull final String key) {
         return getArray(null, key, null);
     }
 
     /**
-     * Delegate method to get the value of an {@link ArrayProperty} in the
-     * specified {@code section}.
+     * Returns the value of an {@link ArrayProperty} in the specified section
+     * that matches {@code key} and {@code JsonArray}, or {@code null} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #getValue(String, String, Class, Object)
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public JsonArray getArray(@Nullable final String section, @NotNull final String key) throws
-            NullPointerException {
+    public JsonArray getArray(@Nullable final String section, @NotNull final String key) {
         return getArray(section, key, null);
     }
 
     /**
-     * Delegate method to get the value of an {@link ArrayProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of an {@link ArrayProperty} in the global section that
+     * matches {@code key} and {@code JsonArray}, or {@code def} if no
+     * property was found.
      *
-     * @param key the property key to match against.
-     * @param def the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key the property key to match against
+     * @param def the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #getValue(String, Class, Object)
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, !null -> !null", pure = true)
     @Nullable
-    public JsonArray getArray(@NotNull final String key, @Nullable final JsonArray def) throws NullPointerException {
+    public JsonArray getArray(@NotNull final String key, @Nullable final JsonArray def) {
         return getArray(null, key, def);
     }
 
     /**
-     * Delegate method to get the value of an {@link ArrayProperty} in the
-     * specified {@code section}.
+     * Returns the value of an {@link ArrayProperty} in the specified section
+     * that matches {@code key} and {@code JsonArray}, or {@code def} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @param def     the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @param def     the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #getValue(String, String, Class, Object)
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public JsonArray getArray(@Nullable final String section, @NotNull final String key, @Nullable final JsonArray def)
-            throws NullPointerException {
+    public JsonArray getArray(@Nullable final String section, @NotNull final String key,
+                              @Nullable final JsonArray def) {
         return getValue(section, key, JsonArray.class, def);
     }
 
     /**
-     * Delegate method to get the value of a {@link BooleanProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of a {@link BooleanProperty} in the global section
+     * that matches {@code key} and {@code Boolean}, or {@code null} if no
+     * property was found.
      *
-     * @param key the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #getValue(String, Class, Object)
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public Boolean getBoolean(@NotNull final String key) throws NullPointerException {
+    public Boolean getBoolean(@NotNull final String key) {
         return getBoolean(null, key, null);
     }
 
     /**
-     * Delegate method to get the value of a {@link BooleanProperty} in the
-     * specified {@code section}.
+     * Returns the value of a {@link BooleanProperty} in the specified section
+     * that matches {@code key} and {@code Boolean}, or {@code null} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #getValue(String, String, Class, Object)
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public Boolean getBoolean(@Nullable final String section, @NotNull final String key) throws NullPointerException {
+    public Boolean getBoolean(@Nullable final String section, @NotNull final String key) {
         return getBoolean(section, key, null);
     }
 
     /**
-     * Delegate method to get the value of a {@link BooleanProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of a {@link BooleanProperty} in the global section
+     * that matches {@code key} and {@code Boolean}, or {@code def} if no
+     * property was found.
      *
-     * @param key the property key to match against.
-     * @param def the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key the property key to match against
+     * @param def the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #getValue(String, Class, Object)
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, !null -> !null", pure = true)
     @Nullable
-    public Boolean getBoolean(@NotNull final String key, @Nullable final Boolean def) throws NullPointerException {
+    public Boolean getBoolean(@NotNull final String key, @Nullable final Boolean def) {
         return getBoolean(null, key, def);
     }
 
     /**
-     * Delegate method to get the value of a {@link BooleanProperty} in the
-     * specified {@code section}.
+     * Returns the value of a {@link BooleanProperty} in the specified section
+     * that matches {@code key} and {@code Boolean}, or {@code def} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @param def     the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @param def     the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #getValue(String, String, Class, Object)
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public Boolean getBoolean(@Nullable final String section, @NotNull final String key, @Nullable final Boolean def)
-            throws NullPointerException {
+    public Boolean getBoolean(@Nullable final String section, @NotNull final String key, @Nullable final Boolean def) {
         return getValue(section, key, Boolean.class, def);
     }
 
     /**
-     * Delegate method to get the value of a {@link CharProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of a {@link CharProperty} in the global section that
+     * matches {@code key} and {@code Character}, or {@code null} if no
+     * property was found.
      *
-     * @param key the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #getValue(String, Class, Object)
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public Character getChar(@NotNull final String key) throws NullPointerException {
+    public Character getChar(@NotNull final String key) {
         return getChar(null, key, null);
     }
 
     /**
-     * Delegate method to get the value of a {@link CharProperty} in the
-     * specified {@code section}.
+     * Returns the value of a {@link CharProperty} in the specified section
+     * that matches {@code key} and {@code Character}, or {@code null} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public Character getChar(@Nullable final String section, @NotNull final String key) throws NullPointerException {
+    public Character getChar(@Nullable final String section, @NotNull final String key) {
         return getChar(section, key, null);
     }
 
     /**
-     * Delegate method to get the value of a {@link CharProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of a {@link CharProperty} in the global section that
+     * matches {@code key} and {@code Character}, or {@code def} if no
+     * property was found.
      *
-     * @param key the property key to match against.
-     * @param def the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, Class, Object)
+     * @param key the property key to match against
+     * @param def the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, !null -> !null", pure = true)
     @Nullable
-    public Character getChar(@NotNull final String key, @Nullable final Character def) throws NullPointerException {
+    public Character getChar(@NotNull final String key, @Nullable final Character def) {
         return getChar(null, key, def);
     }
 
     /**
-     * Delegate method to get the value of a {@link CharProperty} in the
-     * specified {@code section}.
+     * Returns the value of a {@link CharProperty} in the specified section
+     * that matches {@code key} and {@code Character}, or {@code def} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @param def     the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @param def     the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public Character getChar(@Nullable final String section, @NotNull final String key, @Nullable final Character def)
-            throws NullPointerException {
+    public Character getChar(@Nullable final String section, @NotNull final String key, @Nullable final Character def) {
         return getValue(section, key, Character.class, def);
     }
 
-    // TODO javadoc
-    @Contract(pure = true)
-    @Nullable
-    public List<Comment> getComments(@NotNull final String section) throws NullPointerException {
-        final int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
-        if (index == -1)
-            return null;
-        final LinkedList<Comment> list = new LinkedList<>();
-        for (int i = index - 1; i >= 0; i--) {
-            if (elementList.get(i) instanceof Comment comment)
-                list.addFirst(comment);
-            else
-                break;
-        }
-        return list;
-    }
-
-    // TODO javadoc
-    @Contract(pure = true)
-    @Nullable
-    public List<Comment> getComments(@Nullable final String section, @NotNull final String key) throws
-            NullPointerException {
-        final int index = getPropertyIndex(section, key, null);
-        if (index == -1)
-            return null;
-        final LinkedList<Comment> list = new LinkedList<>();
-        for (int i = index - 1; i >= 0; i--) {
-            if (elementList.get(i) instanceof Comment comment)
-                list.addFirst(comment);
-            else
-                break;
-        }
-        return list;
-    }
-
     /**
-     * Delegate method to get the value of a {@link DoubleProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of a {@link DoubleProperty} in the global section that
+     * matches {@code key} and {@code Double}, or {@code null} if no property
+     * was found.
      *
-     * @param key the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, Class, Object)
+     * @param key the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public Double getDouble(@NotNull final String key) throws NullPointerException {
+    public Double getDouble(@NotNull final String key) {
         return getDouble(null, key, null);
     }
 
     /**
-     * Delegate method to get the value of a {@link DoubleProperty} in the
-     * specified {@code section}.
+     * Returns the value of a {@link DoubleProperty} in the specified section
+     * that matches {@code key} and {@code Double}, or {@code null} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public Double getDouble(@Nullable final String section, @NotNull final String key) throws NullPointerException {
+    public Double getDouble(@Nullable final String section, @NotNull final String key) {
         return getDouble(section, key, null);
     }
 
     /**
-     * Delegate method to get the value of a {@link DoubleProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of a {@link DoubleProperty} in the global section that
+     * matches {@code key} and {@code Double}, or {@code def} if no property
+     * was found.
      *
-     * @param key the property key to match against.
-     * @param def the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, Class, Object)
+     * @param key the property key to match against
+     * @param def the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, !null -> !null", pure = true)
     @Nullable
-    public Double getDouble(@NotNull final String key, @Nullable final Double def) throws NullPointerException {
+    public Double getDouble(@NotNull final String key, @Nullable final Double def) {
         return getDouble(null, key, def);
     }
 
     /**
-     * Delegate method to get the value of a {@link DoubleProperty} in the
-     * specified {@code section}.
+     * Returns the value of a {@link DoubleProperty} in the specified section
+     * that matches {@code key} and {@code Double}, or {@code def} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @param def     the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @param def     the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
     public Double getDouble(@Nullable final String section, @NotNull final String key, @Nullable final Double def)
-            throws NullPointerException {
+            {
         return getValue(section, key, Double.class, def);
     }
 
     /**
-     * Returns the {@link Element element}  at the specified index in this
-     * document.
+     * Returns the element at the specified index in this document.
      *
-     * @throws IndexOutOfBoundsException if {@code index} is out of range
-     *                                   ({@code index < 0 || index >= size()})
+     * @throws IndexOutOfBoundsException if {@code index} is out of bounds
+     *                                   {@code (index < 0 || index >= size())}
      */
     @Contract(pure = true)
     @NotNull
-    public Element getElement(@Range(from = 0, to = Integer.MAX_VALUE) int index) throws IndexOutOfBoundsException {
-        return elementList.get(index);
+    public Element getElement(@Range(from = 0, to = Integer.MAX_VALUE) int index) {
+        return list.get(index);
     }
 
     /**
-     * Delegate method to get the value of a {@link FloatProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of a {@link FloatProperty} in the global section that
+     * matches {@code key} and {@code Float}, or {@code null} if no property
+     * was found.
      *
-     * @param key the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, Class, Object)
+     * @param key the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public Float getFloat(@NotNull final String key) throws NullPointerException {
+    public Float getFloat(@NotNull final String key) {
         return getFloat(null, key, null);
     }
 
     /**
-     * Delegate method to get the value of a {@link FloatProperty} in the
-     * specified {@code section}.
+     * Returns the value of a {@link FloatProperty} in the specified section
+     * that matches {@code key} and {@code Float}, or {@code null} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public Float getFloat(@Nullable final String section, @NotNull final String key) throws NullPointerException {
+    public Float getFloat(@Nullable final String section, @NotNull final String key) {
         return getFloat(section, key, null);
     }
 
     /**
-     * Delegate method to get the value of a {@link FloatProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of a {@link FloatProperty} in the global section that
+     * matches {@code key} and {@code Float}, or {@code def} if no property
+     * was found.
      *
-     * @param key the property key to match against.
-     * @param def the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, Class, Object)
+     * @param key the property key to match against
+     * @param def the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, !null -> !null", pure = true)
     @Nullable
-    public Float getFloat(@NotNull final String key, @Nullable final Float def) throws NullPointerException {
+    public Float getFloat(@NotNull final String key, @Nullable final Float def) {
         return getFloat(null, key, def);
     }
 
     /**
-     * Delegate method to get the value of a {@link FloatProperty} in the
-     * specified {@code section}.
+     * Returns the value of a {@link FloatProperty} in the specified section
+     * that matches {@code key} and {@code Float}, or {@code def} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @param def     the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @param def     the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public Float getFloat(@Nullable final String section, @NotNull final String key, @Nullable final Float def) throws
-            NullPointerException {
+    public Float getFloat(@Nullable final String section, @NotNull final String key, @Nullable final Float def) {
         return getValue(section, key, Float.class, def);
     }
 
     /**
-     * Delegate method to get the value of an {@link IntProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of an {@link IntProperty} in the global section that
+     * matches {@code key} and {@code Integer}, or {@code null} if no property
+     * was found.
      *
-     * @param key the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, Class, Object)
+     * @param key the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public Integer getInt(@NotNull final String key) throws NullPointerException {
+    public Integer getInt(@NotNull final String key) {
         return getInt(null, key, null);
     }
 
     /**
-     * Delegate method to get the value of an {@link IntProperty} in the
-     * specified {@code section}.
+     * Returns the value of an {@link IntProperty} in the specified section
+     * that matches {@code key} and {@code Integer}, or {@code null} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public Integer getInt(@Nullable final String section, @NotNull final String key) throws NullPointerException {
+    public Integer getInt(@Nullable final String section, @NotNull final String key) {
         return getInt(section, key, null);
     }
 
     /**
-     * Delegate method to get the value of an {@link IntProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of an {@link IntProperty} in the global section that
+     * matches {@code key} and {@code Integer}, or {@code def} if no property
+     * was found.
      *
-     * @param key the property key to match against.
-     * @param def the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, Class, Object)
+     * @param key the property key to match against
+     * @param def the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, !null -> !null", pure = true)
     @Nullable
-    public Integer getInt(@NotNull final String key, @Nullable final Integer def) throws NullPointerException {
+    public Integer getInt(@NotNull final String key, @Nullable final Integer def) {
         return getInt(null, key, def);
     }
 
     /**
-     * Delegate method to get the value of an {@link IntProperty} in the
-     * specified {@code section}.
+     * Returns the value of an {@link IntProperty} in the specified section
+     * that matches {@code key} and {@code Integer}, or {@code def} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @param def     the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @param def     the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public Integer getInt(@Nullable final String section, @NotNull final String key, @Nullable final Integer def) throws
-            NullPointerException {
+    public Integer getInt(@Nullable final String section, @NotNull final String key, @Nullable final Integer def) {
         return getValue(section, key, Integer.class, def);
     }
 
     /**
-     * Delegate method to get the value of a {@link LongProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of a {@link LongProperty} in the global section that
+     * matches {@code key} and {@code Long}, or {@code null} if no property was
+     * found.
      *
-     * @param key the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, Class, Object)
+     * @param key the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public Long getLong(@NotNull final String key) throws NullPointerException {
+    public Long getLong(@NotNull final String key) {
         return getLong(null, key, null);
     }
 
     /**
-     * Delegate method to get the value of a {@link LongProperty} in the
-     * specified {@code section}.
+     * Returns the value of a {@link LongProperty} in the specified section
+     * that matches {@code key} and {@code Long}, or {@code null} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public Long getLong(@Nullable final String section, @NotNull final String key) throws NullPointerException {
+    public Long getLong(@Nullable final String section, @NotNull final String key) {
         return getLong(section, key, null);
     }
 
     /**
-     * Delegate method to get the value of a {@link LongProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of a {@link LongProperty} in the global section that
+     * matches {@code key} and {@code Long}, or {@code def} if no property was
+     * found.
      *
-     * @param key the property key to match against.
-     * @param def the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, Class, Object)
+     * @param key the property key to match against
+     * @param def the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, !null -> !null", pure = true)
     @Nullable
-    public Long getLong(@NotNull final String key, @Nullable final Long def) throws NullPointerException {
+    public Long getLong(@NotNull final String key, @Nullable final Long def) {
         return getLong(null, key, def);
     }
 
     /**
-     * Delegate method to get the value of a {@link LongProperty} in the
-     * specified {@code section}.
+     * Returns the value of a {@link LongProperty} in the specified section
+     * that matches {@code key} and {@code Long}, or {@code def} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @param def     the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @param def     the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public Long getLong(@Nullable final String section, @NotNull final String key, @Nullable final Long def) throws
-            NullPointerException {
+    public Long getLong(@Nullable final String section, @NotNull final String key, @Nullable final Long def) {
         return getValue(section, key, Long.class, def);
     }
 
     /**
-     * Delegate method to get the value of an {@link ObjectProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of an {@link ObjectProperty} in the global section
+     * that matches {@code key} and {@code Object}, or {@code null} if no
+     * property was found.
      *
-     * @param key the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, Class, Object)
+     * @param key the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public JsonObject getObject(@NotNull final String key) throws NullPointerException {
+    public JsonObject getObject(@NotNull final String key) {
         return getObject(null, key, null);
     }
 
     /**
-     * Delegate method to get the value of an {@link ObjectProperty} in the
-     * specified {@code section}.
+     * Returns the value of an {@link ObjectProperty} in the specified section
+     * that matches {@code key} and {@code Object}, or {@code null} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public JsonObject getObject(@Nullable final String section, @NotNull final String key) throws
-            NullPointerException {
+    public JsonObject getObject(@Nullable final String section, @NotNull final String key) {
         return getObject(section, key, null);
     }
 
     /**
-     * Delegate method to get the value of an {@link ObjectProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of an {@link ObjectProperty} in the global section
+     * that matches {@code key} and {@code Object}, or {@code def} if no
+     * property was found.
      *
-     * @param key the property key to match against.
-     * @param def the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, Class, Object)
+     * @param key the property key to match against
+     * @param def the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, !null -> !null", pure = true)
     @Nullable
-    public JsonObject getObject(@NotNull final String key, @Nullable final JsonObject def) throws NullPointerException {
+    public JsonObject getObject(@NotNull final String key, @Nullable final JsonObject def) {
         return getObject(null, key, def);
     }
 
     /**
-     * Delegate method to get the value of an {@link ObjectProperty} in the
-     * specified {@code section}.
+     * Returns the value of an {@link ObjectProperty} in the specified section
+     * that matches {@code key} and {@code Object}, or {@code def} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @param def     the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @param def     the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
     public JsonObject getObject(@Nullable final String section, @NotNull final String key,
-            @Nullable final JsonObject def) throws NullPointerException {
+            @Nullable final JsonObject def) {
         return getValue(section, key, JsonObject.class, def);
     }
 
     /**
-     * Returns an array of all {@link Property properties} in the specified
-     * {@code section}, or {@code null} for the
-     * <a href="#global"><i>global section</i></a>, or {@code null} if no
-     * ection was found.
+     * Returns an array of all properties in the specified section, or
+     * {@code null} if no section was found.
      *
-     * @param section the name of the section to match against.
-     * @return An array of all properties in the section, or {@code null}.
+     * @param section the name of the section to match against, can be
+     * {@code null}
+     * @return An array of all properties in the section, or {@code null}
      * @see Section#matches(String)
      */
-    @Contract(value = "_ -> new", pure = true)
+    @Contract(value = "null -> !null", pure = true)
     @Nullable
-    public List<Property<?>> getProperties(@Nullable final String section) {
-        final int index = getElementsIndex(section);
-        if (index == -1)
-            return null;
-        final ArrayList<Property<?>> subList = new ArrayList<>(elements().size() - index);
-        Element e;
-        for (int i = index; i < elements().size(); i++) {
-            e = elementList.get(i);
-            if (e instanceof Section)
-                break;
-            else if (e instanceof Property p)
-                subList.add(p);
-        }
-        return subList;
+    public Property<?>[] getProperties(@Nullable final String section) {
+        return getProperties(section, null);
     }
 
     /**
-     * Returns an array of all {@link Property properties} in the specified
-     * {@code section}, or {@code null} for the
-     * <a href="#global"><i>global section</i></a>, that matches the specified
+     * Returns an array of all properties in the specified section that matches
      * {@code valueType}, or {@code null} if no section was found.
      *
-     * @param section   the name of the section to match against.
-     * @param valueType the property values type, or {@code null}.
+     * @param section   the name of the section to match against, can be
+     *                  {@code null}
+     * @param valueType the property values type, or {@code null}
      * @param <V>       runtime type of the property values.
-     * @return An array of all matching properties in the section, or {@code null}.
+     * @return An array of all matching properties in the section, or
+     * {@code null}
+     * @see Property#matches(Class)
      * @see Section#matches(String)
      */
-    @SuppressWarnings("unchecked")
-    @Contract(value = "_, _ -> new", pure = true)
+    @SuppressWarnings({"unchecked", "ConstantConditions"})
+    @Contract(value = "null, _ -> !null", pure = true)
     @Nullable
-    public <V> List<Property<V>> getProperties(@Nullable final String section, @Nullable Class<V> valueType) {
+    public <V> Property<V>[] getProperties(@Nullable final String section, @Nullable Class<V> valueType) {
         final int index = getElementsIndex(section);
         if (index == -1)
             return null;
         final ArrayList<Property<V>> subList = new ArrayList<>(elements().size() - index);
         Element e;
         for (int i = index; i < elements().size(); i++) {
-            e = elementList.get(i);
+            e = list.get(i);
             if (e instanceof Section)
                 break;
             else if (e instanceof Property p && p.matches(valueType))
                 subList.add((Property<V>) p);
         }
-        return subList;
+        return (Property<V>[]) subList.toArray();
     }
 
     /**
-     * Returns the {@link Property property} in the
-     * <a href="#global"><i>global section</i></a> that matches the specified
-     * {@code key}, or {@code null} if no such property was found.
+     * Returns the property in the global section that matches the {@code key},
+     * or {@code null} if no property was found.
      *
-     * @param key the property key to match against.
-     * @return the property that was found, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key the property key to match against
+     * @return the property that was found, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String)
      */
     @Contract(pure = true)
     @Nullable
-    public Property<?> getProperty(@NotNull final String key) throws NullPointerException {
+    public Property<?> getProperty(@NotNull final String key) {
         return getProperty(null, key);
     }
 
     /**
-     * Returns the {@link Property property} in the specified {@code section},
-     * or {@code null} for the <a href="#global"><i>global section</i></a>,
-     * that matches the specified {@code key}, or {@code null} if no such
-     * property was found.
+     * Returns the property in the specified section that matches the specified
+     * {@code key}, or {@code null} if no property was found.
      *
-     * @param section name of the section to search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @return the property that was found, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @return the property that was found, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String)
      */
     @Contract(pure = true)
     @Nullable
-    public Property<?> getProperty(@Nullable final String section, @NotNull final String key) throws
-            NullPointerException {
+    public Property<?> getProperty(@Nullable final String section, @NotNull final String key) {
         return getProperty(section, key, null);
     }
 
     /**
-     * Returns the {@link Property property} in the
-     * <a href="#global"><i>global section</i></a> that matches the specified
-     * {@code key} and {@code valueType}, or {@code null} if no such property
-     * was found.
+     * Returns the property in the global section that matches {@code key} and
+     * {@code valueType}, or {@code null} if no property was found.
      *
-     * @param key       the property key to match against.
-     * @param valueType the property value type, or {@code null}.
-     * @param <V>       runtime type of the property value.
-     * @return the property that was found, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key       the property key to match against
+     * @param valueType the property value type to match against, can be
+     * {@code null}
+     * @param <V>       runtime type of the property value
+     * @return the property that was found, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public <V> Property<V> getProperty(@NotNull final String key, @Nullable final Class<V> valueType) throws
-            NullPointerException {
+    public <V> Property<V> getProperty(@NotNull final String key, @Nullable final Class<V> valueType) {
         return getProperty(null, key, valueType);
     }
 
     /**
-     * Returns the {@link Property property} in the specified {@code section},
-     * or {@code null} for the <a href="#global"><i>global section</i></a>,
-     * that matches the specified {@code key} and {@code valueType}, or
-     * {@code null} if no such property was found.
+     * Returns the property in the specified section that matches {@code key}
+     * and {@code valueType}, or {@code null} if no property was found.
      *
-     * @param section   name of the section to search in, or {@code null}.
-     * @param key       the property key to match against.
-     * @param valueType the property value type, or {@code null}.
-     * @param <V>       runtime type of the property value.
-     * @return the property that was found, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param section   the name of the section to search in, can be
+     * {@code null}
+     * @param key       the property key to match against
+     * @param valueType the property value type to match against, can be
+     * {@code null}
+     * @param <V>       runtime type of the property value
+     * @return the property that was found, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String, Class)
      */
     @SuppressWarnings("unchecked")
     @Contract(pure = true)
     @Nullable
     public <V> Property<V> getProperty(@Nullable final String section, @NotNull final String key,
-            @Nullable final Class<V> valueType) throws NullPointerException {
+            @Nullable final Class<V> valueType) {
         Objects.requireNonNull(key, "key is null");
         final int index = getPropertyIndex(section, key, valueType);
         if (index != -1)
-            return (Property<V>) elementList.get(index);
+            return (Property<V>) list.get(index);
         else
             return null;
     }
 
     /**
-     * Returns the number of {@link Property properties} in the
-     * {@link Section section} in this document that matches the specified
-     * section name, or {@code null} for  the
-     * <a href="#global"><i>global section</i></a>. If no section was found
-     * then {@code -1} is returned.
+     * Returns the section in this document that matches {@code section}, or
+     * {@code null} if no section was found.
      *
-     * @param section the name of the section to match against.
-     * @return the number of properties, or {@code -1}.
-     */
-    @Contract(pure = true)
-    @Range(from = -1, to = Integer.MAX_VALUE)
-    public int getPropertyCount(@Nullable final String section) {
-        final int index = getElementsIndex(section);
-        if (index == -1)
-            return -1;
-        int count = 0;
-        Element e;
-        for (int i = index; i < elementList.size(); i++) {
-            e = elementList.get(i);
-            if (e instanceof Property)
-                count++;
-            else if (e instanceof Section)
-                break;
-        }
-        return count;
-    }
-
-    /**
-     * Returns the {@link Section section} in this document that matches the
-     * specified section name, or {@code null} if no such section was found.
-     *
-     * @param section the name of the section to match against.
-     * @return the section that was found, or {@code null}.
-     * @throws NullPointerException if {@code section} is {@code null}.
+     * @param section the name of the section to match against, can be
+     * {@code null}
+     * @return the section that was found, or {@code null}
+     * @throws NullPointerException if {@code section} is {@code null}
+     * @see Section#matches(String)
      */
     @Contract(pure = true)
     @Nullable
-    public Section getSection(@NotNull final String section) throws NullPointerException {
-        final int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
+    public Section getSection(@NotNull final String section) {
+        Objects.requireNonNull(section, "section is null");
+        final int index = getSectionIndex(section);
         if (index != -1)
-            return (Section) elementList.get(index);
+            return (Section) list.get(index);
         else
             return null;
     }
 
     /**
-     * Returns the number of {@link Section sections} in this document.
-     */
-    @Contract(pure = true)
-    @Range(from = 0, to = Integer.MAX_VALUE)
-    public int getSectionCount() {
-        int count = 0;
-        Element e;
-        for (int i = 0; i < elementList.size(); i++) {
-            e = elementList.get(i);
-            if (e instanceof Section)
-                count++;
-        }
-        return count;
-    }
-
-    /**
-     * Returns a list of {@link Section sections} in this document.
-     */
-    @Contract(value = "-> new", pure = true)
-    @NotNull
-    public List<Section> getSections() {
-        final ArrayList<Section> list = new ArrayList<>();
-        Element e;
-        for (int i = 0; i < elementList.size(); i++) {
-            e = elementList.get(i);
-            if (e instanceof Section s)
-                list.add(s);
-        }
-        return list;
-    }
-
-    /**
-     * Delegate method to get the value of a {@link StringProperty} in the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the value of a {@link StringProperty} in the global section that
+     * matches {@code key} and {@code String}, or {@code null} if no property
+     * was found.
      *
-     * @param key the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, Class, Object)
+     * @param key the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public String getString(@NotNull final String key) throws NullPointerException {
+    public String getString(@NotNull final String key) {
         return getString(null, key, null);
     }
 
     /**
-     * Delegate method to get the value of a {@link StringProperty} in the
-     * specified {@code section}.
+     * Returns the value of a {@link StringProperty} in the specified section
+     * that matches {@code key} and {@code String}, or {@code null} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @return the value of the found property, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @return the value of the found property, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
     @Nullable
-    public String getString(@Nullable final String section, @NotNull final String key) throws NullPointerException {
+    public String getString(@Nullable final String section, @NotNull final String key) {
         return getString(section, key, null);
     }
 
     /**
-     * Delegate method to get the value of a {@link StringProperty} in the
-     * specified {@code section}.
+     * Returns the value of a {@link StringProperty} in the specified section
+     * that matches {@code key} and {@code String}, or {@code def} if no
+     * property was found.
      *
-     * @param section the name of the section search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @param def     the default value to return if no property was found.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
-     * @see #getValue(String, String, Class, Object)
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @param def     the default value to return if no property was found
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public String getString(@Nullable final String section, @NotNull final String key, final String def) throws
-            NullPointerException {
+    public String getString(@Nullable final String section, @NotNull final String key, final String def) {
         return getValue(section, key, String.class, def);
     }
 
     /**
-     * Returns the value of the {@link Property property} in the
-     * <a href="#global"><i>global section</i></a> that matches the specified
-     * {@code key}, or {@code def} if no such property was found.
+     * Returns the value of the property in the global section that matches
+     * {@code key}, or {@code def} if no property was found.
      *
-     * @param key the property key to match against.
-     * @param def the default value to return if no property was found.
-     * @param <V> runtime type of the property value.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key the property key to match against
+     * @param def the default value to return if no property was found
+     * @param <V> runtime type of the property value
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String)
      */
     @Contract(pure = true)
     @Nullable
-    public <V> V getValue(@NotNull final String key, @Nullable V def) throws NullPointerException {
+    public <V> V getValue(@NotNull final String key, @Nullable V def) {
         return getValue(null, key, null, def);
     }
 
     /**
-     * Returns the value of the {@link Property property} in the specified
-     * {@code section}, or {@code null} for the
-     * <a href="#global"><i>global section</i></a>, that matches the specified
-     * {@code key}, or {@code def} if no such property was found.
+     * Returns the value of the property in the specified section that matches
+     * {@code key}, or {@code def} if no property was found.
      *
-     * @param section name of the section to search in, or {@code null}.
-     * @param key     the property key to match against.
-     * @param def     the default value to return if no property was found.
-     * @param <V>     runtime type of the property value.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param section the name of the section to search in, can be
+     * {@code null}
+     * @param key     the property key to match against
+     * @param def     the default value to return if no property was found
+     * @param <V>     runtime type of the property value
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String)
      */
     @Nullable
-    public <V> V getValue(@Nullable final String section, @NotNull final String key, @Nullable V def) throws
-            NullPointerException {
+    public <V> V getValue(@Nullable final String section, @NotNull final String key, @Nullable V def) {
         return getValue(section, key, null, def);
     }
 
     /**
-     * Returns the value of the {@link Property property} in the
-     * <a href="#global"><i>global section</i></a> that matches the specified
-     * {@code key} and {@code valueType}, or {@code def} if no such property
-     * was found.
+     * Returns the value of the property in the global section that matches
+     * {@code key} and {@code valueType}, or {@code def} if no property was
+     * found.
      *
-     * @param key       the property key to match against.
-     * @param valueType the property value type, or {@code null}.
-     * @param def       the default value to return if no property was found.
-     * @param <V>       runtime type of the property value.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key       the property key to match against
+     * @param valueType the property value type to match against, or
+     * {@code null}
+     * @param def       the default value to return if no property was found
+     * @param <V>       runtime type of the property value
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String, Class)
      */
     @Nullable
-    public <V> V getValue(@NotNull final String key, @Nullable final Class<V> valueType, @Nullable V def) throws
-            NullPointerException {
+    public <V> V getValue(@NotNull final String key, @Nullable final Class<V> valueType, @Nullable V def) {
         return getValue(null, key, valueType, def);
     }
 
     /**
-     * Returns the value of the {@link Property property} in the specified
-     * {@code section}, or {@code null} for the
-     * <a href="#global"><i>global section</i></a>, that matches the specified
-     * {@code key} and {@code valueType}, or {@code def} if no such property
-     * was found.
+     * Returns the value of the property in the specified section that matches
+     * {@code key} and {@code valueType}, or {@code def} if no property was
+     * found.
      *
-     * @param section   name of the section to search in, or {@code null}.
-     * @param key       the property key to match against.
-     * @param valueType the property value type, or {@code null}.
-     * @param def       the default value to return if no property was found.
-     * @param <V>       runtime type of the property value.
-     * @return the value of the found property, or {@code def}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param section   the name of the section to search in, can be
+     * {@code null}
+     * @param key       the property key to match against
+     * @param valueType the property value type to match against, or
+     * {@code null}
+     * @param def       the default value to return if no property was found
+     * @param <V>       runtime type of the property value
+     * @return the value of the found property, or {@code def}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String, Class)
      */
     @Nullable
     public <V> V getValue(@Nullable final String section, @NotNull final String key,
-            @Nullable final Class<V> valueType, @Nullable V def) throws NullPointerException {
+            @Nullable final Class<V> valueType, @Nullable V def) {
         Property<V> property = getProperty(section, key, valueType);
         return property != null ? property.value : def;
     }
@@ -1584,22 +1488,26 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * Returns a hash code value for this document. This method delegates to
      * {@link ArrayList#hashCode()} and is considered to be consistent with
      * equals.
+     *
+     * @return a hash code value for this document
      */
     @Contract(pure = true)
     @Override
     public int hashCode() {
-        return elementList.hashCode();
+        return list.hashCode();
     }
 
     /**
-     * Returns an iterator over the {@link Element elements} in this document
-     * in proper sequence. The returned iterator is fail-fast.
+     * Returns an iterator over the elements in this document in proper
+     * sequence. The returned iterator is fail-fast.
+     *
+     * @return an iterator over the elements in this document
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
     public Iterator<Element> iterator() {
-        return elementList.iterator();
+        return list.iterator();
     }
 
     /**
@@ -1608,15 +1516,13 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     @Contract(value = "-> new", pure = true)
     @NotNull
     public Stream<Element> parallelStream() {
-        return elementList.parallelStream();
+        return list.parallelStream();
     }
 
     /**
-     * Removes all {@link Property properties} from the specified
-     * {@code section}, or {@code null} for the
-     * <a href="#global"><i>global section</i></a>.
+     * Removes all properties from the specified section.
      *
-     * @param section the name of the section, or {@code null}.
+     * @param section the name of the section, can be {@code null}
      */
     public void removeProperties(@Nullable final String section) {
         final int index = getElementsIndex(section);
@@ -1625,32 +1531,29 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Removes any {@link Property property} from the specified
-     * {@code section}, or {@code null} for the
-     * <a href="#global"><i>global section</i></a>, that matches the given
-     * {@code key}.
+     * Removes a property and its comments, if any, from the specified section
+     * that matches {@code key}.
      *
-     * @param section the name of the section, or {@code null}.
-     * @param key     the key of the property to remove.
-     * @return {@code true} if a property was removed, otherwise {@code false}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param section the name of the section, can be {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if a property was removed, otherwise {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String)
      */
-    public boolean removeProperty(@Nullable final String section, @NotNull final String key) throws
-            NullPointerException {
+    public boolean removeProperty(@Nullable final String section, @NotNull final String key) {
         Objects.requireNonNull(key, "key is null");
         final int index = getElementsIndex(section);
         if (index == -1)
             return false;
         Element element;
-        for (int i = index; i < elementList.size(); i++) {
-            element = elementList.get(i);
+        for (int i = index; i < list.size(); i++) {
+            element = list.get(i);
             // break loop if a section is reached
             if (element instanceof Section)
                 return false;
             // remove element if it is a property and matches key
             if (element instanceof Property<?> p && p.matches(key)) {
-                elementList.remove(i);
+                list.remove(i);
                 // remove comments preceding the property
                 removeComments(i - 1);
                 return true;
@@ -1660,12 +1563,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Removes the specified {@code section} and its
-     * {@link Property properties}, or {@code null} for the
-     * <a href="#global"><i>global section</i></a>.
+     * Removes the specified section, its comments (if any) and its properties.
      *
-     * @param section the name of the section, or {@code null}
-     * @see Section#matches
+     * @param section the name of the section, can be {@code null}
+     * @see Section#matches(String)
      */
     public void removeSection(@Nullable final String section) {
         final int index = getElementsIndex(section);
@@ -1673,30 +1574,32 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
             return;
         removeProperties(index);
         if (section != null) {
-            elementList.remove(index - 1);
+            list.remove(index - 1);
             removeComments(index - 2);
         }
     }
 
     /**
-     * Returns the number of {@link Element elements} in this document.
+     * Returns the number of elements in this document.
      */
     @Contract(pure = true)
     public int size() {
-        return elementList.size();
+        return list.size();
     }
 
     /**
-     * Returns a <em>late-binding</em> and <em>fail-fast</em> Spliterator over
-     * the {@link Element elements} in this document. The Spliterator reports
+     * Returns a <i>late-binding</i> and <i>fail-fast</i> spliterator over the
+     * elements in this document. The spliterator reports
      * {@link Spliterator#SIZED}, {@link Spliterator#SUBSIZED} and
      * {@link Spliterator#ORDERED}.
+     *
+     * @return a spliterator over the elements in this document
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
     public Spliterator<Element> spliterator() {
-        return elementList.spliterator();
+        return list.spliterator();
     }
 
     /**
@@ -1705,18 +1608,19 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     @Contract(value = "-> new", pure = true)
     @NotNull
     public Stream<Element> stream() {
-        return elementList.stream();
+        return list.stream();
     }
 
     /**
-     * Helper method to return the index of the specified {@code section}'s
-     * {@link Element elements}, or {@code null} for the
-     * <a href="#global"><i>global section</i></a>.
+     * Returns the starting index of the specified section's elements, or
+     * {@code -1} if no section was found.
      *
-     * @param section the name of the section, or {@code null}.
-     * @return the index.
+     * @param section the name of the section, can be {@code null}
+     * @return the starting index, or {@code -1}
+     * @see Section#matches(String)
      */
     @Contract(pure = true)
+    @Range(from = -1, to = Integer.MAX_VALUE)
     protected int getElementsIndex(@Nullable final String section) {
         if (section != null) {
             final int index = getSectionIndex(section);
@@ -1727,15 +1631,14 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Helper method to return the index of any {@link Property property}
-     * matching the specified {@code key} and {@code valueType} in the
-     * specified {@code section}, or null for the
-     * <a href="#global"><i>global section</i></a>. If no matching property was
-     * found, then {@code -1} is returned.
+     * Returns the index of the property that matches {@code key} and
+     * {@code valueType} in the specified section, or {@code -1} if no property
+     * was found.
      *
-     * @param section   the name of the section.
-     * @param key       the property key.
-     * @param valueType the property value type
+     * @param section   the name of the section, can be {@code null}
+     * @param key       the property key to match against
+     * @param valueType the property value type to match against, can be
+     *                  {@code null}
      * @return the index of the property, or {@code -1}.
      * @see Property#matches(String, Class)
      */
@@ -1748,8 +1651,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
             return -1;
         // iterate elements
         Element e;
-        for (int i = index; i < elementList.size(); i++) {
-            e = elementList.get(i);
+        for (int i = index; i < list.size(); i++) {
+            e = list.get(i);
             // start of next section, property not found
             if (e instanceof Section) {
                 return -1;
@@ -1763,19 +1666,19 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Helper method to return the index of the specified {@code section}, or
-     * {@code -1} if not found.
+     * Returns the index of the specified section, or {@code -1} if no section
+     * was found.
      *
-     * @param section the name of the section.
-     * @return the index of the section, or {@code -1}.
+     * @param section the name of the section
+     * @return the index of the section, or {@code -1}
      * @see Section#matches(String)
      */
     @Contract(pure = true)
     protected int getSectionIndex(@NotNull final String section) {
         // iterate elements
         Element e;
-        for (int i = 0; i < elementList.size(); i++) {
-            e = elementList.get(i);
+        for (int i = 0; i < list.size(); i++) {
+            e = list.get(i);
             // section found
             if (e instanceof Section s && s.matches(section))
                 return i;
@@ -1785,44 +1688,40 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Helper method to remove {@link Comment comments} beginning at the
-     * specified {@code index}. The method will iterate the document in
-     * decreasing order until the document is exhausted or an
-     * {@link Element element} is reached that is not a comment.
+     * Iterates the elements of this document, starting at the specified index,
+     * and removes all comments in decreasing order until an element is reached
+     * that is not a comment or this document has been exhausted.
      *
-     * @param index the index of the comment.
-     * @throws IndexOutOfBoundsException if {@code index &gt= size()} is
-     *                                   {@code true}.
+     * @param index the starting index, inclusive
+     * @throws IndexOutOfBoundsException if {@code index >= size()} is
+     * {@code true}
      */
-    protected void removeComments(@Range(from = 0, to = Integer.MAX_VALUE) final int index) throws
-            IndexOutOfBoundsException {
+    protected void removeComments(final int index) {
         for (int i = index; i >= 0; i--)
-            if (elementList.get(i) instanceof Comment)
-                elementList.remove(i);
+            if (list.get(i) instanceof Comment)
+                list.remove(i);
             else
                 break;
     }
 
     /**
-     * Helper method to remove all {@link Property properties} in the document,
-     * beginning at the specified {@code index}, until the document is
-     * exhausted or a {@link Section section} is reached.
+     * Removes all properties (and their comments, if any) from this document,
+     * starting at the specified index, until a section is reached or this
+     * document is exhausted.
      *
-     * @param index the index to start from, inclusive.
-     * @throws IndexOutOfBoundsException if {@code index &lt 0} is
-     *                                   {@code true}.
+     * @param index the starting index, inclusive
+     * @throws IndexOutOfBoundsException if {@code index < 0} is {@code true}
      */
-    protected void removeProperties(@Range(from = 0, to = Integer.MAX_VALUE) final int index) throws
-            IndexOutOfBoundsException {
+    protected void removeProperties(@Range(from = 0, to = Integer.MAX_VALUE) final int index) {
         Element element;
-        for (int i = index; i < elementList.size(); ) {
-            element = elementList.get(i);
+        for (int i = index; i < list.size(); ) {
+            element = list.get(i);
             // break loop if a section is reached
             if (element instanceof Section)
                 break;
             // remove element if it is a property
             if (element instanceof Property<?>) {
-                elementList.remove(i);
+                list.remove(i);
                 // remove comments preceding the property
                 removeComments(i - 1);
             }

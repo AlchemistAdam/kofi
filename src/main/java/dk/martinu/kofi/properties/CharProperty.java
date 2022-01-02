@@ -17,6 +17,7 @@
 
 package dk.martinu.kofi.properties;
 
+import dk.martinu.kofi.KofiUtil;
 import org.jetbrains.annotations.*;
 
 import java.io.Serial;
@@ -26,7 +27,7 @@ import java.util.Objects;
 import dk.martinu.kofi.Property;
 
 /**
- * {@link Property} implementation that holds an {@code Character} value.
+ * A {@link Property} that holds a character value.
  *
  * @author Adam Martinu
  * @since 1.0
@@ -37,17 +38,16 @@ public class CharProperty extends Property<Character> implements Cloneable, Seri
     private static final long serialVersionUID = 0L;
 
     /**
-     * Constructs a new property with the specified {@code key} and
-     * {@code value}. The key is not case-sensitive when compared to other
-     * properties. If {@code value} is {@code null}, then the property value
-     * will default to the null character ({@code U+0000}).
+     * Constructs a new property with the specified key and value. If
+     * {@code value} is {@code null}, then the property value will default to
+     * the {@code \0 U+0000} Null character.
      *
-     * @param key   The property key.
-     * @param value The property value, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key   The property key
+     * @param value The property value, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      */
     @Contract(pure = true)
-    public CharProperty(@NotNull final String key, @Nullable final Character value) throws NullPointerException {
+    public CharProperty(@NotNull final String key, @Nullable final Character value) {
         super(key, Objects.requireNonNullElse(value, (char) 0));
     }
 
@@ -72,41 +72,26 @@ public class CharProperty extends Property<Character> implements Cloneable, Seri
     }
 
     /**
-     * <p>Returns a {@code String} representation of this property's value. The
-     * returned string is equal to (with some exceptions):
+     * Returns a string representation of this property's value. The returned
+     * string is equal to (with some exceptions):
      * <pre>
-     *     "'" + value + "'"
+     *     "\'<i>value</i>\'"
      * </pre>
-     * <p>If this property's value is equal to any of the escapable characters in
-     * the Java language, then the escaped version is used instead. E.g. if
-     * {@code value} is equal to {@code '\t'} then the returned string is equal
-     * to:
-     * <pre>
-     *     "'\\t'"
-     * </pre>
-     * The following is a list of all such characters:
-     * <ul>
-     *     <li>{@code \t} horizontal tabulation, U+0009</li>
-     *     <li>{@code \b} backspace, U+0008</li>
-     *     <li>{@code \n} new line, U+000A</li>
-     *     <li>{@code \r} carriage return, U+000D</li>
-     *     <li>{@code \f} form feed, U+000C</li>
-     *     <li>{@code \0} null, U+0000</li>
-     * </ul>
+     * <p>
+     * If this property's value is in the range 0-1F, inclusive, then it will
+     * be represented as a two-character or six-character escape sequence
+     * instead.
+     *
+     * @see KofiUtil#escape_00_1F(char)
      */
-    @Contract(value = "-> new", pure = true)
+    @Contract(pure = true)
     @NotNull
     @Override
     public String getValueString() {
         //noinspection ConstantConditions
-        return switch (value) {
-            case '\t' -> "'\\t'";
-            case '\b' -> "'\\b'";
-            case '\n' -> "'\\n'";
-            case '\r' -> "'\\r'";
-            case '\f' -> "'\\f'";
-            case '\0' -> "'\\0'";
-            default -> String.copyValueOf(new char[] {'\'', value, '\''});
-        };
+        if (value < 0x20)
+            return '\'' + KofiUtil.escape_00_1F(value) + '\'';
+        else
+            return String.copyValueOf(new char[] {'\'', value, '\''});
     }
 }

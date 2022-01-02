@@ -17,39 +17,98 @@
 
 package dk.martinu.kofi;
 
+import dk.martinu.kofi.properties.ArrayProperty;
 import org.jetbrains.annotations.*;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.function.Consumer;
 
+/**
+ * {@link Json} implementation of an immutable JSON array value.
+ *
+ * @author Adam Martinu
+ * @since 1.0
+ * @see ArrayProperty
+ */
 public class JsonArray extends Json implements Iterable<Object>, Serializable {
 
+    /**
+     * Empty, zero-length object array constant.
+     */
     protected static final Object[] EMPTY = new Object[0];
     @Serial
     private static final long serialVersionUID = 0L;
 
+    /**
+     * Constructs a new {@code JsonArray} that wraps around the specified array
+     * using reflection and returns it. Removing or inserting elements in 
+     * {@code array} will not change the returned array.
+     *
+     * @param array the array to reflect
+     * @return a new {@code JsonArray}
+     * @throws NullPointerException if {@code array} is {@code null}
+     * @throws IllegalArgumentException if {@code array} is not an array type,
+     * determined by {@link Class#isArray()}
+     * @see #JsonArray(Object...) 
+     */
+    @Contract(value = "_ -> new", pure = true)
     @NotNull
-    public static JsonArray reflect(@NotNull final Object object) throws NullPointerException,
-            IllegalArgumentException {
-        Objects.requireNonNull(object, "object is null");
-        if (!object.getClass().isArray())
-            throw new IllegalArgumentException("object is not an array");
-        final int len = Array.getLength(object);
+    public static JsonArray reflect(@NotNull final Object array) throws IllegalArgumentException {
+        Objects.requireNonNull(array, "array is null");
+        if (!array.getClass().isArray())
+            throw new IllegalArgumentException("array is not an array type");
+        final int len = Array.getLength(array);
         // list of reflected array values
         final ArrayList<Object> list = new ArrayList<>(len);
         for (int i = 0; i < len; i++)
-            list.add(Array.get(object, i));
+            list.add(Array.get(array, i));
         return new JsonArray(list);
     }
 
+    /**
+     * Performs the specified action for each element in the array until all
+     * elements have been processed or the action throws an exception.
+     * Exceptions thrown by the action are relayed to the caller.
+     *
+     * @param action The action to perform on each element
+     * @throws NullPointerException if {@code action} is {@code null}
+     */
+    @Override
+    public void forEach(@NotNull final Consumer<? super Object> action) {
+        Objects.requireNonNull(action, "action is null");
+        for (Object o : array)
+            action.accept(o);
+    }
+
+    /**
+     * The objects contained in this array. Each object is guaranteed to be
+     * defined.
+     * 
+     * @see Json#getDefinedObject(Object)  
+     */
+    @NotNull
     protected final Object[] array;
 
+    /**
+     * Construct a new, empty {@code JsonArray}.
+     */
+    @Contract(pure = true)
     public JsonArray() {
         array = EMPTY;
     }
 
+    /**
+     * Constructs a new {@code JsonArray} containing the defined objects of
+     * {@code values}.
+     * 
+     * @param values the array objects, or {@code null}
+     * @see Json#getDefinedObject(Object) 
+     */
+    // TODO test size of varargs array for different parameters; int[] vs Object[]
+    @Contract(pure = true)
     public JsonArray(@Nullable final Object... values) {
         if (values != null && values.length != 0) {
             final ArrayList<Object> list = new ArrayList<>();
@@ -62,12 +121,15 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
     }
 
     /**
-     * Constructs a {@code JsonArray} wrapping the values in the specified
-     * {@code list}.
+     * Constructs a new {@code JsonArray} containing the defined objects of the
+     * values in the specified list.
+     *
+     * @param list the list of objects, or {@code null}
+     * @see Json#getDefinedObject(Object)
      */
-    public JsonArray(@NotNull final List<Object> list) throws NullPointerException {
-        Objects.requireNonNull(list, "list is null");
-        if (!list.isEmpty())
+    @Contract(pure = true)
+    public JsonArray(@Nullable final List<Object> list) {
+        if (list != null && !list.isEmpty())
             array = list.parallelStream()
                     .map(this::getDefinedObject)
                     .toArray(Object[]::new);
@@ -75,6 +137,12 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
             array = EMPTY;
     }
 
+    /**
+     * Returns {@code true} if this array is equal to {@code obj}
+     * ({@code this == obj}), or {@code obj} is also a {@code JsonArray} and
+     * its length and elements are equal to this array's length and elements.
+     * Otherwise {@code false} is returned.
+     */
     @Contract(value = "null -> false", pure = true)
     @Override
     public boolean equals(@Nullable final Object obj) {
@@ -93,31 +161,67 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
             return false;
     }
 
-    public Object get(final int index) throws ArrayIndexOutOfBoundsException {
+    /**
+     * Returns the object at the specified index in this array.
+     *
+     * @param index the index of the object
+     * @return the element at the specified index, can be {@code null}
+     * @throws ArrayIndexOutOfBoundsException if {@code index} is out of bounds
+     *                                 {@code (index < 0 || index >= length())}
+     */
+    @Contract(pure = true)
+    @Nullable
+    public Object get(@Range(from = 0, to = Integer.MAX_VALUE) final int index) throws ArrayIndexOutOfBoundsException {
         return array[index];
     }
 
+    /**
+     * Returns the hash code of this array's objects.
+     *
+     * @see Arrays#hashCode(Object[])
+     */
+    @Contract(pure = true)
     @Override
     public int hashCode() {
         return Arrays.hashCode(array);
     }
 
+    /**
+     * Returns an iterator over the objects in this array. The returned
+     * iterator is immutable and calling {@link Iterator#remove()} will throw
+     * an {@code UnsupportedOperationException}.
+     */
+    @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
     public Iterator<Object> iterator() {
-        return new ArrayIterator();
+        return new ObjectIterator();
     }
 
+    /**
+     * Returns the length of this array.
+     */
+    @Contract(pure = true)
+    @Range(from = 0, to = Integer.MAX_VALUE)
     public int length() {
         return array.length;
     }
 
+    /**
+     * Returns a spliterator covering the objects this array.
+     *
+     * @see Arrays#spliterator(Object[])
+     */
+    @Contract(value = "-> new", pure = true)
     @Override
     public Spliterator<Object> spliterator() {
         return Arrays.spliterator(array);
     }
 
-    @Contract(value = "-> new", pure = true)
+    /**
+     * {@inheritDoc}
+     */
+    @Contract(pure = true)
     @NotNull
     @Override
     public String toJson() {
@@ -126,34 +230,78 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
         return sb.toString();
     }
 
-    // TODO javadoc
+    /**
+     * {@inheritDoc}
+     */
     @Contract(pure = true)
     @Override
     public void toJson(@NotNull final StringBuilder sb) {
         sb.append('[');
-        for (int index = 0; index < array.length; index++) {
-            if (index > 0)
-                sb.append(',');
-            sb.append(' ');
-            toJson(array[index], sb);
+        if (array.length > 0) {
+            toJson(array[0], sb);
+            for (int index = 1; index < array.length; index++) {
+                sb.append(", ");
+                toJson(array[index], sb);
+            }
         }
         sb.append(" ]");
     }
 
-    public class ArrayIterator implements Iterator<Object> {
+    /**
+     * An immutable iterator over the objects of a {@code JsonArray}.
+     */
+    protected class ObjectIterator implements Iterator<Object> {
 
+        /**
+         * The current index (position) of the iteration.
+         */
+        @Range(from = 0, to = Integer.MAX_VALUE)
         private int index = 0;
 
+        /**
+         * {@inheritDoc}
+         */
+        @Contract(pure = true)
         @Override
         public boolean hasNext() {
             return index < array.length;
         }
 
+        /**
+         * Throws an {@code UnsupportedOperationException}.
+         */
+        @Contract(value = "-> fail", pure = true)
+        @Override
+        public void remove() throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("remove");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Contract(pure = true)
+        @NotNull
         @Override
         public Object next() throws NoSuchElementException {
-            if (!hasNext())
+            if (index >= array.length)
                 throw new NoSuchElementException();
             return array[index++];
+        }
+
+        /**
+         * Performs the given action for each remaining element until all
+         * elements have been processed or the action throws an exception. If
+         * the action throws an exception, use of the iterator can continue as
+         * long as it has more elements.
+         *
+         * @param action the action to be performed for each element
+         * @throws NullPointerException if the specified action is {@code null}
+         */
+        @Override
+        public void forEachRemaining(@NotNull final Consumer<? super Object> action) {
+            Objects.requireNonNull(action, "action is null");
+            while (index < array.length)
+                action.accept(array[index++]);
         }
     }
 }

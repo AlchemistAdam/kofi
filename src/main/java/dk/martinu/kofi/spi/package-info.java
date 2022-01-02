@@ -15,30 +15,10 @@
  * under the License.
  */
 
-package dk.martinu.kofi;
-
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-
-import java.io.Serial;
-import java.io.Serializable;
-
 /**
- * Signals that no service providers were available.
- *
- * @author Adam Martinu
- * @since 1.0
+ * This package contains service provider interfaces for reading and writing
+ * {@link dk.martinu.kofi.Document documents}. Implementations of these
+ * interfaces (service providers) can be retrieved with the
+ * {@link dk.martinu.kofi.DocumentIO DocumentIO} class.
  */
-public class ServiceUnavailableException extends Exception implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 0L;
-
-    /**
-     * Constructs a new exception with the specified message.
-     */
-    @Contract(pure = true)
-    public ServiceUnavailableException(@NotNull final String msg) {
-        super(msg);
-    }
-}
+package dk.martinu.kofi.spi;

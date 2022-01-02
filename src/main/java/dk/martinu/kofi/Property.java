@@ -25,18 +25,15 @@ import java.util.Objects;
 import dk.martinu.kofi.properties.NullProperty;
 
 /**
- * The {@code Property} class defines an abstract {@link Element element} used
- * to store data in a {@link Document document} as a key-value pair. Property
- * implementations provided by the KOFI API are located in the
- * {@link dk.martinu.kofi.properties} package. Properties have a {@code String}
- * key and a value of type {@code V}. Keys are not case-sensitive when
- * compared. The {@code String} representation of a property, as returned by
- * {@link #getString()}, is equal to:
+ * An abstract {@link Element element} used to store data as a key-value pair.
+ * Property implementations provided by the KOFI API are located in the
+ * {@link dk.martinu.kofi.properties} package. Properties have a string key and
+ * a value of type {@code V}. Keys are not case-sensitive when compared. The
+ * string representation of a property, returned by {@link #getString()}, is
+ * equal to:
  * <pre>
  *     "<i>key</i> = <i>value</i>"
  * </pre>
- * where <i>key</i> and <i>value</i> are equal to the strings returned by
- * {@link #getKeyString()} and {@link #getValueString()} respectively.
  *
  * @param <V> the property value type
  * @author Adam Martinu
@@ -55,27 +52,24 @@ public abstract class Property<V> extends Element {
     @Nullable
     public final V value;
     /**
-     * Cached hash code. Set on first call to {@link #hashCode()}.
+     * Cached hash code.
      */
     protected transient int hash = 0;
     /**
-     * {@code true} if the computed hash code is {@code 0}. Set on first call
-     * to {@link #hashCode()}.
+     * {@code true} if the computed hash code is {@code 0}.
      */
     protected transient boolean hashIsZero = false;
 
     /**
-     * Constructs a new property with the specified {@code key} and
-     * {@code value}. The key is not case-sensitive when compared to other
-     * properties.
+     * Constructs a new property with the specified key and value.
      *
-     * @param key   The property key.
-     * @param value The property value.
+     * @param key   The property key
+     * @param value The property value
      * @throws NullPointerException if {@code key} or {@code value} is
-     *                              {@code null}.
+     *                              {@code null}
      */
     @Contract(pure = true)
-    public Property(@NotNull final String key, @NotNull final V value) throws NullPointerException {
+    public Property(@NotNull final String key, @NotNull final V value) {
         this.key = Objects.requireNonNull(key, "key is null");
         this.value = Objects.requireNonNull(value, "value is null");
     }
@@ -84,10 +78,11 @@ public abstract class Property<V> extends Element {
      * Protected constructor for property implementations with null values,
      * such as {@link NullProperty}.
      *
-     * @param key The property key.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key The property key
+     * @throws NullPointerException if {@code key} is {@code null}
      */
-    protected Property(@NotNull final String key) throws NullPointerException {
+    @Contract(pure = true)
+    protected Property(@NotNull final String key) {
         this.key = Objects.requireNonNull(key, "key is null");
         value = null;
     }
@@ -113,26 +108,20 @@ public abstract class Property<V> extends Element {
     }
 
     /**
-     * Returns an escaped version of this property's key. The following
-     * characters are escaped:
-     *  <ul>
-     *      <li>{@code \n} new line, U+000A</li>
-     *      <li>{@code \r} carriage return, U+000D</li>
-     *      <li>{@code ;} semicolon, U+003B</li>
-     *      <li>{@code [} left square bracket, U+005B</li>
-     *      <li>{@code \\} reverse solidus, U+005C</li>
-     * </ul>
+     * Returns an escaped version of this property's key. Note that all
+     * {@code ; U+003B} Semicolon and {@code [ U+005B} Left Square Bracket
+     * characters are also escaped.
      *
      * @see KofiUtil#escape(String, char...)
      */
     @Contract(pure = true)
     @NotNull
     public String getKeyString() {
-        return KofiUtil.escape(key, '\n', '\r', ';', '[', '\\');
+        return KofiUtil.escape(key, ';', '[');
     }
 
     /**
-     * Returns a {@code String} representation of this property, equal to:
+     * Returns a string representation of this property, equal to:
      * <pre>
      *     "<i>key</i> = <i>value</i>"
      * </pre>
@@ -154,26 +143,23 @@ public abstract class Property<V> extends Element {
     public abstract Class<? super V> getValueClass();
 
     /**
-     * Returns a {@code String} representation of this property's value. The
-     * returned string must be valid for file output in KOFI-file format. E.g.
-     * properties cannot span multiple lines, so the returned string must not
-     * contain any line breaks.
+     * Returns a string representation of this property's value.
      */
     @Contract(pure = true)
     @NotNull
     public abstract String getValueString();
 
     /**
-     * Returns a combined hash code of this property's key, in upper-case, and
-     * value. The returned value is equal to:
+     * Returns a combined hash code of this property's key, in upper-case,
+     * and value. The returned value is equal to:
      * <pre>
      *     keyHash | valueHash << 16
      * </pre>
-     *
-     * <p><b>NOTE:</b> if the state of this property's value is mutable, then
-     * this method should be overridden. The default implementation caches the
-     * hash code and will not reflect changes to the value's state after the
-     * first call.
+     * <p>
+     * <b>NOTE:</b> if the state of this property's value is mutable, then this
+     * method should be overridden. The default implementation caches the hash
+     * code and will not reflect changes to the value's state after the first
+     * call.
      */
     @Contract(pure = true)
     @Override
@@ -195,10 +181,10 @@ public abstract class Property<V> extends Element {
      * Returns {@code true} if the key of this property is equal to
      * {@code key}, ignoring case. Otherwise {@code false} is returned.
      *
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      */
     @Contract(pure = true)
-    public boolean matches(@NotNull final String key) throws NullPointerException {
+    public boolean matches(@NotNull final String key) {
         Objects.requireNonNull(key, "key is null");
         return this.key.equalsIgnoreCase(key);
     }
@@ -207,12 +193,12 @@ public abstract class Property<V> extends Element {
      * Returns {@code true} if this property matches the specified {@code key}
      * and {@code valueType}. Otherwise {@code false} is returned.
      *
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @throws NullPointerException if {@code key} is {@code null}
      * @see #matches(String)
      * @see #matches(Class)
      */
     @Contract(pure = true)
-    public boolean matches(@NotNull final String key, @Nullable final Class<?> valueType) throws NullPointerException {
+    public boolean matches(@NotNull final String key, @Nullable final Class<?> valueType) {
         return matches(key) && matches(valueType);
     }
 
@@ -232,12 +218,12 @@ public abstract class Property<V> extends Element {
     }
 
     /**
-     * Returns a {@code String} representation of this property, equal to:
+     * Returns a string representation of this property, equal to:
      * <pre>
-     *     "<i>class-name</i>@<i>hashCode</i>{key=<i>key</i>, value=<i>value</i>}"
+     *     "<i>className</i>@<i>hashCode</i>{key=<i>key</i>, value=<i>value</i>}"
      * </pre>
      */
-    @Contract(value = "-> new", pure = true)
+    @Contract(pure = true)
     @NotNull
     @Override
     public String toString() {

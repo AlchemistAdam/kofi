@@ -27,10 +27,8 @@ import java.util.function.Consumer;
 import dk.martinu.kofi.JsonArray;
 import dk.martinu.kofi.Property;
 
-// TODO arrays are mutable, override hashCode()
-
 /**
- * {@link Property} implementation that holds a {@link JsonArray} value.
+ * A {@link Property} that holds a {@link JsonArray} value.
  *
  * @author Adam Martinu
  * @since 1.0
@@ -41,18 +39,17 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
     private static final long serialVersionUID = 0L;
 
     /**
-     * Constructs a new property with the specified {@code key} and
-     * {@code value}. The key is not case-sensitive when compared to other
-     * properties. If {@code value} is {@code null}, then the property value
-     * will default to an empty {@code JsonArray}.
+     * Constructs a new property with the specified key and value. If
+     * {@code value} is {@code null}, then the property value will default to
+     * an empty array.
      *
-     * @param key   The property key.
-     * @param value The property value, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key   The property key
+     * @param value The property value, can be {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      */
     @Contract(pure = true)
-    public ArrayProperty(@NotNull final String key, @Nullable final JsonArray value) throws NullPointerException {
-        super(key, Objects.requireNonNullElse(value, new JsonArray()));
+    public ArrayProperty(@NotNull final String key, @Nullable final JsonArray value) {
+        super(key, value != null ? value : new JsonArray());
     }
 
     /**
@@ -66,15 +63,15 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
     }
 
     /**
-     * Performs the given action for each element in the {@code JsonArray}
-     * until  all elements have been processed or the action throws an
-     * exception. Exceptions thrown by the action are relayed to the caller.
+     * Performs the specified action for each element in the array until all
+     * elements have been processed or the action throws an exception.
+     * Exceptions thrown by the action are relayed to the caller.
      *
-     * @param action The action to be performed for each element.
-     * @throws NullPointerException if {@code action} is {@code null}.
+     * @param action The action to perform on each element
+     * @throws NullPointerException if {@code action} is {@code null}
      */
     @Override
-    public void forEach(@NotNull final Consumer<? super Object> action) throws NullPointerException {
+    public void forEach(@NotNull final Consumer<? super Object> action) {
         Objects.requireNonNull(action, "action is null");
         //noinspection ConstantConditions
         for (Object o : value)
@@ -96,10 +93,11 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
      *
      * @see JsonArray#toJson()
      */
-    @SuppressWarnings("ConstantConditions")
+    @Contract(pure = true)
     @NotNull
     @Override
     public String getValueString() {
+        //noinspection ConstantConditions
         return value.toJson();
     }
 
@@ -110,6 +108,7 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
      *     keyHash | valueHash << 16
      * </pre>
      */
+    @Contract(pure = true)
     @Override
     public int hashCode() {
         // key hash is immutable and is cached
@@ -132,7 +131,7 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
      *
      * @see JsonArray#iterator()
      */
-    @Contract(value = "-> new")
+    @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
     public Iterator<Object> iterator() {
@@ -146,7 +145,7 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
      *
      * @see JsonArray#spliterator()
      */
-    @Contract(value = "-> new")
+    @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
     public Spliterator<Object> spliterator() {

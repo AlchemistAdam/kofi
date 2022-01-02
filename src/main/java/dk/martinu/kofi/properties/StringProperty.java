@@ -27,7 +27,7 @@ import dk.martinu.kofi.KofiUtil;
 import dk.martinu.kofi.Property;
 
 /**
- * {@link Property} implementation that holds an {@code String} value.
+ * A {@link Property} implementation that holds a string value.
  *
  * @author Adam Martinu
  * @since 1.0
@@ -37,21 +37,23 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
     @Serial
     private static final long serialVersionUID = 0L;
 
+    /**
+     * Cached escaped version of {@link #value}.
+     */
     @Nullable
-    protected String valueString = null;
+    protected transient String escapedValue = null;
 
     /**
-     * Constructs a new property with the specified {@code key} and
-     * {@code value}. The key is not case-sensitive when compared to other
-     * properties. If {@code value} is {@code null}, then the property value
-     * will default to {@code ""} (an empty string).
+     * Constructs a new property with the specified key and value. If
+     * {@code value} is {@code null}, then the property value will default to
+     * {@code ""} (an empty string).
      *
-     * @param key   The property key.
-     * @param value The property value, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key   The property key
+     * @param value The property value, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      */
     @Contract(pure = true)
-    public StringProperty(@NotNull final String key, @Nullable final String value) throws NullPointerException {
+    public StringProperty(@NotNull final String key, @Nullable final String value) {
         super(key, Objects.requireNonNullElse(value, ""));
     }
 
@@ -76,24 +78,24 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
     }
 
     /**
-     * Returns a {@code String} representation of this property's value. The
-     * returned string is equal to:
+     * Returns a string representation of this property's value. The returned
+     * string is equal to:
      * <pre>
-     *     '"' + valueString + '"'
+     *     "\"<i>escapedValue</i>\""
      * </pre>
-     * where <i>valueString</i> is an escaped version of this property's value
-     * where the characters {@code '\n'}, {@code '\r'} and {@code '\\'} are
-     * replaced with their corresponding two-character escape sequences.
-     *
-     * @see KofiUtil#escape(String, char...).
+     * where <i>escapedValue</i> is the escaped version of this property's
+     * value. Note that all {@code " U+0022} Quotation Mark characters are also
+     * escaped.
+     * 
+     * @see KofiUtil#escape(String, char...) 
      */
-    @Contract(value = "-> new", pure = true)
+    @Contract(pure = true)
     @NotNull
     @Override
     public String getValueString() {
-        if (valueString == null)
+        if (escapedValue == null)
             //noinspection ConstantConditions
-            valueString = '"' + KofiUtil.escape(value, '\n', '\r', '\\') + '"';
-        return valueString;
+            escapedValue = '"' + KofiUtil.escape(value, '\"') + '"';
+        return escapedValue;
     }
 }

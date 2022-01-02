@@ -21,15 +21,19 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * <p>Abstract implementation of an element in a {@link Document}. An element can
- * be represented as a {@code String} returned by {@link #getString()}.
+ * An abstract element, which can be represented as a string returned by
+ * {@link #getString()}. This class does not define exactly what an element is
+ * nor its string representation.
+ * <p>
+ * Examples of elements could be the lines of a text file, the values of an
+ * array or the elements of a list.
  *
  * @author Adam Martinu
+ * @since 1.0
  * @see Comment
  * @see Property
  * @see Section
  * @see Whitespace
- * @since 1.0
  */
 public abstract class Element {
 
@@ -37,7 +41,7 @@ public abstract class Element {
      * Returns a copy of this element or throws a
      * {@code CloneNotSupportedException} if this element cannot be cloned.
      *
-     * @throws CloneNotSupportedException if this element cannot be cloned.
+     * @throws CloneNotSupportedException if this element cannot be cloned
      */
     @SuppressWarnings("RedundantThrows")
     @Contract(value = "-> new", pure = true)
@@ -46,8 +50,8 @@ public abstract class Element {
     public abstract Element clone() throws CloneNotSupportedException;
 
     /**
-     * Returns a {@code String} representation of this element as it would
-     * appear in a textual context, e.g. a file or user interface.
+     * Returns a string representation of this element as it would appear in a
+     * textual context, such as a file or graphical user interface.
      */
     @Contract(pure = true)
     @NotNull

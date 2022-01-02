@@ -24,10 +24,9 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * The {@code Whitespace} class defines an {@link Element element} used to mark
- * an index as pure whitespace in a {@link Document document} (a blank line).
- * The {@code String} representation of a {@code Whitespace} element is equal
- * to an empty string {@code ""}.
+ * An {@link Element element} used to mark pure whitespace, such as a blank
+ * line in a text file. The string representation of whitespace, returned by
+ * {@link #getString()}, is equal to an empty string {@code ""}.
  *
  * @author Adam Martinu
  * @since 1.0
@@ -38,13 +37,13 @@ public class Whitespace extends Element implements Cloneable, Serializable {
     private static final long serialVersionUID = 0L;
 
     /**
-     * Constructs a new {@code Whitespace} element.
+     * Constructs a new whitespace element.
      */
     @Contract(pure = true)
     public Whitespace() { }
 
     /**
-     * Clones this {@code Whitespace} element.
+     * Clones this whitespace element.
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
@@ -54,17 +53,18 @@ public class Whitespace extends Element implements Cloneable, Serializable {
     }
 
     /**
-     * Returns {@code true} if {@code obj} is a {@code Whitespace} element.
+     * Returns {@code true} if {@code obj} is a {@code Whitespace} object.
      * Otherwise {@code false} is returned.
      */
+    @Contract(value = "null -> false", pure = true)
     @Override
     public boolean equals(final Object obj) {
         return obj instanceof Whitespace;
     }
 
     /**
-     * Returns a {@code String} representation of this {@code Whitespace}
-     * element, equal to an empty string {@code ""}.
+     * Returns a string representation of this Whitespace element, equal to an
+     * empty string {@code ""}.
      */
     @Contract(pure = true)
     @NotNull

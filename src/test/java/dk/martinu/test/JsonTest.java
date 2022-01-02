@@ -72,16 +72,16 @@ public class JsonTest {
 
     @Test
     public void isTypeDefined() {
-        assertTrue(instance.isTypeDefined(null));
-        assertTrue(instance.isTypeDefined(instance));
-        assertTrue(instance.isTypeDefined(new JsonObject()));
-        assertTrue(instance.isTypeDefined(new JsonArray()));
-        assertTrue(instance.isTypeDefined("Hello, World!"));
-        assertTrue(instance.isTypeDefined(123));
-        assertTrue(instance.isTypeDefined(true));
+        assertTrue(instance.isDefinedType(null));
+        assertTrue(instance.isDefinedType(instance));
+        assertTrue(instance.isDefinedType(new JsonObject()));
+        assertTrue(instance.isDefinedType(new JsonArray()));
+        assertTrue(instance.isDefinedType("Hello, World!"));
+        assertTrue(instance.isDefinedType(123));
+        assertTrue(instance.isDefinedType(true));
 
-        assertFalse(instance.isTypeDefined('A'));
-        assertFalse(instance.isTypeDefined(this));
+        assertFalse(instance.isDefinedType('A'));
+        assertFalse(instance.isDefinedType(this));
     }
 
     static class JsonTestImpl extends Json {
@@ -92,19 +92,19 @@ public class JsonTest {
         }
 
         @Override
-        public String getJavaString(@NotNull final String s) {
-            return super.getJavaString(s);
+        public @NotNull String getJavaString(@NotNull final String string) {
+            return super.getJavaString(string);
         }
 
         @Override
         @NotNull
-        public String getJsonString(@NotNull final String s) {
-            return super.getJsonString(s);
+        public String getJsonString(@NotNull final String string) {
+            return super.getJsonString(string);
         }
 
         @Override
-        public boolean isTypeDefined(final Object o) {
-            return super.isTypeDefined(o);
+        public boolean isDefinedType(final Object o) {
+            return super.isDefinedType(o);
         }
 
         @Override

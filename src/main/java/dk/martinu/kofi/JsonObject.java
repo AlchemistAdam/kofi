@@ -17,30 +17,69 @@
 
 package dk.martinu.kofi;
 
+import dk.martinu.kofi.properties.ObjectProperty;
 import org.jetbrains.annotations.*;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.function.Consumer;
 
+/**
+ * {@link Json} implementation of an immutable JSON object value.
+ *
+ * @author Adam Martinu
+ * @since 1.0
+ * @see ObjectProperty
+ */
 public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Serializable {
 
+    /**
+     * Empty, zero-length entry array constant.
+     */
     protected static final Entry[] EMPTY = new Entry[0];
     @Serial
     private static final long serialVersionUID = 0L;
 
+    /**
+     * Reconstructs a new object of the specified type from the entries of
+     * {@code json} and returns it.
+     *
+     * @param json the {@code JsonObject} whose entries are used to reconstruct
+     *             the object
+     * @param type the class of the object to reconstruct
+     * @param <V> the runtime type of the object to reconstruct
+     * @return a new, reconstructed object
+     * @throws NullPointerException if {@code json} or {@code type} is
+     * {@code null}
+     * @throws InstantiationException if {@code type} does not represent a
+     * non-abstract class
+     * @throws NoSuchMethodException if {@code type} does not declare a no-arg
+     * constructor
+     * @throws IllegalAccessException if the no-arg constructor declared by
+     * {@code type} is inaccessible
+     * @throws ExceptionInInitializerError if the initialization caused by
+     * calling the constructor or setting the value of a field fails.
+     * @throws InvocationTargetException if calling the constructor throws an
+     * exception
+     * @throws NoSuchFieldException if {@code json} contains an entry whose
+     * name does not match the name of a field declared by {@code type}
+     */
     // TODO ensure that java strings are (un)escaped correctly when reflecting/reconstructing
-    // TODO check for a JSON array named "0" and if found use as constructer args
+    // TODO check for a JSON array named "0" and if found use as constructor args
     //  (this is safe because field names cannot begin with numbers
-    public static <V> V reconstruct(@NotNull final JsonObject json, @NotNull final Class<V> objectClass) throws
-            NullPointerException, InstantiationException, NoSuchMethodException, IllegalAccessException,
-            InvocationTargetException, NoSuchFieldException, ClassCastException {
+    // TODO provide more details on how entry values are assigned to fields
+    @Contract(pure = true)
+    @NotNull
+    public static <V> V reconstruct(@NotNull final JsonObject json, @NotNull final Class<V> type) throws
+            InstantiationException, NoSuchMethodException, IllegalAccessException, InvocationTargetException,
+            NoSuchFieldException {
         Objects.requireNonNull(json, "json is null");
-        Objects.requireNonNull(objectClass, "objectClass is null");
-        if (Modifier.isAbstract(objectClass.getModifiers()) || Modifier.isInterface(objectClass.getModifiers())) {
+        Objects.requireNonNull(type, "type is null");
+        if (Modifier.isAbstract(type.getModifiers()) || Modifier.isInterface(type.getModifiers())) {
             final InstantiationException exc = new InstantiationException(
-                    "objectClass must represent a non-abstract class {" + objectClass + "}");
+                    "type must represent a non-abstract class {" + type + "}");
             KofiLog.throwing(JsonObject.class.getName(), "reconstruct", exc);
             throw exc;
         }
@@ -48,17 +87,17 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         // no-arg constructor to create object
         final Constructor<V> constructor;
         try {
-            constructor = objectClass.getDeclaredConstructor();
+            constructor = type.getDeclaredConstructor();
             if (!constructor.canAccess(null) && !constructor.trySetAccessible()) {
                 final IllegalAccessException exc = new IllegalAccessException(
-                        "no-arg constructor to create object is inaccessible {" + objectClass + "}");
+                        "no-arg constructor to create object is inaccessible {" + type + "}");
                 KofiLog.throwing(JsonObject.class.getName(), "reconstruct", exc);
                 throw exc;
             }
         }
         catch (NoSuchMethodException e) {
             NoSuchMethodException exc = new NoSuchMethodException(
-                    "no-arg constructor not found {" + objectClass + "}");
+                    "no-arg constructor not found {" + type + "}");
             exc.initCause(e);
             KofiLog.throwing(JsonObject.class.getName(), "reconstruct", exc);
             throw exc;
@@ -73,10 +112,11 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
             KofiLog.throwing(JsonObject.class.getName(), "reconstruct", e);
             throw e;
         }
-        // assign values to object fields
+
+        // assign entry values to fields
         for (Entry entry : json) {
             try {
-                final Field field = objectClass.getField(entry.name);
+                final Field field = type.getField(entry.name);
                 // field must be accessible and not final
                 if (!Modifier.isFinal(field.getModifiers()) && (field.canAccess(obj) || field.trySetAccessible())) {
                     final Class<?> fieldType = field.getType();
@@ -91,7 +131,8 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
                             if (fieldType.equals(String.class)) {
                                 field.set(obj, json.getJavaString((String) entry.value));
                             }
-                            field.set(obj, entry.value);
+                            else
+                                field.set(obj, entry.value);
                             unassigned = false;
                         }
                         // below are primitive types
@@ -172,6 +213,15 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         return obj;
     }
 
+    /**
+     * Constructs a new {@code JsonObject} that wraps around the specified object
+     * using reflection and returns it. Setting non-static field values in
+     * {@code object} will not change the returned object.
+     *
+     * @param object the object to reflect
+     * @return a new {@code JsonObject}
+     * @throws NullPointerException if {@code object} is {@code null}
+     */
     // TODO ensure that java strings are (un)escaped correctly when reflecting/reconstructing
     // TODO char is not specified in JSON
     @NotNull
@@ -203,15 +253,34 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         return new JsonObject(map);
     }
 
+    /**
+     * The entries contained in this object. Each entry value is guaranteed to
+     * be defined.
+     *
+     * @see Json#getDefinedObject(Object)
+     */
     @NotNull
     protected final Entry[] entries;
 
+    /**
+     * Construct a new, empty {@code JsonObject}.
+     */
+    @Contract(pure = true)
     public JsonObject() {
         entries = EMPTY;
     }
 
-    protected JsonObject(@NotNull final Map<String, Object> map) {
-        if (map.size() > 0)
+    /**
+     * Constructs a new {@code JsonObject} containing the defined name-value
+     * pairs of the specified map.
+     *
+     * @param map the map of name-value pairs, or {@code null}
+     * @see Json#getDefinedObject(Object)
+     * @see Entry
+     */
+    @Contract(pure = true)
+    public JsonObject(@Nullable final Map<String, Object> map) {
+        if (map != null && map.size() > 0)
             entries = map.entrySet().parallelStream()
                     .map(entry -> new Entry(entry.getKey(), entry.getValue()))
                     .toArray(Entry[]::new);
@@ -219,6 +288,12 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
             entries = EMPTY;
     }
 
+    /**
+     * Returns {@code true} if this object is equal to {@code obj}
+     * ({@code this == obj}), or {@code obj} is also a {@code JsonObject} and
+     * its size and entries are equal to this object's size and entries.
+     * Otherwise {@code false} is returned.
+     */
     @Contract(value = "null -> false", pure = true)
     @Override
     public boolean equals(@Nullable final Object obj) {
@@ -237,6 +312,15 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
             return false;
     }
 
+    /**
+     * Returns the value of the entry in this object with the specified name,
+     * or {@code null}.
+     *
+     * @param name the name of the entry
+     * @return the entry value, or {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    @Contract(pure = true)
     @Nullable
     public Object get(@NotNull final String name) throws NullPointerException {
         Objects.requireNonNull(name, "name is null");
@@ -254,34 +338,67 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         return null;
     }
 
+    /**
+     * Returns the entry at the specified index in this object.
+     *
+     * @param index the index of the entry
+     * @return the entry at the specified index
+     * @throws ArrayIndexOutOfBoundsException if {@code index} is out of bounds
+     *                                   ({@code index < 0 || index >= size()})
+     */
+    @Contract(pure = true)
     @NotNull
-    public Entry getEntry(final int index) throws ArrayIndexOutOfBoundsException {
+    public Entry getEntry(@Range(from = 0, to = Integer.MAX_VALUE) final int index) throws
+            ArrayIndexOutOfBoundsException {
         return entries[index];
     }
 
+    /**
+     * Returns the hash code of this object's entries.
+     *
+     * @see Arrays#hashCode(Object[])
+     */
     @Override
     public int hashCode() {
         return Arrays.hashCode(entries);
     }
 
-    @Contract(pure = true)
+    /**
+     * Returns an iterator over the entries in this object. The returned
+     * iterator is immutable and calling {@link Iterator#remove()} will throw
+     * an {@code UnsupportedOperationException}.
+     */
+    @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
     public Iterator<Entry> iterator() {
         return new EntryIterator();
     }
 
+    /**
+     * Returns the size of this object.
+     */
     @Contract(pure = true)
     public int size() {
         return entries.length;
     }
 
-    @Contract(pure = true)
+    /**
+     * Returns a spliterator covering the entries of this object.
+     *
+     * @see Arrays#spliterator(Object[])
+     */
+    @Contract(value = "-> new", pure = true)
+    @NotNull
     @Override
     public Spliterator<Entry> spliterator() {
         return Arrays.spliterator(entries);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Contract(pure = true)
     @NotNull
     @Override
     public String toJson() {
@@ -290,37 +407,85 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         return sb.toString();
     }
 
-    // TODO javadoc
+    /**
+     * {@inheritDoc}
+     */
     @Contract(pure = true)
     @Override
     protected void toJson(@NotNull final StringBuilder sb) {
         sb.append('{');
-        for (int index = 0; index < entries.length; index++) {
-            if (index > 0)
-                sb.append(',');
-            sb.append(" \"").append(entries[index].getName()).append("\": ");
-            toJson(entries[index].getValue(), sb);
+        if (entries.length > 0) {
+            sb.append(" \"").append(entries[0].getName()).append("\": ");
+            toJson(entries[0], sb);
+            for (int index = 1; index < entries.length; index++) {
+                sb.append(", \"").append(entries[index].getName()).append("\": ");
+                toJson(entries[index].getValue(), sb);
+            }
         }
         sb.append(" }");
     }
 
+    /**
+     * A name-value pair. The value of an entry is guaranteed to be defined.
+     *
+     * @see Json#getDefinedObject(Object)
+     */
     public class Entry implements Comparable<Entry> {
 
+        /**
+         * The entry name.
+         */
         @NotNull
         public final String name;
+        /**
+         * The defined object entry value.
+         *
+         * @see Json#getDefinedObject(Object)
+         */
         @Nullable
-        protected Object value;
+        public final Object value;
+        /**
+         * Cached name hash code.
+         */
+        protected transient int hash = 0;
+        /**
+         * {@code true} if the computed name hash code is {@code 0}.
+         */
+        protected transient boolean hashIsZero = false;
 
+        /**
+         * Creates a new entry with the specified name and defined object of
+         * {@code value}.
+         *
+         * @param name the entry name
+         * @param value the value to get the defined object from, which will be
+         *              the entry value
+         * @throws NullPointerException if {@code name} is {@code null}
+         * @see Json#getDefinedObject(Object)
+         */
+        @Contract(pure = true)
         public Entry(@NotNull final String name, @Nullable final Object value) throws NullPointerException {
             this.name = Objects.requireNonNull(name, "name is null");
             this.value = getDefinedObject(value);
         }
 
+        /**
+         * Compares this entry to the specified entry.
+         *
+         * @see String#compareTo(String)
+         */
+        @Contract(pure = true)
         @Override
         public int compareTo(@NotNull final JsonObject.Entry entry) {
             return name.compareTo(entry.name);
         }
 
+        /**
+         * Returns {@code true} if this entry is equal to {@code obj}
+         * ({@code this == obj}), or {@code obj} is also an {@code Entry} and
+         * its name and value is equal to this object's name and value.
+         * Otherwise {@code false} is returned.
+         */
         @Contract(value = "null -> false", pure = true)
         @Override
         public boolean equals(@Nullable final Object obj) {
@@ -332,32 +497,54 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
                 return false;
         }
 
+        /**
+         * Returns the name of this entry.
+         */
         @Contract(pure = true)
         @NotNull
         public String getName() {
             return name;
         }
 
+        /**
+         * Returns the value of this entry.
+         */
         @Contract(pure = true)
         @Nullable
         public Object getValue() {
             return value;
         }
 
+        /**
+         * Returns a combined hash code of this entry's key, in upper-case, and
+         * value. The returned value is equal to:
+         * <pre>
+         *     keyHash | valueHash << 16
+         * </pre>
+         */
         @Contract(pure = true)
         @Override
         public int hashCode() {
-            if (value != null)
-                return name.toLowerCase().hashCode() | value.hashCode() << 16;
-            else
-                return name.toLowerCase().hashCode();
+            // name hash is immutable and is cached
+            int h = hash;
+            if (h == 0 && !hashIsZero) {
+                h = name.toUpperCase(Locale.ROOT).hashCode();
+                if (h == 0)
+                    hashIsZero = true;
+                else
+                    hash = h;
+            }
+            // value hash is mutable and must be computed each time
+            return value != null ? h | value.hashCode() << 16 : h;
         }
 
-        public void setValue(@NotNull final Object value) throws NullPointerException {
-            this.value = Objects.requireNonNull(value, "value is null");
-        }
-
-        @Contract(value = "-> new", pure = true)
+        /**
+         * Returns a string representation of this entry, equal to:
+         * <pre>
+         *     "\"<i>name</i>\": <i>value</i>"
+         * </pre>
+         */
+        @Contract(pure = true)
         @NotNull
         @Override
         public String toString() {
@@ -365,32 +552,75 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         }
     }
 
+    /**
+     * A {@code JsonObject} builder. The values of name-value pairs in a
+     * builder are not guaranteed to be defined.
+     *
+     * @see Json#getDefinedObject(Object)
+     */
     public static class Builder {
 
+        /**
+         * Map of name-value pairs.
+         */
         protected final TreeMap<String, Object> map = new TreeMap<>();
 
+        /**
+         * Constructs a new object from the name-value pairs in this builder.
+         *
+         * @see JsonObject#JsonObject(Map)
+         */
         @Contract(pure = true)
         @NotNull
         public JsonObject build() {
             return new JsonObject(map);
         }
 
+        /**
+         * Clears this builder of all name-value pairs.
+         */
         public void clear() {
             map.clear();
         }
 
+        /**
+         * Returns the value of the name-value pair for the specified name.
+         *
+         * @throws NullPointerException if {@code name} is {@code null}
+         */
         @Nullable
         public Object get(@NotNull final String name) throws NullPointerException {
             Objects.requireNonNull(name, "name is null");
             return map.get(name);
         }
 
+        /**
+         * Puts the name-value pair of the specified entry in this builder. If
+         * this builder already contains a mapping for the entry name, then the
+         * old value is replaced.
+         *
+         * @param entry the name-value pair to put into this builder
+         * @return this builder
+         * @throws NullPointerException if {@code entry} is {@code null}
+         */
+        @Contract(value = "_ -> this", pure = true)
         @NotNull
         public Builder put(@NotNull final Entry entry) throws NullPointerException {
             Objects.requireNonNull(entry, "entry is null");
             return put(entry.getName(), entry.getValue());
         }
 
+        /**
+         * Puts the name-value pair in this builder. If this builder already
+         * contains a mapping for the specified name, then the old value is
+         * replaced.
+         *
+         * @param name the name
+         * @param value the value
+         * @return this builder
+         * @throws NullPointerException if {@code name} is {@code null}
+         */
+        @Contract(value = "_, _ -> this", pure = true)
         @NotNull
         public Builder put(@NotNull final String name, @Nullable final Object value) throws NullPointerException {
             Objects.requireNonNull(name, "name is null");
@@ -398,6 +628,15 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
             return this;
         }
 
+        /**
+         * Removes the name-value pair in this builder matching the specified
+         * name.
+         *
+         * @param name the name of the name-value pair to remove
+         * @return this builder
+         * @throws NullPointerException if {@code name} is {@code null}
+         */
+        @Contract(value = "_ -> this", pure = true)
         @NotNull
         public Builder remove(@NotNull final String name) throws NullPointerException {
             Objects.requireNonNull(name, "name is null");
@@ -405,6 +644,11 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
             return this;
         }
 
+        /**
+         * Returns the size of this builder.
+         */
+        @Contract(pure = true)
+        @Range(from = 0, to = Integer.MAX_VALUE)
         public int size() {
             return map.size();
         }
@@ -412,18 +656,54 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
 
     protected class EntryIterator implements Iterator<Entry> {
 
+        /**
+         * The current index (position) of the iteration.
+         */
+        @Range(from = 0, to = Integer.MAX_VALUE)
         private int index = 0;
 
+        /**
+         * {@inheritDoc}
+         */
         @Contract(pure = true)
         @Override
         public boolean hasNext() {
             return index < entries.length;
         }
 
+        /**
+         * Throws an {@code UnsupportedOperationException}.
+         */
+        @Contract(value = "-> fail", pure = true)
+        @Override
+        public void remove() throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("remove");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
         @Contract(pure = true)
+        @NotNull
         @Override
         public Entry next() {
             return entries[index++];
+        }
+
+        /**
+         * Performs the given action for each remaining element until all
+         * elements have been processed or the action throws an exception. If
+         * the action throws an exception, use of the iterator can continue as
+         * long as it has more elements.
+         *
+         * @param action the action to be performed for each element
+         * @throws NullPointerException if the specified action is {@code null}
+         */
+        @Override
+        public void forEachRemaining(@NotNull final Consumer<? super Entry> action) {
+            Objects.requireNonNull(action, "action is null");
+            while (index < entries.length)
+                action.accept(entries[index++]);
         }
     }
 }

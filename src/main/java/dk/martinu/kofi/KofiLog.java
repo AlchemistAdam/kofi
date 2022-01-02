@@ -17,15 +17,28 @@
 
 package dk.martinu.kofi;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.logging.*;
 
+/**
+ * Singleton logger used by the KOFI API, based on the Java logging API. Contains static
+ * convenience methods for logging messages to this logger.
+ *
+ * @author Adam Martinu
+ * @since 1.0
+ * @see #getLogger()
+ * @see Logger
+ */
 public class KofiLog {
 
     /**
-     * Name of the logger returned by {@link #getLogger()}.
+     * Name of the logger returned by {@link #getLogger()}. This is the package
+     * name of this class.
+     *
+     * @see Class#getPackageName()
      */
     public static final String KOFI_LOGGER_NAME = KofiLog.class.getPackageName();
     /**
@@ -34,10 +47,29 @@ public class KofiLog {
      */
     private static volatile Logger logger = null;
 
-    public static void finest(@NotNull final String msg) {
+    /**
+     * See {@link Logger#finest(String)}.
+     */
+    @Contract(pure = true)
+    public static void finest(@Nullable final String msg) {
         getLogger().finest(msg);
     }
 
+    /**
+     * Returns the singleton logger instance held by this class, or creates a
+     * new instance if it does not already exist.
+     * <p>
+     * When creating a new logger, it is created for a named subsystem
+     * specified by {@link #KOFI_LOGGER_NAME}. Using parent handlers is
+     * disabled, its level is set to {@code ALL} and adds a new
+     * {@link ConsoleHandler} with a level set to {@code CONFIG}.
+     *
+     * @return the logger
+     * @see Logger#getLogger(String)
+     * @see Level
+     */
+    @Contract(pure = true)
+    @NotNull
     public static Logger getLogger() {
         if (logger == null)
             synchronized (KofiLog.class) {
@@ -54,19 +86,35 @@ public class KofiLog {
         return logger;
     }
 
-    public static void severe(@NotNull final String msg) {
+    /**
+     * See {@link Logger#severe(String)}.
+     */
+    @Contract(pure = true)
+    public static void severe(@Nullable final String msg) {
         getLogger().severe(msg);
     }
 
-    public static void throwing(@NotNull final String sourceClass, @Nullable final String sourceMethod,
-            @NotNull final Throwable thrown) {
+    /**
+     * See {@link Logger#throwing(String, String, Throwable)}.
+     */
+    @Contract(pure = true)
+    public static void throwing(@Nullable final String sourceClass, @Nullable final String sourceMethod,
+            @Nullable final Throwable thrown) {
         getLogger().throwing(sourceClass, sourceMethod, thrown);
     }
 
-    public static void warning(@NotNull final String msg) {
+    /**
+     * See {@link Logger#warning(String)}.
+     */
+    @Contract(pure = true)
+    public static void warning(@Nullable final String msg) {
         getLogger().warning(msg);
     }
 
+    /**
+     * Private constructor. Use {@link #getLogger()} to get a logger instance.
+     */
+    @Contract(pure = true)
     private KofiLog() { }
 
 }
