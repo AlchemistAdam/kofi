@@ -26,7 +26,7 @@ import java.util.Objects;
 import dk.martinu.kofi.Property;
 
 /**
- * {@link Property} implementation that holds a {@code Float} value.
+ * A {@link Property} that holds a float value.
  *
  * @author Adam Martinu
  * @since 1.0
@@ -37,17 +37,16 @@ public class FloatProperty extends Property<Float> implements Cloneable, Seriali
     private static final long serialVersionUID = 0L;
 
     /**
-     * Constructs a new property with the specified {@code key} and
-     * {@code value}. The key is not case-sensitive when compared to other
-     * properties. If {@code value} is {@code null}, then the property value
-     * will default to {@code 0.0f}.
+     * Constructs a new property with the specified key and value. If
+     * {@code value} is {@code null}, then the property value will default to
+     * {@code 0.0f}.
      *
-     * @param key   The property key.
-     * @param value The property value, or {@code null}.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key   The property key
+     * @param value The property value, or {@code null}
+     * @throws NullPointerException if {@code key} is {@code null}
      */
     @Contract(pure = true)
-    public FloatProperty(@NotNull final String key, @Nullable final Float value) throws NullPointerException {
+    public FloatProperty(@NotNull final String key, @Nullable final Float value) {
         super(key, Objects.requireNonNullElse(value, 0.0f));
     }
 
@@ -72,13 +71,13 @@ public class FloatProperty extends Property<Float> implements Cloneable, Seriali
     }
 
     /**
-     * Returns a {@code String} representation of this property's value. The
-     * returned string is equal to:
+     * Returns a string representation of this property's value. The returned
+     * string is equal to:
      * <pre>
-     *     Float.toString(value) + 'f'
+     *     Float.toString(<i>value</i>) + 'f'
      * </pre>
      */
-    @Contract(value = "-> new", pure = true)
+    @Contract(pure = true)
     @NotNull
     @Override
     public String getValueString() {

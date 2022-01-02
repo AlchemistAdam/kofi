@@ -26,10 +26,10 @@ import dk.martinu.kofi.Element;
 import dk.martinu.kofi.Property;
 
 /**
- * {@link Property} implementation whose value is always {@code null}. Because 
- * a {@code null} value does not inherently belong to a specific value type,
- * the value type of {@code NullProperty} is {@code Object}. This means that
- * all (except primitive) types will {@link #matches(Class) match} against an
+ * A {@link Property} whose value is always {@code null}. Because a
+ * {@code null} value does not inherently belong to a specific value type, the
+ * value type of {@code NullProperty} is {@code Object}. This means that all
+ * (except primitive) types will {@link #matches(Class) match} against an
  * instance of this class.
  *
  * @author Adam Martinu
@@ -41,14 +41,13 @@ public class NullProperty extends Property<Object> implements Cloneable, Seriali
     private static final long serialVersionUID = 0L;
 
     /**
-     * Constructs a new property with the specified {@code key}. The key is not
-     * case-sensitive when compared to other properties.
+     * Constructs a new property with the specified key.
      *
-     * @param key The property key.
-     * @throws NullPointerException if {@code key} is {@code null}.
+     * @param key The property key
+     * @throws NullPointerException if {@code key} is {@code null}
      */
     @Contract(pure = true)
-    public NullProperty(@NotNull final String key) throws NullPointerException {
+    public NullProperty(@NotNull final String key) {
         super(key);
     }
 
@@ -75,7 +74,7 @@ public class NullProperty extends Property<Object> implements Cloneable, Seriali
     /**
      * Returns the string {@code "null"}.
      */
-    @Contract(value = "-> new", pure = true)
+    @Contract(pure = true)
     @Override
     @NotNull
     public String getValueString() {
