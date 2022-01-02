@@ -34,8 +34,7 @@ import dk.martinu.kofi.spi.*;
 
 import static dk.martinu.kofi.KofiUtil.*;
 
-public class KofiCodec
-        implements DocumentFileReader, DocumentFileWriter, DocumentStringReader, DocumentStringWriter {
+public class KofiCodec implements DocumentFileReader, DocumentFileWriter, DocumentStringReader, DocumentStringWriter {
 
     @Contract(value = "-> new", pure = true)
     @NotNull
@@ -45,7 +44,7 @@ public class KofiCodec
 
     @Contract(pure = true)
     @Override
-    public boolean canRead(@NotNull final Path filePath) throws NullPointerException {
+    public boolean canRead(@NotNull final Path filePath) {
         Objects.requireNonNull(filePath, "filePath is null");
         if (!Files.isDirectory(filePath)) {
             final String fileName = filePath.getFileName().toString();
@@ -62,10 +61,10 @@ public class KofiCodec
 
     @Contract(pure = true)
     @Override
-    public boolean canWrite(@NotNull final Path filePath, @Nullable final Document document) throws
-            NullPointerException {
+    public boolean canWrite(@NotNull final Path filePath, @Nullable final Document document) {
         Objects.requireNonNull(filePath, "filePath is null");
-        if (document != null && !Files.isDirectory(filePath)) {
+        Objects.requireNonNull(document, "document is null");
+        if (!Files.isDirectory(filePath)) {
             final String fileName = filePath.getFileName().toString();
             final int index = fileName.lastIndexOf('.');
             if (index != -1) {
@@ -88,10 +87,10 @@ public class KofiCodec
             return new Document();
     }
 
-    @Contract(value = "_ -> new", pure = true)
+    @Contract(pure = true)
     @Override
     @NotNull
-    public Document readString(final @NotNull String string) throws NullPointerException, IOException {
+    public Document readString(final @NotNull String string) throws IOException {
         Objects.requireNonNull(string, "string is null");
         return read(() -> new BufferedReader(new CharArrayReader(string.toCharArray())));
     }
@@ -99,17 +98,16 @@ public class KofiCodec
     @Contract(pure = true)
     @Override
     public void writeFile(@NotNull final Path filePath, @NotNull final Document document, @Nullable final Charset cs)
-            throws NullPointerException, IOException {
+            throws IOException {
         Objects.requireNonNull(filePath, "filePath is null");
         Objects.requireNonNull(document, "document is null");
         write(() -> Files.newBufferedWriter(filePath, cs != null ? cs : StandardCharsets.UTF_8), document);
     }
 
-    @Contract(value = "_ -> new", pure = true)
+    @Contract(pure = true)
     @Override
     @NotNull
-    public String writeString(final @NotNull Document document) throws
-            NullPointerException, IOException {
+    public String writeString(final @NotNull Document document) throws IOException {
         Objects.requireNonNull(document, "document is null");
         final CharArrayWriter writer = new CharArrayWriter();
         write(() -> new BufferedWriter(writer), document);
@@ -154,11 +152,11 @@ public class KofiCodec
         if (key.isEmpty())
             throw new ParseException("property key is empty");
         // get parsable value
-        final char[] rawValue = line.substring(delimiter + 1).toCharArray();
-        final Parsable<?> parsableValue = parseValue(rawValue, 0, -1, false);
+        final char[] chars = line.substring(delimiter + 1).toCharArray();
+        final Parsable<?> parsableValue = parseValue(chars, 0, -1, false);
         // return property
         if (parsableValue != null) {
-            if (parsableValue.length == rawValue.length) {
+            if (parsableValue.length == chars.length) {
                 final Object value = parsableValue.parse();
                 return switch (parsableValue.getType()) {
                     case NULL -> new NullProperty(key);
@@ -649,6 +647,8 @@ public class KofiCodec
     @FunctionalInterface
     protected interface Supplier<T> {
 
+        @Contract(value = "-> new", pure = true)
+        @NotNull
         T get() throws IOException;
     }
 
