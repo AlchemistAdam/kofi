@@ -28,12 +28,12 @@ import static org.junit.jupiter.api.Assertions.*;
 // TODO add remove tests
 
 /**
- * Testing {@link Document} methods on an input string that has different
+ * <p>Testing {@link Document} methods on an input string that has different
  * amounts of whitespace, and with elements of all value types. Tests are
- * ordered randomly.
- * <p>
- * This test not only helps verify that documents work as intended, but also
- * that {@link KofiCodec} parses strings to elements correctly.
+ * ordered randomly.</p>
+ *
+ * <p>This test not only helps verify that documents work as intended, but also
+ * that {@link KofiCodec} parses strings to elements correctly.</p>
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.Random.class)

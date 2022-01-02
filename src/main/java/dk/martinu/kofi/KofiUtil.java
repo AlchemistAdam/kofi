@@ -29,25 +29,137 @@ import org.jetbrains.annotations.NotNull;
 public class KofiUtil {
 
     /**
-     * Returns an escaped version of the specified string {@code s}. The
-     * characters to escape are specified in the {@code chars} array. If no
-     * characters were escaped, then {@code s} is returned.
+     * An array of precomputed strings for escaping characters in the range
+     * [0x00;0x1F] as a six-character escape sequence, or a two-character
+     * escape sequence if the character is one of the following:
+     * <ul>
+     *    <li>{@code \0 U+0000} NULL</li>
+     *    <li>{@code \b U+0008} BACKSPACE</li>
+     *    <li>{@code \t U+0009} HORIZONTAL TAB</li>
+     *    <li>{@code \n U+000A} LINE FEED</li>
+     *    <li>{@code \f U+000C} FORM FEED</li>
+     *    <li>{@code \r U+000D} CARRIAGE RETURN</li>
+     * </ul>
+     */
+    private static final String[] ESCAPED_CHARS_00_1F = {
+            "\\0", "\\u0001", "\\u0002",
+            "\\u0003", "\\u0004", "\\u0005",
+            "\\u0006", "\\u0007", "\\b",
+            "\\t", "\\n", "\\u000B",
+            "\\f", "\\r", "\\u000E",
+            "\\u000F", "\\u0010", "\\u0011",
+            "\\u0012", "\\u0013", "\\u0014",
+            "\\u0015", "\\u0016", "\\u0017",
+            "\\u0018", "\\u0019", "\\u001A",
+            "\\u001B", "\\u001C", "\\u001D",
+            "\\u001E", "\\u001F"
+    };
+
+    /**
+     * Returns an escape sequence for the specified control character as a
+     * six-character escape sequence, or a two-character  escape sequence if
+     * {@code c} is one of the following:
+     * <ul>
+     *    <li>{@code \0 U+0000} NULL</li>
+     *    <li>{@code \b U+0008} BACKSPACE</li>
+     *    <li>{@code \t U+0009} HORIZONTAL TAB</li>
+     *    <li>{@code \n U+000A} LINE FEED</li>
+     *    <li>{@code \f U+000C} FORM FEED</li>
+     *    <li>{@code \r U+000D} CARRIAGE RETURN</li>
+     * </ul>
+     *
+     * @param c the control character to escape
+     * @return an escape sequence of {@code c}
+     * @throws ArrayIndexOutOfBoundsException if {@code c} is not a character
+     * in the range 0-1F, inclusive.
      */
     @Contract(pure = true)
     @NotNull
-    public static String escape(@NotNull final String s, final char... chars) {
-        final StringBuilder sb = new StringBuilder(s.length());
+    public static String escape_00_1F(final char c) {
+        return ESCAPED_CHARS_00_1F[c];
+    }
+
+    // TODO test surrogate characters
+    /**
+     * Returns an escaped version of {@code string}. Characters in the range
+     * [0x00;0x1F] are escaped as a six-character escape sequence, or a
+     * two-character escape sequence if the character is one of the following:
+     * <ul>
+     *    <li>{@code \0 U+0000} Null</li>
+     *    <li>{@code \b U+0008} Backspace</li>
+     *    <li>{@code \t U+0009} Horizontal Tabulation</li>
+     *    <li>{@code \n U+000A} Line Feed</li>
+     *    <li>{@code \f U+000C} Form Feed</li>
+     *    <li>{@code \r U+000D} Carriage Return</li>
+     * </ul>
+     * {@code \ U+005C} Reverse Solidus characters are also escaped as a
+     * two-character escape sequence. If no characters were escaped then
+     * {@code string} is returned.
+     *
+     * @param string the string to escape
+     * @return an escaped version of {@code string}
+     * @throws NullPointerException if {@code string} is null
+     * @see #escape(String, char...)
+     */
+    @Contract(pure = true)
+    @NotNull
+    public static String escape(@NotNull final String string) {
+        final char[] chars = string.toCharArray();
+        final StringBuilder sb = new StringBuilder(chars.length);
+            for (char c : chars)
+                if (c < 0x20)
+                    sb.append(ESCAPED_CHARS_00_1F[c]);
+                else if (c == '\\')
+                    sb.append("\\\\");
+                else
+                    sb.append(c);
+        return chars.length == sb.length() ? string : sb.toString();
+    }
+
+    /**
+     * Returns an escaped version of {@code string}. Characters in the range
+     * [0x00;0x1F] are escaped as a six-character escape sequence, or a
+     * two-character escape sequence if the character is one of the following:
+     * <ul>
+     *    <li>{@code \0 U+0000} Null</li>
+     *    <li>{@code \b U+0008} Backspace</li>
+     *    <li>{@code \t U+0009} Horizontal Tabulation</li>
+     *    <li>{@code \n U+000A} Line Feed</li>
+     *    <li>{@code \f U+000C} Form Feed</li>
+     *    <li>{@code \r U+000D} Carriage Return</li>
+     * </ul>
+     * {@code \ U+005C} Reverse Solidus and {@code other} characters are also
+     * escaped as two-character escape sequences. If no characters were escaped
+     * then {@code string} is returned.
+     *
+     * @param string the string to escape
+     * @param other other characters to escape
+     * @return an escaped version of {@code string}
+     * @throws NullPointerException if {@code string} is {@code null}, or if
+     * {@code other} is {@code null} and {@code string} contains a character
+     * that is not escaped by default
+     * @see #escape(String)
+     */
+    @Contract(pure = true)
+    @NotNull
+    public static String escape(@NotNull final String string, final char... other) {
+        final char[] chars = string.toCharArray();
+        final StringBuilder sb = new StringBuilder(chars.length);
         outer:
-        for (int i = 0; i < s.length(); i++) {
-            final char c0 = s.charAt(i);
-            for (char c1 : chars)
-                if (c0 == c1) {
-                    sb.append('\\').append(c0);
-                    continue outer;
-                }
+        for (char c0 : chars) {
+            if (c0 < 0x20)
+                sb.append(ESCAPED_CHARS_00_1F[c0]);
+            else if (c0 == '\\')
+                sb.append("\\\\");
+            else
+                for (char c1 : other)
+                    if (c0 == c1) {
+                        sb.append('\\').append(c0);
+                        continue outer;
+                    }
             sb.append(c0);
         }
-        return s.length() == sb.length() ? s : sb.toString();
+        return string.length() == sb.length() ? string : sb.toString();
     }
 
 
@@ -55,9 +167,9 @@ public class KofiUtil {
      * Returns {@code true} if the specified character {@code c} is a decimal
      * digit, otherwise {@code false} is returned.
      *
-     * @param c the character to be tested.
+     * @param c the character to be tested
      * @return {@code true} if {@code c} is a decimal digit, otherwise
-     * {@code false}.
+     * {@code false}
      */
     @Contract(pure = true)
     public static boolean isDigit(final char c) {
@@ -68,9 +180,9 @@ public class KofiUtil {
      * Returns {@code true} if the specified character {@code c} is a
      * hexadecimal digit, otherwise {@code false} is returned.
      *
-     * @param c the character to be tested.
+     * @param c the character to be tested
      * @return {@code true} if {@code c} is a hexadecimal digit, otherwise
-     * {@code false}.
+     * {@code false}
      */
     @Contract(pure = true)
     public static boolean isHexDigit(final char c) {
@@ -82,6 +194,19 @@ public class KofiUtil {
             return c >= 'a' && c <= 'f';
     }
 
+    /**
+     * Returns {@code true} if the specified character is whitespace, otherwise
+     * {@code false} is returned. The following characters are whitespace:
+     * <ul>
+     *    <li>{@code ' ' U+0020} Space</li>
+     *    <li>{@code \n U+0008} Line Feed</li>
+     *    <li>{@code \r U+000A} Carriage Return</li>
+     *    <li>{@code \t U+0009} Horizontal Tabulation</li>
+     * </ul>
+     *
+     * @param c the character to be tested
+     * @return {@code true} if {@code c} is whitespace, otherwise {@code false}
+     */
     public static boolean isWhitespace(final char c) {
         if (c > ' ')
             return false;
@@ -89,9 +214,19 @@ public class KofiUtil {
             return c == ' ' || c == '\n' || c == '\r' || c == '\t';
     }
 
-    // TODO needs testing
-    // TODO javadoc
-    @Contract(value = "null, _, _ -> fail; _, _, _ -> new", pure = true)
+    /**
+     * Returns an unescaped version of the specified characters, omitting the
+     * first and last character in {@code chars}.
+     *
+     * @param chars the characters to create an unescaped string from
+     * @param start the offset into {@code chars}
+     * @param end the l
+     * @return an unescaped string
+     */
+    // TODO needs general testing - also surrogate characters
+    // TODO javadoc - indices inclusive?
+    @Contract(value = "null, _, _ -> fail", pure = true)
+    @NotNull
     public static String unescape(final char[] chars, final int start, final int end) {
         final StringBuilder sb = new StringBuilder(end - start - 2);
         for (int i = start + 1; i < end - 1; ) {
