@@ -90,7 +90,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     @Contract(pure = true)
     public Document(@NotNull final Collection<Element> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        final Element[] a = elements.toArray(new Element[0]);
+        final Element[] a = elements.toArray(new Element[elements.size()]);
         list = new ArrayList<>(a.length);
         for (Element element : a)
             list.add(Objects.requireNonNull(element, "element is null"));
@@ -453,7 +453,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Range(from = 0, to = Integer.MAX_VALUE)
     public int addSection(@NotNull final String section) {
-        int index = getSectionIndex(section);
+        int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
         if (index == -1)
             list.add(index = list.size(), new Section(section));
         return index;
@@ -845,6 +845,41 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
         return getValue(section, key, Character.class, def);
     }
 
+    // TODO javadoc
+    @Contract(pure = true)
+    @Nullable
+    public List<Comment> getComments(@NotNull final String section) throws NullPointerException {
+        final int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
+        if (index == -1)
+            return null;
+        final LinkedList<Comment> comments = new LinkedList<>();
+        for (int i = index - 1; i >= 0; i--) {
+            if (list.get(i) instanceof Comment comment)
+                comments.addFirst(comment);
+            else
+                break;
+        }
+        return comments;
+    }
+
+    // TODO javadoc
+    @Contract(pure = true)
+    @Nullable
+    public List<Comment> getComments(@Nullable final String section, @NotNull final String key) throws
+            NullPointerException {
+        final int index = getPropertyIndex(section, key, null);
+        if (index == -1)
+            return null;
+        final LinkedList<Comment> comments = new LinkedList<>();
+        for (int i = index - 1; i >= 0; i--) {
+            if (list.get(i) instanceof Comment comment)
+                comments.addFirst(comment);
+            else
+                break;
+        }
+        return comments;
+    }
+
     /**
      * Returns the value of a {@link DoubleProperty} in the global section that
      * matches {@code key} and {@code Double}, or {@code null} if no property
@@ -1209,6 +1244,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
         return getValue(section, key, JsonObject.class, def);
     }
 
+    // TODO javadoc
     /**
      * Returns an array of all properties in the specified section, or
      * {@code null} if no section was found.
@@ -1218,12 +1254,13 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @return An array of all properties in the section, or {@code null}
      * @see Section#matches(String)
      */
-    @Contract(value = "null -> !null", pure = true)
+    @Contract(value = "_ -> new", pure = true)
     @Nullable
-    public Property<?>[] getProperties(@Nullable final String section) {
+    public List<Property<Object>> getProperties(@Nullable final String section) {
         return getProperties(section, null);
     }
 
+    // TODO javadoc
     /**
      * Returns an array of all properties in the specified section that matches
      * {@code valueType}, or {@code null} if no section was found.
@@ -1237,10 +1274,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @see Property#matches(Class)
      * @see Section#matches(String)
      */
-    @SuppressWarnings({"unchecked", "ConstantConditions"})
-    @Contract(value = "null, _ -> !null", pure = true)
+    @SuppressWarnings("unchecked")
+    @Contract(value = "_, _ -> new", pure = true)
     @Nullable
-    public <V> Property<V>[] getProperties(@Nullable final String section, @Nullable Class<V> valueType) {
+    public <V> List<Property<V>> getProperties(@Nullable final String section, @Nullable Class<V> valueType) {
         final int index = getElementsIndex(section);
         if (index == -1)
             return null;
@@ -1253,7 +1290,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
             else if (e instanceof Property p && p.matches(valueType))
                 subList.add((Property<V>) p);
         }
-        return (Property<V>[]) subList.toArray();
+        return subList;
     }
 
     /**
@@ -1334,6 +1371,33 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
+     * Returns the number of properties in the section in this document that
+     * matches the specified section name. If no section was found then
+     * {@code -1} is returned.
+     *
+     * @param section the name of the section to match against, can be
+     * {@code null}
+     * @return the number of properties, or {@code -1}
+     */
+    @Contract(pure = true)
+    @Range(from = -1, to = Integer.MAX_VALUE)
+    public int getPropertyCount(@Nullable final String section) {
+        final int index = getElementsIndex(section);
+        if (index == -1)
+            return -1;
+        int count = 0;
+        Element e;
+        for (int i = index; i < list.size(); i++) {
+            e = list.get(i);
+            if (e instanceof Property)
+                count++;
+            else if (e instanceof Section)
+                break;
+        }
+        return count;
+    }
+
+    /**
      * Returns the section in this document that matches {@code section}, or
      * {@code null} if no section was found.
      *
@@ -1346,12 +1410,43 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     @Contract(pure = true)
     @Nullable
     public Section getSection(@NotNull final String section) {
-        Objects.requireNonNull(section, "section is null");
-        final int index = getSectionIndex(section);
+        final int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
         if (index != -1)
             return (Section) list.get(index);
         else
             return null;
+    }
+
+    /**
+     * Returns the number of sections in this document.
+     */
+    @Contract(pure = true)
+    @Range(from = 0, to = Integer.MAX_VALUE)
+    public int getSectionCount() {
+        int count = 0;
+        Element e;
+        for (int i = 0; i < list.size(); i++) {
+            e = list.get(i);
+            if (e instanceof Section)
+                count++;
+        }
+        return count;
+    }
+
+    /**
+     * Returns a list of sections in this document.
+     */
+    @Contract(value = "-> new", pure = true)
+    @NotNull
+    public List<Section> getSections() {
+        final ArrayList<Section> sections = new ArrayList<>();
+        Element e;
+        for (int i = 0; i < list.size(); i++) {
+            e = list.get(i);
+            if (e instanceof Section s)
+                sections.add(s);
+        }
+        return sections;
     }
 
     /**
