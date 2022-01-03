@@ -180,8 +180,6 @@ public abstract class Json {
         return KofiUtil.unescape(chars, 1, chars.length - 1);
     }
 
-    // TODO this escapes u+0000 as \0, which is not in the specification
-
     /**
      * Surrounds the specified string with quotation marks and escapes any
      * characters necessary, such that it conforms to the IETF RFC 8259
@@ -195,7 +193,7 @@ public abstract class Json {
     @Contract(pure = true)
     @NotNull
     protected String getJsonString(@NotNull final String string) {
-        return '"' + KofiUtil.escape(string, '\"') + '"';
+        return '"' + KofiUtil.escapeJson(string, '\"') + '"';
     }
 
     /**

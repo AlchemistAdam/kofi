@@ -91,8 +91,6 @@ public class KofiUtil {
         return chars.length == sb.length() ? string : sb.toString();
     }
 
-    // TODO test surrogate characters
-
     /**
      * Returns an escaped version of {@code string}. Characters in the range
      * [0x00;0x1F] are escaped as a six-character escape sequence, or a
@@ -113,8 +111,9 @@ public class KofiUtil {
      * @param other  other characters to escape
      * @return an escaped version of {@code string}
      * @throws NullPointerException if {@code string} is {@code null}, or if
-     *                              {@code other} is {@code null} and {@code string} contains a character
-     *                              that is not escaped by default
+     *                              {@code other} is {@code null} and
+     *                              {@code string} contains a character that is
+     *                              not escaped by default
      * @see #escape(String)
      */
     @Contract(pure = true)
@@ -124,6 +123,61 @@ public class KofiUtil {
         final StringBuilder sb = new StringBuilder(chars.length);
         outer:
         for (char c0 : chars) {
+            if (c0 < 0x20) {
+                sb.append(ESCAPED_CHARS_00_1F[c0]);
+                continue;
+            }
+            else if (c0 == '\\') {
+                sb.append("\\\\");
+                continue;
+            }
+            else
+                for (char c1 : other)
+                    if (c0 == c1) {
+                        sb.append('\\').append(c0);
+                        continue outer;
+                    }
+            sb.append(c0);
+        }
+        return string.length() == sb.length() ? string : sb.toString();
+    }
+
+    /**
+     * Returns an escaped version of {@code string}. Characters in the range
+     * [0x00;0x1F] are escaped as a six-character escape sequence, or a
+     * two-character escape sequence if the character is one of the following:
+     * <ul>
+     *    <li>{@code \b U+0008} Backspace</li>
+     *    <li>{@code \t U+0009} Horizontal Tabulation</li>
+     *    <li>{@code \n U+000A} Line Feed</li>
+     *    <li>{@code \f U+000C} Form Feed</li>
+     *    <li>{@code \r U+000D} Carriage Return</li>
+     * </ul>
+     * {@code \ U+005C} Reverse Solidus and {@code other} characters are also
+     * escaped as two-character escape sequences. If no characters were escaped
+     * then {@code string} is returned.
+     * <p>
+     * <b>NOTE:</b> this method differs from {@link #escape(String, char...)}
+     * in that it does not use a two-character escape sequence for the
+     * {@code \0 U+0000} Null character.
+     *
+     * @param string the string to escape
+     * @param other  other characters to escape
+     * @return an escaped version of {@code string}
+     * @throws NullPointerException if {@code string} is {@code null}, or if
+     *                              {@code other} is {@code null} and
+     *                              {@code string} contains a character that is
+     *                              not escaped by default
+     */
+    public static String escapeJson(@NotNull final String string, final char... other) {
+        final char[] chars = string.toCharArray();
+        final StringBuilder sb = new StringBuilder(chars.length);
+        outer:
+        for (char c0 : chars) {
+            if (c0 == 0) {
+                sb.append("\\u0000");
+                continue;
+            }
             if (c0 < 0x20) {
                 sb.append(ESCAPED_CHARS_00_1F[c0]);
                 continue;
