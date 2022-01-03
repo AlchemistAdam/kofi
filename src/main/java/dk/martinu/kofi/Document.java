@@ -843,8 +843,16 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
         return getValue(section, key, Character.class, def);
     }
 
-    // TODO javadoc
-    @Contract(pure = true)
+    /**
+     * Returns a list of comments attached to the specified section, or
+     * {@code null} if no section was found.
+     *
+     * @param section the name of the section to match against, can be
+     *                {@code null}
+     * @return a list of comments, or {@code null}
+     * @see Section#matches(String)
+     */
+    @Contract(value = "_-> new", pure = true)
     @Nullable
     public List<Comment> getComments(@NotNull final String section) {
         final int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
@@ -860,8 +868,19 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
         return comments;
     }
 
-    // TODO javadoc
-    @Contract(pure = true)
+    /**
+     * Returns a list of comments attached to the property in the specified
+     * section that matches {@code key}, or {@code null} if no section or
+     * property was found.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return a list of comments, or {@code null}
+     * @see Section#matches(String)
+     * @see Property#matches(String)
+     */
+    @Contract(value = "_, _ -> new", pure = true)
     @Nullable
     public List<Comment> getComments(@Nullable final String section, @NotNull final String key) {
         final int index = getPropertyIndex(section, key, null);
@@ -1240,10 +1259,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
         return getValue(section, key, JsonObject.class, def);
     }
 
-    // TODO javadoc
-
     /**
-     * Returns an array of all properties in the specified section, or
+     * Returns a list of all properties in the specified section, or
      * {@code null} if no section was found.
      *
      * @param section the name of the section to match against, can be
@@ -1257,16 +1274,14 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
         return getProperties(section, null);
     }
 
-    // TODO javadoc
-
     /**
-     * Returns an array of all properties in the specified section that matches
+     * Returns a list of all properties in the specified section that matches
      * {@code valueType}, or {@code null} if no section was found.
      *
      * @param section   the name of the section to match against, can be
      *                  {@code null}
      * @param valueType the property values type, or {@code null}
-     * @param <V>       runtime type of the property values.
+     * @param <V>       runtime type of the property values
      * @return An array of all matching properties in the section, or
      * {@code null}
      * @see Property#matches(Class)
@@ -1590,26 +1605,70 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
         return list.hashCode();
     }
 
+    /**
+     * Returns {@code true} if this document does not contain a property in the
+     * global section that matches {@code key} or its value is {@code null}.
+     * Otherwise {@code false} is returned.
+     *
+     * @param key the property key to match against
+     * @return {@code true} if no property with was found or its value is
+     * {@code null}, otherwise false
+     * @see Property#matches(String)
+     */
     @Contract(pure = true)
-    // TODO javadoc
     public boolean isNull(@NotNull final String key) {
         return isNull(null, key, null);
     }
 
+    /**
+     * Returns {@code true} if this document does not contain a property in the
+     * global section that matches {@code key} and {@code valueType}, or its
+     * value is {@code null}. Otherwise {@code false} is returned.
+     *
+     * @param key       the property key to match against
+     * @param valueType the property value type to match against, or
+     *                  {@code null}
+     * @return {@code true} if no property with was found or its value is
+     * {@code null}, otherwise false
+     * @see Property#matches(String, Class)
+     */
     @Contract(pure = true)
-    // TODO javadoc
     public boolean isNull(@NotNull final String key, @Nullable final Class<?> valueType) {
         return isNull(null, key, valueType);
     }
 
+    /**
+     * Returns {@code true} if this document does not contain a property in the
+     * specified section that matches {@code key} or its value is {@code null}.
+     * Otherwise {@code false} is returned.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if no property with was found or its value is
+     * {@code null}, otherwise false
+     * @see Property#matches(String)
+     */
     @Contract(pure = true)
-    // TODO javadoc
     public boolean isNull(@Nullable final String section, @NotNull final String key) {
         return isNull(section, key, null);
     }
 
+    /**
+     * Returns {@code true} if this document does not contain a property in the
+     * specified section that matches {@code key} and {@code valueType}, or
+     * its value is {@code null}. Otherwise {@code false} is returned.
+     *
+     * @param section   the name of the section to search in, can be
+     *                  {@code null}
+     * @param key       the property key to match against
+     * @param valueType the property value type to match against, or
+     *                  {@code null}
+     * @return {@code true} if no property with was found or its value is
+     * {@code null}, otherwise false
+     * @see Property#matches(String, Class)
+     */
     @Contract(pure = true)
-    // TODO javadoc
     public boolean isNull(@Nullable final String section, @NotNull final String key,
             @Nullable final Class<?> valueType) {
         final Property<?> property = getProperty(section, key, valueType);
