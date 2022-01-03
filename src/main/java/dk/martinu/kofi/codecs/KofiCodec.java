@@ -196,7 +196,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         final IntUnaryOperator from = json ?
                 len -> {
                     // count whitespace and add to len
-                    while (len < l && Json.isWhitespace(chars[len]))
+                    while (len < l && KofiUtil.isWhitespace(chars[len]))
                         len++;
                     return len;
                 } :
@@ -309,7 +309,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                     for (; end < l; end++) {
                         c = chars[end];
                         // ws or separator - not part of number
-                        if (c < 33 && (!json || Json.isWhitespace(c)) || c == ',') {
+                        if (c < 33 && (!json || KofiUtil.isWhitespace(c)) || c == ',') {
                             break;
                         }
                         // characters not allowed after type specifier
@@ -967,7 +967,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         @NotNull
         @Override
         public String parse() {
-            return KofiUtil.unescapeString(chars, start, end);
+            return KofiUtil.unescape(chars, start, end);
         }
     }
 }
