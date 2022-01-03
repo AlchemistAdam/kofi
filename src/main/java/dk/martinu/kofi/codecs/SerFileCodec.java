@@ -39,7 +39,7 @@ public class SerFileCodec implements DocumentFileReader, DocumentFileWriter {
 
     @Contract(pure = true)
     @Override
-    public boolean canRead(@NotNull final Path filePath) throws NullPointerException {
+    public boolean canRead(@NotNull final Path filePath) {
         Objects.requireNonNull(filePath, "filePath is null");
         if (!Files.isDirectory(filePath)) {
             final String fileName = filePath.getFileName().toString();
@@ -56,8 +56,7 @@ public class SerFileCodec implements DocumentFileReader, DocumentFileWriter {
 
     @Contract(pure = true)
     @Override
-    public boolean canWrite(@NotNull final Path filePath, @Nullable final Document document) throws
-            NullPointerException {
+    public boolean canWrite(@NotNull final Path filePath, @Nullable final Document document) {
         Objects.requireNonNull(filePath, "filePath is null");
         if (document != null && !Files.isDirectory(filePath)) {
             final String fileName = filePath.getFileName().toString();
@@ -75,8 +74,7 @@ public class SerFileCodec implements DocumentFileReader, DocumentFileWriter {
     @Contract(value = "_, _ -> new", pure = true)
     @NotNull
     @Override
-    public Document readFile(@NotNull final Path filePath, @Nullable final Charset cs) throws NullPointerException,
-            IOException {
+    public Document readFile(@NotNull final Path filePath, @Nullable final Charset cs) throws IOException {
         Objects.requireNonNull(filePath, "filePath is null");
         try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(filePath))) {
             return (Document) in.readObject();
@@ -92,7 +90,7 @@ public class SerFileCodec implements DocumentFileReader, DocumentFileWriter {
     @Contract(pure = true)
     @Override
     public void writeFile(@NotNull final Path filePath, @NotNull final Document document, @Nullable final Charset cs)
-            throws NullPointerException, IOException {
+            throws IOException {
         Objects.requireNonNull(filePath, "filePath is null");
         try (ObjectOutputStream in = new ObjectOutputStream(Files.newOutputStream(filePath))) {
             in.writeObject(document);

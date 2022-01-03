@@ -17,13 +17,13 @@
 
 package dk.martinu.kofi.spi;
 
-import dk.martinu.kofi.DocumentIO;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
 import dk.martinu.kofi.Document;
+import dk.martinu.kofi.DocumentIO;
 
 /**
  * Service provider interface for reading a {@link Document} from a string.
@@ -31,8 +31,8 @@ import dk.martinu.kofi.Document;
  * the {@link DocumentIO} class.
  *
  * @author Adam Martinu
- * @since 1.0
  * @see DocumentIO#getStringReaders()
+ * @since 1.0
  */
 @FunctionalInterface
 public interface DocumentStringReader {
@@ -43,7 +43,8 @@ public interface DocumentStringReader {
      * @param string the string to read
      * @return a new document read from {@code string}
      * @throws NullPointerException if {@code string} is {@code null}
-     * @throws IOException if an error occurs is while reading the string
+     * @throws IOException          if an error occurs is while reading the
+     *                              string
      */
     @Contract(value = "_ -> new", pure = true)
     @NotNull

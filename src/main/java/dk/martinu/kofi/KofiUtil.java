@@ -56,31 +56,6 @@ public class KofiUtil {
     };
 
     /**
-     * Returns an escape sequence for the specified control character as a
-     * six-character escape sequence, or a two-character  escape sequence if
-     * {@code c} is one of the following:
-     * <ul>
-     *    <li>{@code \0 U+0000} NULL</li>
-     *    <li>{@code \b U+0008} BACKSPACE</li>
-     *    <li>{@code \t U+0009} HORIZONTAL TAB</li>
-     *    <li>{@code \n U+000A} LINE FEED</li>
-     *    <li>{@code \f U+000C} FORM FEED</li>
-     *    <li>{@code \r U+000D} CARRIAGE RETURN</li>
-     * </ul>
-     *
-     * @param c the control character to escape
-     * @return an escape sequence of {@code c}
-     * @throws ArrayIndexOutOfBoundsException if {@code c} is not a character
-     * in the range 0-1F, inclusive.
-     */
-    @Contract(pure = true)
-    @NotNull
-    public static String escape_00_1F(final char c) {
-        return ESCAPED_CHARS_00_1F[c];
-    }
-
-    // TODO test surrogate characters
-    /**
      * Returns an escaped version of {@code string}. Characters in the range
      * [0x00;0x1F] are escaped as a six-character escape sequence, or a
      * two-character escape sequence if the character is one of the following:
@@ -106,15 +81,17 @@ public class KofiUtil {
     public static String escape(@NotNull final String string) {
         final char[] chars = string.toCharArray();
         final StringBuilder sb = new StringBuilder(chars.length);
-            for (char c : chars)
-                if (c < 0x20)
-                    sb.append(ESCAPED_CHARS_00_1F[c]);
-                else if (c == '\\')
-                    sb.append("\\\\");
-                else
-                    sb.append(c);
+        for (char c : chars)
+            if (c < 0x20)
+                sb.append(ESCAPED_CHARS_00_1F[c]);
+            else if (c == '\\')
+                sb.append("\\\\");
+            else
+                sb.append(c);
         return chars.length == sb.length() ? string : sb.toString();
     }
+
+    // TODO test surrogate characters
 
     /**
      * Returns an escaped version of {@code string}. Characters in the range
@@ -133,11 +110,11 @@ public class KofiUtil {
      * then {@code string} is returned.
      *
      * @param string the string to escape
-     * @param other other characters to escape
+     * @param other  other characters to escape
      * @return an escaped version of {@code string}
      * @throws NullPointerException if {@code string} is {@code null}, or if
-     * {@code other} is {@code null} and {@code string} contains a character
-     * that is not escaped by default
+     *                              {@code other} is {@code null} and {@code string} contains a character
+     *                              that is not escaped by default
      * @see #escape(String)
      */
     @Contract(pure = true)
@@ -162,6 +139,29 @@ public class KofiUtil {
         return string.length() == sb.length() ? string : sb.toString();
     }
 
+    /**
+     * Returns an escape sequence for the specified control character as a
+     * six-character escape sequence, or a two-character  escape sequence if
+     * {@code c} is one of the following:
+     * <ul>
+     *    <li>{@code \0 U+0000} NULL</li>
+     *    <li>{@code \b U+0008} BACKSPACE</li>
+     *    <li>{@code \t U+0009} HORIZONTAL TAB</li>
+     *    <li>{@code \n U+000A} LINE FEED</li>
+     *    <li>{@code \f U+000C} FORM FEED</li>
+     *    <li>{@code \r U+000D} CARRIAGE RETURN</li>
+     * </ul>
+     *
+     * @param c the control character to escape
+     * @return an escape sequence of {@code c}
+     * @throws ArrayIndexOutOfBoundsException if {@code c} is not a character
+     *                                        in the range 0-1F, inclusive.
+     */
+    @Contract(pure = true)
+    @NotNull
+    public static String escape_00_1F(final char c) {
+        return ESCAPED_CHARS_00_1F[c];
+    }
 
     /**
      * Returns {@code true} if the specified character {@code c} is a decimal
@@ -220,7 +220,7 @@ public class KofiUtil {
      *
      * @param chars the characters to create an unescaped string from
      * @param start the offset into {@code chars}
-     * @param end the l
+     * @param end   the l
      * @return an unescaped string
      */
     // TODO needs general testing - also surrogate characters

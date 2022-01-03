@@ -17,7 +17,6 @@
 
 package dk.martinu.kofi;
 
-import dk.martinu.kofi.properties.ObjectProperty;
 import org.jetbrains.annotations.*;
 
 import java.io.Serial;
@@ -26,12 +25,14 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Consumer;
 
+import dk.martinu.kofi.properties.ObjectProperty;
+
 /**
  * {@link Json} implementation of an immutable JSON object value.
  *
  * @author Adam Martinu
- * @since 1.0
  * @see ObjectProperty
+ * @since 1.0
  */
 public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Serializable {
 
@@ -49,22 +50,24 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
      * @param json the {@code JsonObject} whose entries are used to reconstruct
      *             the object
      * @param type the class of the object to reconstruct
-     * @param <V> the runtime type of the object to reconstruct
+     * @param <V>  the runtime type of the object to reconstruct
      * @return a new, reconstructed object
-     * @throws NullPointerException if {@code json} or {@code type} is
-     * {@code null}
-     * @throws InstantiationException if {@code type} does not represent a
-     * non-abstract class
-     * @throws NoSuchMethodException if {@code type} does not declare a no-arg
-     * constructor
-     * @throws IllegalAccessException if the no-arg constructor declared by
-     * {@code type} is inaccessible
+     * @throws NullPointerException        if {@code json} or {@code type} is
+     *                                     {@code null}
+     * @throws InstantiationException      if {@code type} does not represent a
+     *                                     non-abstract class
+     * @throws NoSuchMethodException       if {@code type} does not declare a
+     *                                     no-arg constructor
+     * @throws IllegalAccessException      if the no-arg constructor declared
+     *                                     by {@code type} is inaccessible
      * @throws ExceptionInInitializerError if the initialization caused by
-     * calling the constructor or setting the value of a field fails.
-     * @throws InvocationTargetException if calling the constructor throws an
-     * exception
-     * @throws NoSuchFieldException if {@code json} contains an entry whose
-     * name does not match the name of a field declared by {@code type}
+     *                                     calling the constructor or setting
+     *                                     the value of a field fails.
+     * @throws InvocationTargetException   if calling the constructor throws an
+     *                                     exception
+     * @throws NoSuchFieldException        if {@code json} contains an entry
+     *                                     whose name does not match the name
+     *                                     of a field declared by {@code type}
      */
     // TODO ensure that java strings are (un)escaped correctly when reflecting/reconstructing
     // TODO check for a JSON array named "0" and if found use as constructor args
@@ -225,7 +228,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
     // TODO ensure that java strings are (un)escaped correctly when reflecting/reconstructing
     // TODO char is not specified in JSON
     @NotNull
-    public static JsonObject reflect(@NotNull final Object object) throws NullPointerException {
+    public static JsonObject reflect(@NotNull final Object object) {
         Objects.requireNonNull(object, "object is null");
         // class for reflection
         final Class<?> cl = object.getClass();
@@ -322,7 +325,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
      */
     @Contract(pure = true)
     @Nullable
-    public Object get(@NotNull final String name) throws NullPointerException {
+    public Object get(@NotNull final String name) {
         Objects.requireNonNull(name, "name is null");
         int min = 0, max = size() - 1;
         for (int i, k; min <= max; ) {
@@ -344,7 +347,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
      * @param index the index of the entry
      * @return the entry at the specified index
      * @throws ArrayIndexOutOfBoundsException if {@code index} is out of bounds
-     *                                   ({@code index < 0 || index >= size()})
+     *                                        ({@code index < 0 || index >= size()})
      */
     @Contract(pure = true)
     @NotNull
@@ -457,14 +460,14 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
          * Creates a new entry with the specified name and defined object of
          * {@code value}.
          *
-         * @param name the entry name
+         * @param name  the entry name
          * @param value the value to get the defined object from, which will be
          *              the entry value
          * @throws NullPointerException if {@code name} is {@code null}
          * @see Json#getDefinedObject(Object)
          */
         @Contract(pure = true)
-        public Entry(@NotNull final String name, @Nullable final Object value) throws NullPointerException {
+        public Entry(@NotNull final String name, @Nullable final Object value) {
             this.name = Objects.requireNonNull(name, "name is null");
             this.value = getDefinedObject(value);
         }
@@ -589,7 +592,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
          * @throws NullPointerException if {@code name} is {@code null}
          */
         @Nullable
-        public Object get(@NotNull final String name) throws NullPointerException {
+        public Object get(@NotNull final String name) {
             Objects.requireNonNull(name, "name is null");
             return map.get(name);
         }
@@ -605,7 +608,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
          */
         @Contract(value = "_ -> this", pure = true)
         @NotNull
-        public Builder put(@NotNull final Entry entry) throws NullPointerException {
+        public Builder put(@NotNull final Entry entry) {
             Objects.requireNonNull(entry, "entry is null");
             return put(entry.getName(), entry.getValue());
         }
@@ -615,14 +618,14 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
          * contains a mapping for the specified name, then the old value is
          * replaced.
          *
-         * @param name the name
+         * @param name  the name
          * @param value the value
          * @return this builder
          * @throws NullPointerException if {@code name} is {@code null}
          */
         @Contract(value = "_, _ -> this", pure = true)
         @NotNull
-        public Builder put(@NotNull final String name, @Nullable final Object value) throws NullPointerException {
+        public Builder put(@NotNull final String name, @Nullable final Object value) {
             Objects.requireNonNull(name, "name is null");
             map.put(name, value);
             return this;
@@ -638,7 +641,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
          */
         @Contract(value = "_ -> this", pure = true)
         @NotNull
-        public Builder remove(@NotNull final String name) throws NullPointerException {
+        public Builder remove(@NotNull final String name) {
             Objects.requireNonNull(name, "name is null");
             map.remove(name);
             return this;
@@ -663,34 +666,6 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         private int index = 0;
 
         /**
-         * {@inheritDoc}
-         */
-        @Contract(pure = true)
-        @Override
-        public boolean hasNext() {
-            return index < entries.length;
-        }
-
-        /**
-         * Throws an {@code UnsupportedOperationException}.
-         */
-        @Contract(value = "-> fail", pure = true)
-        @Override
-        public void remove() throws UnsupportedOperationException {
-            throw new UnsupportedOperationException("remove");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Contract(pure = true)
-        @NotNull
-        @Override
-        public Entry next() {
-            return entries[index++];
-        }
-
-        /**
          * Performs the given action for each remaining element until all
          * elements have been processed or the action throws an exception. If
          * the action throws an exception, use of the iterator can continue as
@@ -704,6 +679,34 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
             Objects.requireNonNull(action, "action is null");
             while (index < entries.length)
                 action.accept(entries[index++]);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Contract(pure = true)
+        @Override
+        public boolean hasNext() {
+            return index < entries.length;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Contract(pure = true)
+        @NotNull
+        @Override
+        public Entry next() {
+            return entries[index++];
+        }
+
+        /**
+         * Throws an {@code UnsupportedOperationException}.
+         */
+        @Contract(value = "-> fail", pure = true)
+        @Override
+        public void remove() throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("remove");
         }
     }
 }

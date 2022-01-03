@@ -17,8 +17,6 @@
 
 package dk.martinu.kofi;
 
-import dk.martinu.kofi.spi.DocumentStringReader;
-import dk.martinu.kofi.spi.DocumentStringWriter;
 import org.jetbrains.annotations.*;
 
 import java.io.IOException;
@@ -26,10 +24,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
-import dk.martinu.kofi.spi.DocumentFileReader;
-import dk.martinu.kofi.spi.DocumentFileWriter;
+import dk.martinu.kofi.spi.*;
 
-// TODO format
 /**
  * Contains static utility methods for retrieving service providers that can
  * read and write {@link Document}s. All service provider interfaces loaded
@@ -108,17 +104,25 @@ public class DocumentIO {
     }
 
     /**
-     * Loads all available service providers for {@link DocumentFileReader}
-     * with {@link ServiceLoader#load(Class)} if it has not already been done,
-     * otherwise calls {@link ServiceLoader#reload()}.
+     * Creates and returns a new iterator containing all available
+     * {@link DocumentFileReader}s. The returned iterator is mutable and safe
+     * for modification.
+     *
+     * @return an iterator of available readers
+     * @throws ServiceConfigurationError see {@link ServiceLoader} for details
      */
-    private static void initFileReaders() throws ServiceConfigurationError {
+    @SuppressWarnings("unused")
+    @Contract(value = "-> new", pure = true)
+    @NotNull
+    public static Iterator<DocumentFileReader> getFileReaders() throws ServiceConfigurationError {
         fileReadLock.lock();
         try {
             if (fileReaders == null)
-                fileReaders = ServiceLoader.load(DocumentFileReader.class);
-            else
-                fileReaders.reload();
+                initFileReaders();
+            final List<ServiceLoader.Provider<DocumentFileReader>> providers = fileReaders.stream().toList();
+            final ArrayList<DocumentFileReader> readers = new ArrayList<>(providers.size());
+            providers.forEach(provider -> readers.add(provider.get()));
+            return readers.iterator();
         }
         finally {
             fileReadLock.unlock();
@@ -126,20 +130,64 @@ public class DocumentIO {
     }
 
     /**
-     * Loads all available service providers for {@link DocumentStringReader}
-     * with {@link ServiceLoader#load(Class)} if it has not already been done,
-     * otherwise calls {@link ServiceLoader#reload()}.
+     * Returns the first {@link DocumentFileWriter} for which
+     * {@link DocumentFileWriter#canWrite(Path, Document) canWrite(filePath, document)}
+     * returns {@code true}. If no such writer was found, then {@code null} is
+     * returned. The order in which the writers are tested is unspecified.
+     *
+     * @param filePath the path to write the document to
+     * @param document the {@link Document} to write
+     * @return a writer which can write the specified document to
+     * {@code filePath}, otherwise {@code null}
+     * @throws NullPointerException      if {@code filePath} or {@code document} is
+     *                                   {@code null}
+     * @throws ServiceConfigurationError see {@link ServiceLoader} for details
      */
-    private static void initStringReaders() throws ServiceConfigurationError {
-        stringReadLock.lock();
+    @Contract(pure = true)
+    @Nullable
+    public static DocumentFileWriter getFileWriter(@NotNull final Path filePath, @NotNull final Document document)
+            throws ServiceConfigurationError {
+        Objects.requireNonNull(filePath, "filePath is null");
+        Objects.requireNonNull(document, "document is null");
+        fileWriteLock.lock();
         try {
-            if (stringReaders == null)
-                stringReaders = ServiceLoader.load(DocumentStringReader.class);
-            else
-                stringReaders.reload();
+            if (fileWriters == null)
+                initFileWriters();
+            // get writer for document
+            for (DocumentFileWriter writer : fileWriters)
+                if (writer.canWrite(filePath, document))
+                    return writer;
         }
         finally {
-            stringReadLock.unlock();
+            fileWriteLock.unlock();
+        }
+        // no writer was found
+        return null;
+    }
+
+    /**
+     * Creates and returns a new iterator containing all available
+     * {@link DocumentFileWriter}s. The returned iterator is mutable and safe
+     * for modification.
+     *
+     * @return an iterator of available writers
+     * @throws ServiceConfigurationError see {@link ServiceLoader} for details
+     */
+    @SuppressWarnings("unused")
+    @Contract(pure = true)
+    @NotNull
+    public static Iterator<DocumentFileWriter> getFileWriters() {
+        fileWriteLock.lock();
+        try {
+            if (fileWriters == null)
+                initFileWriters();
+            final List<ServiceLoader.Provider<DocumentFileWriter>> providers = fileWriters.stream().toList();
+            final ArrayList<DocumentFileWriter> writers = new ArrayList<>(providers.size());
+            providers.forEach(provider -> writers.add(provider.get()));
+            return writers.iterator();
+        }
+        finally {
+            fileWriteLock.unlock();
         }
     }
 
@@ -196,139 +244,18 @@ public class DocumentIO {
     }
 
     /**
-     * Loads all available service providers for {@link DocumentStringWriter}
-     * with {@link ServiceLoader#load(Class)} if it has not already been done,
-     * otherwise calls {@link ServiceLoader#reload()}.
-     */
-    private static void initStringWriters() throws ServiceConfigurationError {
-        stringWriteLock.lock();
-        try {
-            if (stringWriters == null)
-                stringWriters = ServiceLoader.load(DocumentStringWriter.class);
-            else
-                stringWriters.reload();
-        }
-        finally {
-            stringWriteLock.unlock();
-        }
-    }
-
-    /**
-     * Creates and returns a new iterator containing all available
-     * {@link DocumentFileReader}s. The returned iterator is mutable and safe
-     * for modification.
-     *
-     * @return an iterator of available readers
-     * @throws ServiceConfigurationError see {@link ServiceLoader} for details
-     */
-    @SuppressWarnings("unused")
-    @Contract(value = "-> new", pure = true)
-    @NotNull
-    public static Iterator<DocumentFileReader> getFileReaders() throws ServiceConfigurationError {
-        fileReadLock.lock();
-        try {
-            if (fileReaders == null)
-                initFileReaders();
-            final List<ServiceLoader.Provider<DocumentFileReader>> providers = fileReaders.stream().toList();
-            final ArrayList<DocumentFileReader> readers = new ArrayList<>(providers.size());
-            providers.forEach(provider -> readers.add(provider.get()));
-            return readers.iterator();
-        }
-        finally {
-            fileReadLock.unlock();
-        }
-    }
-
-    /**
-     * Returns the first {@link DocumentFileWriter} for which
-     * {@link DocumentFileWriter#canWrite(Path, Document) canWrite(filePath, document)}
-     * returns {@code true}. If no such writer was found, then {@code null} is
-     * returned. The order in which the writers are tested is unspecified.
-     *
-     * @param filePath the path to write the document to
-     * @param document the {@link Document} to write
-     * @return a writer which can write the specified document to
-     * {@code filePath}, otherwise {@code null}
-     * @throws NullPointerException      if {@code filePath} or {@code document} is
-     *                                   {@code null}
-     * @throws ServiceConfigurationError see {@link ServiceLoader} for details
-     */
-    @Contract(pure = true)
-    @Nullable
-    public static DocumentFileWriter getFileWriter(@NotNull final Path filePath, @NotNull final Document document)
-            throws ServiceConfigurationError {
-        Objects.requireNonNull(filePath, "filePath is null");
-        Objects.requireNonNull(document, "document is null");
-            fileWriteLock.lock();
-            try {
-                if (fileWriters == null)
-                    initFileWriters();
-                // get writer for document
-                for (DocumentFileWriter writer : fileWriters)
-                    if (writer.canWrite(filePath, document))
-                        return writer;
-            }
-            finally {
-                fileWriteLock.unlock();
-            }
-        // no writer was found
-        return null;
-    }
-
-    /**
-     * Loads all available service providers for {@link DocumentFileWriter}
-     * with {@link ServiceLoader#load(Class)} if it has not already been done,
-     * otherwise calls {@link ServiceLoader#reload()}.
-     */
-    private static void initFileWriters() {
-        fileWriteLock.lock();
-        try {
-            if (fileWriters == null)
-                fileWriters = ServiceLoader.load(DocumentFileWriter.class);
-            else
-                fileWriters.reload();
-        } finally {
-            fileWriteLock.unlock();
-        }
-    }
-
-    /**
-     * Creates and returns a new iterator containing all available
-     * {@link DocumentFileWriter}s. The returned iterator is mutable and safe
-     * for modification.
-     *
-     * @return an iterator of available writers
-     * @throws ServiceConfigurationError see {@link ServiceLoader} for details
-     */
-    @SuppressWarnings("unused")
-    @Contract(pure = true)
-    @NotNull
-    public static Iterator<DocumentFileWriter> getFileWriters() {
-        fileWriteLock.lock();
-        try {
-            if (fileWriters == null)
-                initFileWriters();
-            final List<ServiceLoader.Provider<DocumentFileWriter>> providers = fileWriters.stream().toList();
-            final ArrayList<DocumentFileWriter> writers = new ArrayList<>(providers.size());
-            providers.forEach(provider -> writers.add(provider.get()));
-            return writers.iterator();
-        }
-        finally {
-            fileWriteLock.unlock();
-        }
-    }
-
-    /**
      * Retrieves the first {@link DocumentFileReader} which can read the
      * specified path, reads a {@link Document} from the path and returns it.
      *
      * @param filePath the path of the document to read
      * @return a new document read from {@code filePath}
-     * @throws NullPointerException if {@code filePath} is {@code null}
-     * @throws ServiceConfigurationError see {@link ServiceLoader} for details
-     * @throws IOException if an error occurs while reading from the file
+     * @throws NullPointerException        if {@code filePath} is {@code null}
+     * @throws ServiceConfigurationError   see {@link ServiceLoader} for
+     *                                     details
+     * @throws IOException                 if an error occurs while reading
+     *                                     from the file
      * @throws ServiceUnavailableException if no available file readers can
-     * read from {@code filePath}
+     *                                     read from {@code filePath}
      * @see #getFileReader(Path)
      */
     @SuppressWarnings("unused")
@@ -349,11 +276,13 @@ public class DocumentIO {
      *
      * @param string the string to read
      * @return a new document read from {@code string}
-     * @throws NullPointerException if {@code string} is {@code null}
-     * @throws ServiceConfigurationError see {@link ServiceLoader} for details
-     * @throws IOException if an error occurs while reading the string
+     * @throws NullPointerException        if {@code string} is {@code null}
+     * @throws ServiceConfigurationError   see {@link ServiceLoader} for
+     *                                     details
+     * @throws IOException                 if an error occurs while reading the
+     *                                     string
      * @throws ServiceUnavailableException if there are no available string
-     * readers
+     *                                     readers
      */
     @SuppressWarnings("unused")
     @Contract(value = "_ -> new", pure = true)
@@ -377,16 +306,44 @@ public class DocumentIO {
     }
 
     /**
+     * Retrieves the first {@link DocumentFileWriter} which can write
+     * {@code document} to the specified path and writes it to the path.
+     *
+     * @param filePath the path to write the document to
+     * @param document the document to write
+     * @throws NullPointerException        if {@code filePath} or
+     *                                     {@code document} is {@code null}
+     * @throws ServiceConfigurationError   see {@link ServiceLoader} for
+     *                                     details
+     * @throws IOException                 if an error occurs while reading to
+     *                                     the file
+     * @throws ServiceUnavailableException if no available writers can write
+     *                                     {@code document} to {@code filePath}
+     */
+    @SuppressWarnings("unused")
+    @Contract(pure = true)
+    public static void writeFile(@NotNull final Path filePath, @NotNull final Document document) throws
+            ServiceConfigurationError, IOException, ServiceUnavailableException {
+        final DocumentFileWriter writer = getFileWriter(filePath, document);
+        if (writer != null)
+            writer.writeFile(filePath, document);
+        else
+            throw new ServiceUnavailableException("no available file writers for " + filePath);
+    }
+
+    /**
      * Retrieves the first {@link DocumentStringWriter} available, writes
      * the specified document to a string and returns it.
      *
      * @param document the document to write
      * @return a string representation of {@code document}
-     * @throws NullPointerException if {@code document} is {@code null}
-     * @throws ServiceConfigurationError see {@link ServiceLoader} for details
-     * @throws IOException if an error occurs while writing the document
+     * @throws NullPointerException        if {@code document} is {@code null}
+     * @throws ServiceConfigurationError   see {@link ServiceLoader} for
+     *                                     details
+     * @throws IOException                 if an error occurs while writing the
+     *                                     document
      * @throws ServiceUnavailableException if there are no available string
-     * writers
+     *                                     writers
      */
     @SuppressWarnings("unused")
     @Contract(pure = true)
@@ -410,26 +367,74 @@ public class DocumentIO {
     }
 
     /**
-     * Retrieves the first {@link DocumentFileWriter} which can write
-     * {@code document} to the specified path and writes it to the path.
-     *
-     * @param filePath the path to write the document to
-     * @param document the document to write
-     * @throws NullPointerException if {@code filePath} or {@code document} is
-     * {@code null}
-     * @throws ServiceConfigurationError see {@link ServiceLoader} for details
-     * @throws IOException if an error occurs while reading to the file
-     * @throws ServiceUnavailableException if no available writers can write
-     * {@code document} to {@code filePath}
+     * Loads all available service providers for {@link DocumentFileReader}
+     * with {@link ServiceLoader#load(Class)} if it has not already been done,
+     * otherwise calls {@link ServiceLoader#reload()}.
      */
-    @SuppressWarnings("unused")
-    @Contract(pure = true)
-    public static void writeFile(@NotNull final Path filePath, @NotNull final Document document) throws
-            NullPointerException, ServiceConfigurationError, IOException, ServiceUnavailableException {
-        final DocumentFileWriter writer = getFileWriter(filePath, document);
-        if (writer != null)
-            writer.writeFile(filePath, document);
-        else
-            throw new ServiceUnavailableException("no available file writers for " + filePath);
+    private static void initFileReaders() throws ServiceConfigurationError {
+        fileReadLock.lock();
+        try {
+            if (fileReaders == null)
+                fileReaders = ServiceLoader.load(DocumentFileReader.class);
+            else
+                fileReaders.reload();
+        }
+        finally {
+            fileReadLock.unlock();
+        }
+    }
+
+    /**
+     * Loads all available service providers for {@link DocumentFileWriter}
+     * with {@link ServiceLoader#load(Class)} if it has not already been done,
+     * otherwise calls {@link ServiceLoader#reload()}.
+     */
+    private static void initFileWriters() {
+        fileWriteLock.lock();
+        try {
+            if (fileWriters == null)
+                fileWriters = ServiceLoader.load(DocumentFileWriter.class);
+            else
+                fileWriters.reload();
+        }
+        finally {
+            fileWriteLock.unlock();
+        }
+    }
+
+    /**
+     * Loads all available service providers for {@link DocumentStringReader}
+     * with {@link ServiceLoader#load(Class)} if it has not already been done,
+     * otherwise calls {@link ServiceLoader#reload()}.
+     */
+    private static void initStringReaders() throws ServiceConfigurationError {
+        stringReadLock.lock();
+        try {
+            if (stringReaders == null)
+                stringReaders = ServiceLoader.load(DocumentStringReader.class);
+            else
+                stringReaders.reload();
+        }
+        finally {
+            stringReadLock.unlock();
+        }
+    }
+
+    /**
+     * Loads all available service providers for {@link DocumentStringWriter}
+     * with {@link ServiceLoader#load(Class)} if it has not already been done,
+     * otherwise calls {@link ServiceLoader#reload()}.
+     */
+    private static void initStringWriters() throws ServiceConfigurationError {
+        stringWriteLock.lock();
+        try {
+            if (stringWriters == null)
+                stringWriters = ServiceLoader.load(DocumentStringWriter.class);
+            else
+                stringWriters.reload();
+        }
+        finally {
+            stringWriteLock.unlock();
+        }
     }
 }

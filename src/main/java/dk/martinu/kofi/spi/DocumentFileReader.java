@@ -17,7 +17,6 @@
 
 package dk.martinu.kofi.spi;
 
-import dk.martinu.kofi.DocumentIO;
 import org.jetbrains.annotations.*;
 
 import java.io.IOException;
@@ -25,8 +24,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 
 import dk.martinu.kofi.Document;
+import dk.martinu.kofi.DocumentIO;
 
-// TODO format
 /**
  * Service provider interface for reading a {@link Document} from file.
  * Implementations of this interface (service providers) can be retrieved with
@@ -36,8 +35,8 @@ import dk.martinu.kofi.Document;
  * {@link dk.martinu.kofi.codecs}.
  *
  * @author Adam Martinu
- * @since 1.0
  * @see DocumentIO#getFileReaders()
+ * @since 1.0
  */
 public interface DocumentFileReader {
 
@@ -66,7 +65,8 @@ public interface DocumentFileReader {
      * @param filePath the path to read from
      * @return a new document read from {@code filePath}
      * @throws NullPointerException if {@code filePath} is {@code null}
-     * @throws IOException if an error occurs is while reading from the file
+     * @throws IOException          if an error occurs is while reading from
+     *                              the file
      */
     @Contract(value = "_ -> new", pure = true)
     @NotNull
@@ -80,10 +80,11 @@ public interface DocumentFileReader {
      * default {@code Charset} is used.
      *
      * @param filePath the path to read from
-     * @param cs the {@code Charset} to use, or {@code null}
+     * @param cs       the {@code Charset} to use, or {@code null}
      * @return a new document read from {@code filePath}
      * @throws NullPointerException if {@code filePath} is {@code null}
-     * @throws IOException if an error occurs is while reading from the file
+     * @throws IOException          if an error occurs is while reading from
+     *                              the file
      */
     @Contract(value = "_, _ -> new", pure = true)
     @NotNull

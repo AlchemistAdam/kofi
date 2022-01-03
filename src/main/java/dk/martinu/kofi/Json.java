@@ -28,9 +28,9 @@ import org.jetbrains.annotations.*;
  * for more details.
  *
  * @author Adam Martinu
- * @since 1.0
  * @see JsonArray
  * @see JsonObject
+ * @since 1.0
  */
 public abstract class Json {
 
@@ -181,6 +181,7 @@ public abstract class Json {
     }
 
     // TODO this escapes u+0000 as \0, which is not in the specification
+
     /**
      * Surrounds the specified string with quotation marks and escapes any
      * characters necessary, such that it conforms to the IETF RFC 8259
@@ -259,7 +260,7 @@ public abstract class Json {
      *
      * @throws IllegalArgumentException if {@code value} is not
      *                                  {@link #isDefinedType(Object) defined}
-     * @throws NullPointerException if {@code sb} is {@code null}
+     * @throws NullPointerException     if {@code sb} is {@code null}
      */
     protected void toJson(@Nullable Object value, @NotNull final StringBuilder sb) throws IllegalArgumentException {
         if (isDefinedType(value)) {

@@ -116,6 +116,8 @@ public abstract class Property<V> extends Element {
      */
     @Contract(pure = true)
     @NotNull
+    // TODO include escaped names in test
+    //  \;key = ... (file) -> ;key (document)
     public String getKeyString() {
         return KofiUtil.escape(key, ';', '[');
     }

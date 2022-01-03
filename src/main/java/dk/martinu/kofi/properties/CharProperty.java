@@ -17,13 +17,13 @@
 
 package dk.martinu.kofi.properties;
 
-import dk.martinu.kofi.KofiUtil;
 import org.jetbrains.annotations.*;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
+import dk.martinu.kofi.KofiUtil;
 import dk.martinu.kofi.Property;
 
 /**

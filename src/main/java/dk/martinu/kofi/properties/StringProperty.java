@@ -86,8 +86,8 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
      * where <i>escapedValue</i> is the escaped version of this property's
      * value. Note that all {@code " U+0022} Quotation Mark characters are also
      * escaped.
-     * 
-     * @see KofiUtil#escape(String, char...) 
+     *
+     * @see KofiUtil#escape(String, char...)
      */
     @Contract(pure = true)
     @NotNull

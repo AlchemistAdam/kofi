@@ -29,11 +29,11 @@ import org.jetbrains.annotations.NotNull;
  * array or the elements of a list.
  *
  * @author Adam Martinu
- * @since 1.0
  * @see Comment
  * @see Property
  * @see Section
  * @see Whitespace
+ * @since 1.0
  */
 public abstract class Element {
 

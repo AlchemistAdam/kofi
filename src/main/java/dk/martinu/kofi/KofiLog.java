@@ -17,9 +17,7 @@
 
 package dk.martinu.kofi;
 
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 import java.util.logging.*;
 
@@ -28,9 +26,9 @@ import java.util.logging.*;
  * convenience methods for logging messages to this logger.
  *
  * @author Adam Martinu
- * @since 1.0
  * @see #getLogger()
  * @see Logger
+ * @since 1.0
  */
 public class KofiLog {
 

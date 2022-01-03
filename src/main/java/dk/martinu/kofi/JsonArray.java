@@ -17,7 +17,6 @@
 
 package dk.martinu.kofi;
 
-import dk.martinu.kofi.properties.ArrayProperty;
 import org.jetbrains.annotations.*;
 
 import java.io.Serial;
@@ -26,12 +25,14 @@ import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Consumer;
 
+import dk.martinu.kofi.properties.ArrayProperty;
+
 /**
  * {@link Json} implementation of an immutable JSON array value.
  *
  * @author Adam Martinu
- * @since 1.0
  * @see ArrayProperty
+ * @since 1.0
  */
 public class JsonArray extends Json implements Iterable<Object>, Serializable {
 
@@ -44,15 +45,15 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
 
     /**
      * Constructs a new {@code JsonArray} that wraps around the specified array
-     * using reflection and returns it. Removing or inserting elements in 
+     * using reflection and returns it. Removing or inserting elements in
      * {@code array} will not change the returned array.
      *
      * @param array the array to reflect
      * @return a new {@code JsonArray}
-     * @throws NullPointerException if {@code array} is {@code null}
+     * @throws NullPointerException     if {@code array} is {@code null}
      * @throws IllegalArgumentException if {@code array} is not an array type,
-     * determined by {@link Class#isArray()}
-     * @see #JsonArray(Object...) 
+     *                                  determined by {@link Class#isArray()}
+     * @see #JsonArray(Object...)
      */
     @Contract(value = "_ -> new", pure = true)
     @NotNull
@@ -67,27 +68,11 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
             list.add(Array.get(array, i));
         return new JsonArray(list);
     }
-
-    /**
-     * Performs the specified action for each element in the array until all
-     * elements have been processed or the action throws an exception.
-     * Exceptions thrown by the action are relayed to the caller.
-     *
-     * @param action The action to perform on each element
-     * @throws NullPointerException if {@code action} is {@code null}
-     */
-    @Override
-    public void forEach(@NotNull final Consumer<? super Object> action) {
-        Objects.requireNonNull(action, "action is null");
-        for (Object o : array)
-            action.accept(o);
-    }
-
     /**
      * The objects contained in this array. Each object is guaranteed to be
      * defined.
-     * 
-     * @see Json#getDefinedObject(Object)  
+     *
+     * @see Json#getDefinedObject(Object)
      */
     @NotNull
     protected final Object[] array;
@@ -103,9 +88,9 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
     /**
      * Constructs a new {@code JsonArray} containing the defined objects of
      * {@code values}.
-     * 
+     *
      * @param values the array objects, or {@code null}
-     * @see Json#getDefinedObject(Object) 
+     * @see Json#getDefinedObject(Object)
      */
     // TODO test size of varargs array for different parameters; int[] vs Object[]
     @Contract(pure = true)
@@ -162,12 +147,27 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
     }
 
     /**
+     * Performs the specified action for each element in the array until all
+     * elements have been processed or the action throws an exception.
+     * Exceptions thrown by the action are relayed to the caller.
+     *
+     * @param action The action to perform on each element
+     * @throws NullPointerException if {@code action} is {@code null}
+     */
+    @Override
+    public void forEach(@NotNull final Consumer<? super Object> action) {
+        Objects.requireNonNull(action, "action is null");
+        for (Object o : array)
+            action.accept(o);
+    }
+
+    /**
      * Returns the object at the specified index in this array.
      *
      * @param index the index of the object
      * @return the element at the specified index, can be {@code null}
      * @throws ArrayIndexOutOfBoundsException if {@code index} is out of bounds
-     *                                 {@code (index < 0 || index >= length())}
+     *                                        {@code (index < 0 || index >= length())}
      */
     @Contract(pure = true)
     @Nullable
@@ -259,21 +259,28 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
         private int index = 0;
 
         /**
+         * Performs the given action for each remaining element until all
+         * elements have been processed or the action throws an exception. If
+         * the action throws an exception, use of the iterator can continue as
+         * long as it has more elements.
+         *
+         * @param action the action to be performed for each element
+         * @throws NullPointerException if the specified action is {@code null}
+         */
+        @Override
+        public void forEachRemaining(@NotNull final Consumer<? super Object> action) {
+            Objects.requireNonNull(action, "action is null");
+            while (index < array.length)
+                action.accept(array[index++]);
+        }
+
+        /**
          * {@inheritDoc}
          */
         @Contract(pure = true)
         @Override
         public boolean hasNext() {
             return index < array.length;
-        }
-
-        /**
-         * Throws an {@code UnsupportedOperationException}.
-         */
-        @Contract(value = "-> fail", pure = true)
-        @Override
-        public void remove() throws UnsupportedOperationException {
-            throw new UnsupportedOperationException("remove");
         }
 
         /**
@@ -289,19 +296,12 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
         }
 
         /**
-         * Performs the given action for each remaining element until all
-         * elements have been processed or the action throws an exception. If
-         * the action throws an exception, use of the iterator can continue as
-         * long as it has more elements.
-         *
-         * @param action the action to be performed for each element
-         * @throws NullPointerException if the specified action is {@code null}
+         * Throws an {@code UnsupportedOperationException}.
          */
+        @Contract(value = "-> fail", pure = true)
         @Override
-        public void forEachRemaining(@NotNull final Consumer<? super Object> action) {
-            Objects.requireNonNull(action, "action is null");
-            while (index < array.length)
-                action.accept(array[index++]);
+        public void remove() throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("remove");
         }
     }
 }

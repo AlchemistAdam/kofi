@@ -27,8 +27,8 @@ import java.util.stream.Stream;
 
 import dk.martinu.kofi.properties.*;
 
-// TODO format
 // TODO add methods for NullProperties
+
 /**
  * A collection of {@link Element elements} with {@code add}, {@code get},
  * {@code contains} and {@code remove} methods provided for {@link Section} and
@@ -55,8 +55,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
 
     /**
      * A list of all elements in this document. The order of the elements in
-     * this list defines how they are logically related to each other. For 
-     * example, a property at index {@code i} belongs to the section at the 
+     * this list defines how they are logically related to each other. For
+     * example, a property at index {@code i} belongs to the section at the
      * highest index {@code k} for which {@code k &lt i} is {@code true}.
      */
     @NotNull
@@ -217,7 +217,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     /**
      * Inserts {@code element} at the specified {@code index} in this document.
      * Shifts the element currently at that position (if any) and any
-     * subsequent elements to the right (adds one to their indices). This 
+     * subsequent elements to the right (adds one to their indices). This
      * method does nothing if {@code element} is {@code null}.
      *
      * @param index   index at which {@code element} is to be inserted
@@ -445,7 +445,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
-     * Appends a new {@link Section} with the specified name to this document 
+     * Appends a new {@link Section} with the specified name to this document
      * if it is not already present and returns its index (position).
      *
      * @param section the name of the section to add
@@ -532,7 +532,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * specified section that matches {@code key}.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @return {@code true} if a property was found, otherwise {@code false}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -563,7 +563,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * specified section that matches {@code key} and {@code valueType}.
      *
      * @param section   the name of the section to search in, can be
-     * {@code null}
+     *                  {@code null}
      * @param key       the property key to match against
      * @param valueType the property value type, can be {@code null}
      * @return {@code true} if a property was found, otherwise {@code false}
@@ -595,7 +595,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @param obj the object to be compared for equality with this document
      * @return {@code true} if the specified object is equal to this document,
      * otherwise {@code false}
-     * @see ArrayList#equals(Object) 
+     * @see ArrayList#equals(Object)
      */
     @Contract(value = "null -> false", pure = true)
     @Override
@@ -648,7 +648,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @return the value of the found property, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -685,7 +685,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @param def     the default value to return if no property was found
      * @return the value of the found property, or {@code def}
@@ -696,7 +696,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
     public JsonArray getArray(@Nullable final String section, @NotNull final String key,
-                              @Nullable final JsonArray def) {
+            @Nullable final JsonArray def) {
         return getValue(section, key, JsonArray.class, def);
     }
 
@@ -723,7 +723,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @return the value of the found property, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -760,7 +760,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @param def     the default value to return if no property was found
      * @return the value of the found property, or {@code def}
@@ -797,7 +797,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @return the value of the found property, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -832,7 +832,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @param def     the default value to return if no property was found
      * @return the value of the found property, or {@code def}
@@ -848,7 +848,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     // TODO javadoc
     @Contract(pure = true)
     @Nullable
-    public List<Comment> getComments(@NotNull final String section) throws NullPointerException {
+    public List<Comment> getComments(@NotNull final String section) {
         final int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
         if (index == -1)
             return null;
@@ -865,8 +865,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     // TODO javadoc
     @Contract(pure = true)
     @Nullable
-    public List<Comment> getComments(@Nullable final String section, @NotNull final String key) throws
-            NullPointerException {
+    public List<Comment> getComments(@Nullable final String section, @NotNull final String key) {
         final int index = getPropertyIndex(section, key, null);
         if (index == -1)
             return null;
@@ -902,7 +901,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @return the value of the found property, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -937,7 +936,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @param def     the default value to return if no property was found
      * @return the value of the found property, or {@code def}
@@ -946,8 +945,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public Double getDouble(@Nullable final String section, @NotNull final String key, @Nullable final Double def)
-            {
+    public Double getDouble(@Nullable final String section, @NotNull final String key, @Nullable final Double def) {
         return getValue(section, key, Double.class, def);
     }
 
@@ -985,7 +983,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @return the value of the found property, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -1020,7 +1018,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @param def     the default value to return if no property was found
      * @return the value of the found property, or {@code def}
@@ -1055,7 +1053,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @return the value of the found property, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -1090,7 +1088,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @param def     the default value to return if no property was found
      * @return the value of the found property, or {@code def}
@@ -1125,7 +1123,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @return the value of the found property, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -1160,7 +1158,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @param def     the default value to return if no property was found
      * @return the value of the found property, or {@code def}
@@ -1195,7 +1193,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @return the value of the found property, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -1230,7 +1228,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @param def     the default value to return if no property was found
      * @return the value of the found property, or {@code def}
@@ -1245,12 +1243,13 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     // TODO javadoc
+
     /**
      * Returns an array of all properties in the specified section, or
      * {@code null} if no section was found.
      *
      * @param section the name of the section to match against, can be
-     * {@code null}
+     *                {@code null}
      * @return An array of all properties in the section, or {@code null}
      * @see Section#matches(String)
      */
@@ -1261,6 +1260,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     // TODO javadoc
+
     /**
      * Returns an array of all properties in the specified section that matches
      * {@code valueType}, or {@code null} if no section was found.
@@ -1313,7 +1313,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * {@code key}, or {@code null} if no property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @return the property that was found, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -1331,7 +1331,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      *
      * @param key       the property key to match against
      * @param valueType the property value type to match against, can be
-     * {@code null}
+     *                  {@code null}
      * @param <V>       runtime type of the property value
      * @return the property that was found, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -1348,10 +1348,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * and {@code valueType}, or {@code null} if no property was found.
      *
      * @param section   the name of the section to search in, can be
-     * {@code null}
+     *                  {@code null}
      * @param key       the property key to match against
      * @param valueType the property value type to match against, can be
-     * {@code null}
+     *                  {@code null}
      * @param <V>       runtime type of the property value
      * @return the property that was found, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -1376,7 +1376,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * {@code -1} is returned.
      *
      * @param section the name of the section to match against, can be
-     * {@code null}
+     *                {@code null}
      * @return the number of properties, or {@code -1}
      */
     @Contract(pure = true)
@@ -1402,7 +1402,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * {@code null} if no section was found.
      *
      * @param section the name of the section to match against, can be
-     * {@code null}
+     *                {@code null}
      * @return the section that was found, or {@code null}
      * @throws NullPointerException if {@code section} is {@code null}
      * @see Section#matches(String)
@@ -1471,7 +1471,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @return the value of the found property, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
@@ -1489,7 +1489,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @param def     the default value to return if no property was found
      * @return the value of the found property, or {@code def}
@@ -1524,7 +1524,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * {@code key}, or {@code def} if no property was found.
      *
      * @param section the name of the section to search in, can be
-     * {@code null}
+     *                {@code null}
      * @param key     the property key to match against
      * @param def     the default value to return if no property was found
      * @param <V>     runtime type of the property value
@@ -1544,7 +1544,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      *
      * @param key       the property key to match against
      * @param valueType the property value type to match against, or
-     * {@code null}
+     *                  {@code null}
      * @param def       the default value to return if no property was found
      * @param <V>       runtime type of the property value
      * @return the value of the found property, or {@code def}
@@ -1562,10 +1562,10 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * found.
      *
      * @param section   the name of the section to search in, can be
-     * {@code null}
+     *                  {@code null}
      * @param key       the property key to match against
      * @param valueType the property value type to match against, or
-     * {@code null}
+     *                  {@code null}
      * @param def       the default value to return if no property was found
      * @param <V>       runtime type of the property value
      * @return the value of the found property, or {@code def}
@@ -1789,7 +1789,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      *
      * @param index the starting index, inclusive
      * @throws IndexOutOfBoundsException if {@code index >= size()} is
-     * {@code true}
+     *                                   {@code true}
      */
     protected void removeComments(final int index) {
         for (int i = index; i >= 0; i--)
