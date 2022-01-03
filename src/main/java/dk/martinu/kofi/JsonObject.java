@@ -418,11 +418,13 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
     protected void toJson(@NotNull final StringBuilder sb) {
         sb.append('{');
         if (entries.length > 0) {
-            sb.append(" \"").append(entries[0].getName()).append("\": ");
-            toJson(entries[0], sb);
+            Entry entry = entries[0];
+            sb.append(" \"").append(entry.name).append("\": ");
+            toJson(entry.value, sb);
             for (int index = 1; index < entries.length; index++) {
-                sb.append(", \"").append(entries[index].getName()).append("\": ");
-                toJson(entries[index].getValue(), sb);
+                entry = entries[index];
+                sb.append(", \"").append(entry.name).append("\": ");
+                toJson(entry.value, sb);
             }
         }
         sb.append(" }");
