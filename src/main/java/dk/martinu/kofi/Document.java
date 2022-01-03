@@ -27,8 +27,6 @@ import java.util.stream.Stream;
 
 import dk.martinu.kofi.properties.*;
 
-// TODO add methods for NullProperties
-
 /**
  * A collection of {@link Element elements} with {@code add}, {@code get},
  * {@code contains} and {@code remove} methods provided for {@link Section} and
@@ -1575,7 +1573,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     @Nullable
     public <V> V getValue(@Nullable final String section, @NotNull final String key,
             @Nullable final Class<V> valueType, @Nullable V def) {
-        Property<V> property = getProperty(section, key, valueType);
+        final Property<V> property = getProperty(section, key, valueType);
         return property != null ? property.value : def;
     }
 
@@ -1590,6 +1588,32 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     @Override
     public int hashCode() {
         return list.hashCode();
+    }
+
+    @Contract(pure = true)
+    // TODO javadoc
+    public boolean isNull(@NotNull final String key) {
+        return isNull(null, key, null);
+    }
+
+    @Contract(pure = true)
+    // TODO javadoc
+    public boolean isNull(@NotNull final String key, @Nullable final Class<?> valueType) {
+        return isNull(null, key, valueType);
+    }
+
+    @Contract(pure = true)
+    // TODO javadoc
+    public boolean isNull(@Nullable final String section, @NotNull final String key) {
+        return isNull(section, key, null);
+    }
+
+    @Contract(pure = true)
+    // TODO javadoc
+    public boolean isNull(@Nullable final String section, @NotNull final String key,
+            @Nullable final Class<?> valueType) {
+        final Property<?> property = getProperty(section, key, valueType);
+        return property == null || property.value == null;
     }
 
     /**
