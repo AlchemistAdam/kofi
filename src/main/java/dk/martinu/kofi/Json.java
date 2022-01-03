@@ -177,7 +177,7 @@ public abstract class Json {
     @NotNull
     protected String getJavaString(@NotNull final String string) {
         final char[] chars = string.toCharArray();
-        return KofiUtil.unescape(chars, 0, chars.length);
+        return KofiUtil.unescape(chars, 1, chars.length - 1);
     }
 
     // TODO this escapes u+0000 as \0, which is not in the specification

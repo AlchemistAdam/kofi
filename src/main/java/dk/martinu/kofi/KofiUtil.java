@@ -124,10 +124,14 @@ public class KofiUtil {
         final StringBuilder sb = new StringBuilder(chars.length);
         outer:
         for (char c0 : chars) {
-            if (c0 < 0x20)
+            if (c0 < 0x20) {
                 sb.append(ESCAPED_CHARS_00_1F[c0]);
-            else if (c0 == '\\')
+                continue;
+            }
+            else if (c0 == '\\') {
                 sb.append("\\\\");
+                continue;
+            }
             else
                 for (char c1 : other)
                     if (c0 == c1) {
@@ -215,23 +219,21 @@ public class KofiUtil {
     }
 
     /**
-     * Returns an unescaped version of the specified characters, omitting the
-     * first and last character in {@code chars}.
+     * Returns an unescaped version of the characters in the specified range
+     * (inclusive).
      *
      * @param chars the characters to create an unescaped string from
-     * @param start the offset into {@code chars}
-     * @param end   the l
+     * @param start the starting offset into {@code chars}, inclusive
+     * @param end   the ending offset into {@code chars}, inclusive
      * @return an unescaped string
      */
-    // TODO needs general testing - also surrogate characters
-    // TODO javadoc - indices inclusive?
     @Contract(value = "null, _, _ -> fail", pure = true)
     @NotNull
     public static String unescape(final char[] chars, final int start, final int end) {
-        final StringBuilder sb = new StringBuilder(end - start - 2);
-        for (int i = start + 1; i < end - 1; ) {
+        final StringBuilder sb = new StringBuilder(end - start);
+        for (int i = start; i < end; ) {
             if (chars[i] == '\\') {
-                final int len = end - 1 - i;
+                final int len = end - i;
                 if (len < 2) {
                     KofiLog.warning("empty escape sequence");
                     sb.append(chars[i++]);
