@@ -244,11 +244,11 @@ public abstract class Json {
     }
 
     /**
-     * Creates a JSON string representation of {@code value} and appends it to
-     * the specified {@code StringBuilder}. This method is intended for
-     * implementations that represent an array or object which can have member
-     * values. If {@code value} is an instance of {@code Json}, then its own
-     * {@link #toJson(StringBuilder)} will be called.
+     * Appends a JSON string representation of {@code value} to the specified
+     * {@code StringBuilder}. This method assumes {@code value} is
+     * {@link #getDefinedObject(Object) defined}. If {@code value} is an
+     * instance of {@code Json}, then its own {@link #toJson(StringBuilder)}
+     * will be called.
      * <p>
      * <b>NOTE:</b> irrational numbers such as {@code Infinity} or {@code NaN}
      * are represented as {@code 0.0}.
@@ -265,7 +265,7 @@ public abstract class Json {
             if (value == null)
                 sb.append("null");
             else if (value instanceof String s)
-                sb.append(s); // TODO convert to JSON string?
+                sb.append(s);
             else if (value instanceof Number n) {
                 if (value instanceof Integer i)
                     sb.append(i.intValue());
