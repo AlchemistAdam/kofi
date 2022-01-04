@@ -29,7 +29,16 @@ public class KofiUtilTest {
 
     @Test
     void escape() {
-        // TODO write test
+        final String unescaped = "\t\\Hello, World!\\\r\n";
+        final String escaped = "\\t\\\\Hello, World!\\\\\\r\\n";
+        assertEquals(escaped, KofiUtil.escape(unescaped));
+    }
+
+    @Test
+    void escapeOther() {
+        final String unescaped = "\t\\Hello, World!\\\r\n";
+        final String escaped = "\\t\\\\He\\l\\lo, \\Wor\\ld!\\\\\\r\\n";
+        assertEquals(escaped, KofiUtil.escape(unescaped, 'l', 'W'));
     }
 
     @Test
@@ -54,43 +63,10 @@ public class KofiUtilTest {
             assertFalse(KofiUtil.isHexDigit(c), "isHexDigit(" + c + ")");
     }
 
-//    @Test
-//    void isWhitespace() {
-//        final char[] ws = {' ', '\n', '\r', '\t'};
-//        for (char c : ws)
-//            assertTrue(KofiUtil.isWhitespace(c), "isWhitespace(" + c + ")");
-//
-//        final char[] notWs = {'\\', '0', 'A', 'a', '\0', '1', 'B', 'b'};
-//        for (char c : notWs)
-//            assertFalse(KofiUtil.isWhitespace(c), "isWhitespace(" + c + ")");
-//    }
-
-//    @Test
-//    void trim() {
-//        final String[] strings = {
-//                "; KOFI comment   ",
-//                "\tHello, World!\r\n",
-//                "    Monkey ",
-//                " \t \r\nABC\n \n ",
-//                "string",
-//                ""
-//        };
-//        final String[] trim = {
-//                "; KOFI comment",
-//                "Hello, World!",
-//                "Monkey",
-//                "ABC",
-//                "string",
-//                ""
-//        };
-//        for (int i = 0; i < trim.length; i++)
-//            assertEquals(trim[i], KofiUtil.trim(strings[i]));
-//        //noinspection ConstantConditions
-//        assertThrows(NullPointerException.class, () -> KofiUtil.trim(null));
-//    }
-
     @Test
     void unescape() {
-        // TODO write test
+        final String escaped = "\\t\\\\Hello, World!\\\\\\r\\n";
+        final String unescaped = "\t\\Hello, World!\\\r\n";
+        assertEquals(unescaped, KofiUtil.unescape(escaped.toCharArray(), 0, escaped.length()));
     }
 }
