@@ -92,7 +92,6 @@ public class JsonArray extends Json implements Iterable<Object>, Serializable {
      * @param values the array objects, or {@code null}
      * @see Json#getDefinedObject(Object)
      */
-    // TODO test size of varargs array for different parameters; int[] vs Object[]
     @Contract(pure = true)
     public JsonArray(@Nullable final Object... values) {
         if (values != null && values.length != 0) {
