@@ -20,6 +20,7 @@ package dk.martinu.test;
 import org.junit.jupiter.api.*;
 
 import java.nio.file.*;
+import java.util.List;
 
 import dk.martinu.kofi.*;
 import dk.martinu.kofi.codecs.KofiCodec;
@@ -27,8 +28,6 @@ import dk.martinu.kofi.spi.DocumentFileReader;
 import dk.martinu.kofi.spi.DocumentFileWriter;
 
 import static org.junit.jupiter.api.Assertions.*;
-
-// TODO add whitespace, comments, null values
 
 /**
  * Testing write and read of {@link KofiCodec} with all property types in
@@ -100,9 +99,17 @@ public class KofiCodecTest {
             assertTrue(document.contains("abc", "int", Integer.class));
             assertEquals(4422, document.getInt("abc", "int", 12));
 
+            assertNotNull(document.getPropertyComments("abc", "int"));
+            assertEquals(1, document.getPropertyComments("abc", "int").size());
+            assertEquals("This is an IntProperty with a value of 4422", document.getPropertyComments("abc", "int").get(0).text);
+
             assertTrue(document.contains("int2"));
             assertTrue(document.contains("int2", Integer.class));
             assertEquals(442211, document.getInt("int2", 12));
+
+            assertNotNull(document.getPropertyComments("int2"));
+            assertEquals(1, document.getPropertyComments("int2").size());
+            assertEquals("This is an IntProperty with a value of 442211", document.getPropertyComments("int2").get(0).text);
         }
 
         @Test
@@ -117,6 +124,31 @@ public class KofiCodecTest {
             assertTrue(document.contains("abc", "string"));
             assertTrue(document.contains("abc", "string", String.class));
             assertEquals("Hello, World!", document.getString("abc", "string", "12"));
+
+            assertNotNull(document.getPropertyComments("abc", "string"));
+            assertEquals(2, document.getPropertyComments("abc", "string").size());
+            assertEquals("This is a StringProperty", document.getPropertyComments("abc", "string").get(0).text);
+            assertEquals("Its value is a common greeting in programming languages", document.getPropertyComments("abc", "string").get(1).text);
+        }
+
+        @Test
+        void isNull() {
+            assertTrue(document.contains("null"));
+            assertTrue(document.contains("null", Object.class));
+            assertNull(document.getValue("null", Object.class, new Object()));
+            assertTrue(document.isNull("null"));
+
+            assertTrue(document.contains("abc", "null"));
+            assertTrue(document.contains("abc", "null", Object.class));
+            assertNull(document.getValue("abc", "null", Object.class, new Object()));
+            assertTrue(document.isNull("abc", "null"));
+        }
+
+        @Test
+        void isWhitespace() {
+            assertEquals(Whitespace.class, document.getElement(0).getClass());
+            assertEquals(Whitespace.class, document.getElement(3).getClass());
+            assertEquals(Whitespace.class, document.getElement(6).getClass());
         }
 
         @BeforeAll
@@ -124,8 +156,6 @@ public class KofiCodecTest {
             final DocumentFileReader reader = DocumentIO.getFileReader(path);
             assertTrue(reader instanceof KofiCodec);
             assertDoesNotThrow(() -> document = reader.readFile(path));
-
-            assertEquals(12, document.elements().size());
         }
     }
 
@@ -189,10 +219,20 @@ public class KofiCodecTest {
             assertTrue(document.contains("abc", "int", Integer.class));
             assertEquals(4422, document.getInt("abc", "int", 12));
 
+            assertDoesNotThrow(() -> document.addPropertyComments("abc", "int", List.of("This is an IntProperty with a value of 4422")));
+            assertNotNull(document.getPropertyComments("abc", "int"));
+            assertEquals(1, document.getPropertyComments("abc", "int").size());
+            assertEquals("This is an IntProperty with a value of 4422", document.getPropertyComments("abc", "int").get(0).text);
+
             assertDoesNotThrow(() -> document.addInt("int2", 442211));
             assertTrue(document.contains("int2"));
             assertTrue(document.contains("int2", Integer.class));
             assertEquals(442211, document.getInt("int2", 12));
+
+            assertDoesNotThrow(() -> document.addPropertyComments("int2", List.of("This is an IntProperty with a value of 442211")));
+            assertNotNull(document.getPropertyComments("int2"));
+            assertEquals(1, document.getPropertyComments("int2").size());
+            assertEquals("This is an IntProperty with a value of 442211", document.getPropertyComments("int2").get(0).text);
         }
 
         @Test
@@ -204,11 +244,31 @@ public class KofiCodecTest {
         }
 
         @Test
+        void addNull() {
+            assertDoesNotThrow(() -> document.addNull("null"));
+            assertTrue(document.contains("null"));
+            assertTrue(document.contains("null", Object.class));
+            assertNull(document.getValue("null", Object.class, new Object()));
+
+            assertDoesNotThrow(() -> document.addNull("abc", "null"));
+            assertTrue(document.contains("abc", "null"));
+            assertTrue(document.contains("abc", "null", Object.class));
+            assertNull(document.getValue("abc", "null", Object.class, new Object()));
+        }
+
+        @Test
         void addString() {
             assertDoesNotThrow(() -> document.addString("abc", "string", "Hello, World!"));
             assertTrue(document.contains("abc", "string"));
             assertTrue(document.contains("abc", "string", String.class));
             assertEquals("Hello, World!", document.getString("abc", "string", "12"));
+
+            assertDoesNotThrow(() -> document.addPropertyComments("abc", "string",
+                    List.of("This is a StringProperty", "Its value is a common greeting in programming languages")));
+            assertNotNull(document.getPropertyComments("abc", "string"));
+            assertEquals(2, document.getPropertyComments("abc", "string").size());
+            assertEquals("This is a StringProperty", document.getPropertyComments("abc", "string").get(0).text);
+            assertEquals("Its value is a common greeting in programming languages", document.getPropertyComments("abc", "string").get(1).text);
         }
 
         @AfterAll
@@ -224,6 +284,10 @@ public class KofiCodecTest {
             assertTrue(document.contains("int2"));
             assertTrue(document.contains("int2", Integer.class));
             assertEquals(442211, document.getInt("int2", 12));
+
+            assertTrue(document.contains("null"));
+            assertTrue(document.contains("null", Object.class));
+            assertNull(document.getValue("null", Object.class, new Object()));
 
             assertTrue(document.contains("abc", "double"));
             assertTrue(document.contains("abc", "double", Double.class));
@@ -245,6 +309,9 @@ public class KofiCodecTest {
             assertTrue(document.contains("abc", "string", String.class));
             assertEquals("Hello, World!", document.getString("abc", "string", "12"));
 
+            assertTrue(document.contains("abc", "null"));
+            assertTrue(document.contains("abc", "null", Object.class));
+            assertNull(document.getValue("abc", "null", Object.class, new Object()));
         }
 
         @BeforeAll
@@ -254,11 +321,13 @@ public class KofiCodecTest {
 
         @AfterAll
         void writeDocument() {
+            document.addElement(0, new Whitespace());
+            document.addElement(3, new Whitespace());
+            document.addElement(6, new Whitespace());
+
             final DocumentFileWriter writer = DocumentIO.getFileWriter(path, document);
             assertTrue(writer instanceof KofiCodec);
             assertDoesNotThrow(() -> writer.writeFile(path, document));
-
-            assertEquals(12, document.elements().size());
         }
     }
 }
