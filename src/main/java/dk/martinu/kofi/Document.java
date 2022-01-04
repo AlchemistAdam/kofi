@@ -443,6 +443,58 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
+     * Attaches the specified comments to the property in the global section
+     * that matches {@code key}. Any previously attached comments are removed.
+     *
+     * @param key      the property key
+     * @param comments the comments to attach
+     * @throws NullPointerException if {@code key} or {@code comments} is
+     *                              {@code null}
+     * @see Property#matches(String)
+     */
+    public void addPropertyComments(@NotNull final String key, @NotNull final Collection<String> comments) {
+        addPropertyComments(null, key, comments);
+    }
+
+    /**
+     * Attaches the specified comments to the property in the specified section
+     * that matches {@code key}. Any previously attached comments are removed.
+     *
+     * @param section  the section to search in, can be {@code null}
+     * @param key      the property key
+     * @param comments the comments to attach
+     * @throws NullPointerException if {@code key} or {@code comments} is
+     *                              {@code null}
+     * @see Section#matches(String)
+     * @see Property#matches(String)
+     */
+    public void addPropertyComments(@Nullable final String section, @NotNull final String key,
+            @NotNull final Collection<String> comments) {
+        Objects.requireNonNull(key, "key is null");
+        Objects.requireNonNull(comments, "comments is null");
+        final int index = getPropertyIndex(section, key, null);
+        if (index == -1)
+            return;
+        // current comment count
+        int count = 0;
+        Element element;
+        for (int i = index - 1; i >= 0; i--) {
+            element = list.get(i);
+            if (element instanceof Comment)
+                count++;
+            else
+                break;
+        }
+        if (count != 0) {
+            for (int i = index - 1, k = 0; k < count; i--, k++)
+                list.remove(i);
+        }
+        // incrementable comment index
+        final IntValue cIndex = new IntValue(index - count);
+        comments.stream().forEachOrdered(comment -> list.add(cIndex.getAndIncrement(), new Comment(comment)));
+    }
+
+    /**
      * Appends a new {@link Section} with the specified name to this document
      * if it is not already present and returns its index (position).
      *
@@ -455,6 +507,41 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
         if (index == -1)
             list.add(index = list.size(), new Section(section));
         return index;
+    }
+
+    /**
+     * Attaches the specified comments to the specified section. Any previously
+     * attached comments are removed.
+     *
+     * @param section  the section to match against
+     * @param comments the comments to attach
+     * @throws NullPointerException if {@code section} or {@code comments} is
+     *                              {@code null}
+     * @see Section#matches(String)
+     */
+    public void addSectionComments(@NotNull final String section, @NotNull final Collection<String> comments) {
+        Objects.requireNonNull(section, "section is null");
+        Objects.requireNonNull(comments, "comments is null");
+        final int index = getSectionIndex(section);
+        if (index == -1)
+            return;
+        // current comment count
+        int count = 0;
+        Element element;
+        for (int i = index - 1; i >= 0; i--) {
+            element = list.get(i);
+            if (element instanceof Comment)
+                count++;
+            else
+                break;
+        }
+        if (count != 0) {
+            for (int i = index - 1, k = 0; k < count; i--, k++)
+                list.remove(i);
+        }
+        // incrementable comment index
+        final IntValue cIndex = new IntValue(index - count);
+        comments.stream().forEachOrdered(comment -> list.add(cIndex.getAndIncrement(), new Comment(comment)));
     }
 
     /**
@@ -841,59 +928,6 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     @Nullable
     public Character getChar(@Nullable final String section, @NotNull final String key, @Nullable final Character def) {
         return getValue(section, key, Character.class, def);
-    }
-
-    /**
-     * Returns a list of comments attached to the specified section, or
-     * {@code null} if no section was found.
-     *
-     * @param section the name of the section to match against, can be
-     *                {@code null}
-     * @return a list of comments, or {@code null}
-     * @see Section#matches(String)
-     */
-    @Contract(value = "_-> new", pure = true)
-    @Nullable
-    public List<Comment> getComments(@NotNull final String section) {
-        final int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
-        if (index == -1)
-            return null;
-        final LinkedList<Comment> comments = new LinkedList<>();
-        for (int i = index - 1; i >= 0; i--) {
-            if (list.get(i) instanceof Comment comment)
-                comments.addFirst(comment);
-            else
-                break;
-        }
-        return comments;
-    }
-
-    /**
-     * Returns a list of comments attached to the property in the specified
-     * section that matches {@code key}, or {@code null} if no section or
-     * property was found.
-     *
-     * @param section the name of the section to search in, can be
-     *                {@code null}
-     * @param key     the property key to match against
-     * @return a list of comments, or {@code null}
-     * @see Section#matches(String)
-     * @see Property#matches(String)
-     */
-    @Contract(value = "_, _ -> new", pure = true)
-    @Nullable
-    public List<Comment> getComments(@Nullable final String section, @NotNull final String key) {
-        final int index = getPropertyIndex(section, key, null);
-        if (index == -1)
-            return null;
-        final LinkedList<Comment> comments = new LinkedList<>();
-        for (int i = index - 1; i >= 0; i--) {
-            if (list.get(i) instanceof Comment comment)
-                comments.addFirst(comment);
-            else
-                break;
-        }
-        return comments;
     }
 
     /**
@@ -1384,6 +1418,50 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
+     * Returns a list of comments attached to the property in the global
+     * section that matches {@code key}, or {@code null} if no section or
+     * property was found.
+     *
+     * @param key the property key to match against
+     * @return a list of comments, or {@code null}
+     * @see Property#matches(String)
+     */
+    @Contract(value = "_ -> new", pure = true)
+    @Nullable
+    public List<Comment> getPropertyComments(@NotNull final String key) {
+        return getPropertyComments(null, key);
+    }
+
+    /**
+     * Returns a list of comments attached to the property in the specified
+     * section that matches {@code key}, or {@code null} if no section or
+     * property was found.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return a list of comments, or {@code null}
+     * @see Section#matches(String)
+     * @see Property#matches(String)
+     */
+    @Contract(value = "_, _ -> new", pure = true)
+    @Nullable
+    public List<Comment> getPropertyComments(@Nullable final String section, @NotNull final String key) {
+        final int index = getPropertyIndex(section, key, null);
+        if (index == -1)
+            return null;
+        final ArrayList<Comment> comments = new ArrayList<>();
+        for (int i = index - 1; i >= 0; i--) {
+            if (list.get(i) instanceof Comment comment)
+                comments.add(comment);
+            else
+                break;
+        }
+        Collections.reverse(comments);
+        return comments;
+    }
+
+    /**
      * Returns the number of properties in the section in this document that
      * matches the specified section name. If no section was found then
      * {@code -1} is returned.
@@ -1428,6 +1506,31 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
             return (Section) list.get(index);
         else
             return null;
+    }
+
+    /**
+     * Returns a list of comments attached to the specified section, or
+     * {@code null} if no section was found.
+     *
+     * @param section the name of the section to match against, can be
+     *                {@code null}
+     * @return a list of comments, or {@code null}
+     * @see Section#matches(String)
+     */
+    @Contract(value = "_-> new", pure = true)
+    @Nullable
+    public List<Comment> getSectionComments(@NotNull final String section) {
+        final int index = getSectionIndex(Objects.requireNonNull(section, "section is null"));
+        if (index == -1)
+            return null;
+        final LinkedList<Comment> comments = new LinkedList<>();
+        for (int i = index - 1; i >= 0; i--) {
+            if (list.get(i) instanceof Comment comment)
+                comments.addFirst(comment);
+            else
+                break;
+        }
+        return comments;
     }
 
     /**
@@ -1821,6 +1924,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @see Property#matches(String, Class)
      */
     @Contract(pure = true)
+    @Range(from = -1, to = Integer.MAX_VALUE)
     protected int getPropertyIndex(@Nullable final String section, @NotNull final String key,
             @Nullable final Class<?> valueType) {
         // get starting index
@@ -1852,6 +1956,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @see Section#matches(String)
      */
     @Contract(pure = true)
+    @Range(from = -1, to = Integer.MAX_VALUE)
     protected int getSectionIndex(@NotNull final String section) {
         // iterate elements
         Element e;
@@ -1906,6 +2011,31 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
             // advance to next element
             else
                 i++;
+        }
+    }
+
+    /**
+     * An {@code int} value that can be incremented.
+     */
+    protected static class IntValue {
+
+        /**
+         * Current value.
+         */
+        public int value;
+
+        /**
+         * Constructs a new adder with the specified initial value.
+         */
+        public IntValue(final int value) {
+            this.value = value;
+        }
+
+        /**
+         * Returns the current value and then increments it.
+         */
+        public int getAndIncrement() {
+            return value++;
         }
     }
 }
