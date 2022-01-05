@@ -41,8 +41,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestMethodOrder(MethodOrderer.Random.class)
 public class DocumentTest {
 
-    // TODO add some nested json
     public static final String input = """
+            nestedArray = [[1, 2, 3], [2, 2, 3], [3, 3, 3]]
+            nestedObject = {"d0": { "v": 6 }, "d1": { "v": 7 }, "d2": { "v": 9 }}
              
              ;hi
               int2  = 442211  \s
@@ -55,7 +56,7 @@ public class DocumentTest {
             ;mixed
             ;array
             mix=["Hello","World",true, 2 ,  null ]
-            
+                        
             ;this comment is not attached to an element
                         
               [abc]  \s
@@ -83,6 +84,9 @@ public class DocumentTest {
 
     @Test
     void containsArray() {
+        assertTrue(document.contains("nestedArray"));
+        assertTrue(document.contains("nestedArray", JsonArray.class));
+
         assertTrue(document.contains("empty"));
         assertTrue(document.contains("empty", JsonArray.class));
 
@@ -151,6 +155,9 @@ public class DocumentTest {
 
     @Test
     void containsObject() {
+        assertTrue(document.contains("nestedObject"));
+        assertTrue(document.contains("nestedObject", JsonObject.class));
+
         assertTrue(document.contains("abc", "object"));
         assertTrue(document.contains("abc", "object", JsonObject.class));
 
@@ -171,6 +178,8 @@ public class DocumentTest {
     @Test
     void documentElements() {
         int i = 0;
+        assertEquals(ArrayProperty.class, document.getElement(i++).getClass());
+        assertEquals(ObjectProperty.class, document.getElement(i++).getClass());
         assertEquals(Whitespace.class, document.getElement(i++).getClass());
         assertEquals(Comment.class, document.getElement(i++).getClass());
         assertEquals(IntProperty.class, document.getElement(i++).getClass());
@@ -186,6 +195,8 @@ public class DocumentTest {
         assertEquals(Whitespace.class, document.getElement(i++).getClass());
         assertEquals(Comment.class, document.getElement(i++).getClass());
         assertEquals(Whitespace.class, document.getElement(i++).getClass());
+
+        // section [abc]
         assertEquals(Section.class, document.getElement(i++).getClass());
         assertEquals(DoubleProperty.class, document.getElement(i++).getClass());
         assertEquals(CharProperty.class, document.getElement(i++).getClass());
@@ -196,6 +207,8 @@ public class DocumentTest {
         assertEquals(IntProperty.class, document.getElement(i++).getClass());
         assertEquals(NullProperty.class, document.getElement(i++).getClass());
         assertEquals(Comment.class, document.getElement(i++).getClass());
+
+        // section [def]
         assertEquals(Section.class, document.getElement(i++).getClass());
         assertEquals(ObjectProperty.class, document.getElement(i++).getClass());
         assertEquals(CharProperty.class, document.getElement(i++).getClass());
@@ -215,6 +228,9 @@ public class DocumentTest {
 
     @Test
     void getArray() {
+        assertEquals(JsonArray.reflect(new int[][] {{1, 2, 3}, {2, 2, 3}, {3, 3, 3}}),
+                document.getArray("nestedArray"));
+
         assertEquals(new JsonArray(), document.getArray("empty"));
 
         assertEquals(new JsonArray("Hello", "World", true, 2, null), document.getArray("mix"));
@@ -242,26 +258,26 @@ public class DocumentTest {
     void getComments() {
         List<Comment> comments;
 
-        comments = document.getComments(null, "int2");
+        comments = document.getPropertyComments(null, "int2");
         assertNotNull(comments);
         assertEquals(1, comments.size());
         assertEquals("hi", comments.get(0).text);
 
-        comments = document.getComments(null, "bool");
+        comments = document.getPropertyComments(null, "bool");
         assertNotNull(comments);
         assertEquals(0, comments.size());
 
-        comments = document.getComments(null, "mix");
+        comments = document.getPropertyComments(null, "mix");
         assertNotNull(comments);
         assertEquals(2, comments.size());
         assertEquals("mixed", comments.get(0).text);
         assertEquals("array", comments.get(1).text);
 
-        comments = document.getComments("abc");
+        comments = document.getSectionComments("abc");
         assertNotNull(comments);
         assertEquals(0, comments.size());
 
-        comments = document.getComments("def");
+        comments = document.getSectionComments("def");
         assertNotNull(comments);
         assertEquals(1, comments.size());
         assertEquals("last section", comments.get(0).text);
@@ -284,15 +300,24 @@ public class DocumentTest {
 
     @Test
     void getNull() {
-        final Object o = new Object();
-        assertNull(document.getValue("null", o));
-        assertNull(document.getValue("null", Object.class, o));
-        assertNull(document.getValue("abc", "null2", o));
-        assertNull(document.getValue("abc", "null2", Object.class, o));
+        assertNull(document.getValue("null", new Object()));
+        assertNull(document.getValue("null", Object.class, new Object()));
+        assertTrue(document.isNull("null"));
+
+        assertNull(document.getValue("abc", "null2", new Object()));
+        assertNull(document.getValue("abc", "null2", Object.class, new Object()));
+        assertTrue(document.isNull("abc", "null"));
     }
 
     @Test
     void getObject() {
+        assertEquals(new JsonObject.Builder()
+                        .put("d0", new JsonObject.Builder().put("v", 6).build())
+                        .put("d1", new JsonObject.Builder().put("v", 7).build())
+                        .put("d2", new JsonObject.Builder().put("v", 9).build())
+                        .build(),
+                document.getObject("nestedObject"));
+
         assertEquals(new JsonObject.Builder()
                         .put("name", "John")
                         .put("age", 50)
@@ -315,7 +340,7 @@ public class DocumentTest {
 
     @Test
     void getPropertyCount() {
-        assertEquals(7, document.getPropertyCount(null));
+        assertEquals(9, document.getPropertyCount(null));
 
         assertEquals(7, document.getPropertyCount("abc"));
 
