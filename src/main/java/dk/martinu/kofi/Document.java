@@ -1812,6 +1812,19 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     }
 
     /**
+     * Removes a property and its comments, if any, from the global section
+     * that matches {@code key}.
+     *
+     * @param key     the property key to match against
+     * @return {@code true} if a property was removed, otherwise {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String)
+     */
+    public boolean removeProperty(@NotNull final String key) {
+        return removeProperty(null, key);
+    }
+
+    /**
      * Removes a property and its comments, if any, from the specified section
      * that matches {@code key}.
      *
