@@ -27,8 +27,6 @@ import dk.martinu.kofi.properties.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// TODO add remove tests
-
 /**
  * <p>Testing {@link Document} methods on an input string that has different
  * amounts of whitespace, and with elements of all value types. Tests are
@@ -42,9 +40,10 @@ import static org.junit.jupiter.api.Assertions.*;
 public class DocumentTest {
 
     public static final String input = """
+            remove = "remove"
             nestedArray = [[1, 2, 3], [2, 2, 3], [3, 3, 3]]
             nestedObject = {"d0": { "v": 6 }, "d1": { "v": 7 }, "d2": { "v": 9 }}
-             
+             \s
              ;hi
               int2  = 442211  \s
              bool  = false  \s
@@ -52,19 +51,20 @@ public class DocumentTest {
             empty=[      ]
             null=null
               char =  \\u0025 \s
-                        
+                      \s
             ;mixed
             ;array
             mix=["Hello","World",true, 2 ,  null ]
-                        
+                   \s
             ;this comment is not attached to an element
-                        
+                       \s
               [abc]  \s
              double=  123.567d
+            remove = 12345
             char2  =  '\\'
                empty=[]
             string  ="Hello, World!"  \s
-                        
+                \s
              object =  { "name":"John",   "age"   : 50    ,"sex" :  "male"} \s
               int=4422
               null2 = null
@@ -73,11 +73,12 @@ public class DocumentTest {
              empty={ }
               char3='A'  \s
             object2={"animal":"cat","color":"black","age":4,"name":"Gert","friendly":true,"owner":null}
-                        
+                        \s
             float  =  0.999f
               long  =  111222333444L \s
              numbers = [ 123,  567,890]  \s
-             
+             \s
+            remove = true
             """;
 
     Document document;
@@ -104,6 +105,9 @@ public class DocumentTest {
     void containsBoolean() {
         assertTrue(document.contains("bool"));
         assertTrue(document.contains("bool", Boolean.class));
+
+        assertTrue(document.contains("def", "remove"));
+        assertTrue(document.contains("def", "remove", Boolean.class));
     }
 
     @Test
@@ -132,13 +136,13 @@ public class DocumentTest {
 
     @Test
     void containsInt() {
-        assertTrue(document.contains("abc", "int"));
-        assertTrue(document.contains("abc", "int", Integer.class));
-        assertEquals(4422, document.getInt("abc", "int", 12));
-
         assertTrue(document.contains("int2"));
         assertTrue(document.contains("int2", Integer.class));
-        assertEquals(442211, document.getInt("int2", 12));
+
+        assertTrue(document.contains("abc", "int"));
+        assertTrue(document.contains("abc", "int", Integer.class));
+        assertTrue(document.contains("abc", "remove"));
+        assertTrue(document.contains("abc", "remove", Integer.class));
     }
 
     @Test
@@ -178,6 +182,7 @@ public class DocumentTest {
     @Test
     void documentElements() {
         int i = 0;
+        assertEquals(StringProperty.class, document.getElement(i++).getClass());
         assertEquals(ArrayProperty.class, document.getElement(i++).getClass());
         assertEquals(ObjectProperty.class, document.getElement(i++).getClass());
         assertEquals(Whitespace.class, document.getElement(i++).getClass());
@@ -199,6 +204,7 @@ public class DocumentTest {
         // section [abc]
         assertEquals(Section.class, document.getElement(i++).getClass());
         assertEquals(DoubleProperty.class, document.getElement(i++).getClass());
+        assertEquals(IntProperty.class, document.getElement(i++).getClass());
         assertEquals(CharProperty.class, document.getElement(i++).getClass());
         assertEquals(ArrayProperty.class, document.getElement(i++).getClass());
         assertEquals(StringProperty.class, document.getElement(i++).getClass());
@@ -218,6 +224,7 @@ public class DocumentTest {
         assertEquals(LongProperty.class, document.getElement(i++).getClass());
         assertEquals(ArrayProperty.class, document.getElement(i++).getClass());
         assertEquals(Whitespace.class, document.getElement(i++).getClass());
+        assertEquals(BooleanProperty.class, document.getElement(i++).getClass());
     }
 
     @Test
@@ -243,6 +250,8 @@ public class DocumentTest {
     @Test
     void getBoolean() {
         assertEquals(false, document.getBoolean("bool", true));
+
+        assertEquals(true, document.getBoolean("def", "remove", false));
     }
 
     @Test
@@ -294,6 +303,14 @@ public class DocumentTest {
     }
 
     @Test
+    void getInt() {
+        assertEquals(442211, document.getInt("int2", 12));
+
+        assertEquals(4422, document.getInt("abc", "int", 12));
+        assertEquals(12345, document.getInt("abc", "remove", 12));
+    }
+
+    @Test
     void getLong() {
         assertEquals(111222333444L, document.getLong("def", "long", 12L));
     }
@@ -340,11 +357,9 @@ public class DocumentTest {
 
     @Test
     void getPropertyCount() {
-        assertEquals(9, document.getPropertyCount(null));
-
-        assertEquals(7, document.getPropertyCount("abc"));
-
-        assertEquals(6, document.getPropertyCount("def"));
+        assertEquals(10, document.getPropertyCount(null));
+        assertEquals(8, document.getPropertyCount("abc"));
+        assertEquals(7, document.getPropertyCount("def"));
     }
 
     @Test
@@ -354,6 +369,7 @@ public class DocumentTest {
 
     @Test
     void getString() {
+        assertEquals("remove", document.getString(null, "remove", "12"));
         assertEquals("Hello, World!", document.getString("abc", "string", "12"));
     }
 
@@ -369,5 +385,20 @@ public class DocumentTest {
         assertEquals(123.567d, document.getValue("abc", "double", Number.class, 0.0d));
         assertEquals("Hello, World!", document.getValue("abc", "string", CharSequence.class, ""));
         assertNotNull(document.getValue("empty", Json.class, null));
+    }
+
+    @AfterAll
+    void remove() {
+        assertTrue(document.removeProperty("remove"));
+        assertFalse(document.contains("remove"));
+        assertTrue(document.isNull("remove"));
+
+        assertTrue(document.removeProperty("abc", "remove"));
+        assertFalse(document.contains("abc", "remove"));
+        assertTrue(document.isNull("abc", "remove"));
+
+        assertTrue(document.removeProperty("def", "remove"));
+        assertFalse(document.contains("def", "remove"));
+        assertTrue(document.isNull("def", "remove"));
     }
 }
