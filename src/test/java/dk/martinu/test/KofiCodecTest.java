@@ -19,6 +19,7 @@ package dk.martinu.test;
 
 import org.junit.jupiter.api.*;
 
+import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
 
@@ -39,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestMethodOrder(MethodOrderer.DisplayName.class)
 public class KofiCodecTest {
 
-    final Path path = Paths.get("inicodectest.kofi");
+    final Path path = Paths.get("KofiCodecTest.kofi");
 
     @AfterAll
     void cleanUp() {
@@ -144,18 +145,19 @@ public class KofiCodecTest {
             assertTrue(document.isNull("abc", "null"));
         }
 
-        @Test
-        void isWhitespace() {
-            assertEquals(Whitespace.class, document.getElement(0).getClass());
-            assertEquals(Whitespace.class, document.getElement(3).getClass());
-            assertEquals(Whitespace.class, document.getElement(6).getClass());
-        }
-
         @BeforeAll
         void readDocument() {
             final DocumentFileReader reader = DocumentIO.getFileReader(path);
             assertTrue(reader instanceof KofiCodec);
             assertDoesNotThrow(() -> document = reader.readFile(path));
+
+            try {
+                System.out.println("READ DOCUMENT " + document);
+                System.out.println(KofiCodec.provider().writeString(document));
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -168,7 +170,7 @@ public class KofiCodecTest {
         Document document;
 
         @Test
-        void addArray() {
+        synchronized void addArray() {
             assertDoesNotThrow(() -> document.addArray("mix", new JsonArray("Hello", "World", true, 97)));
             assertTrue(document.contains("mix"));
             assertTrue(document.contains("mix", JsonArray.class));
@@ -181,7 +183,7 @@ public class KofiCodecTest {
         }
 
         @Test
-        void addBoolean() {
+        synchronized void addBoolean() {
             assertDoesNotThrow(() -> document.addBoolean("bool", false));
             assertTrue(document.contains("bool"));
             assertTrue(document.contains("bool", Boolean.class));
@@ -189,7 +191,7 @@ public class KofiCodecTest {
         }
 
         @Test
-        void addChar() {
+        synchronized void addChar() {
             assertDoesNotThrow(() -> document.addChar("char", '%'));
             assertTrue(document.contains("char"));
             assertTrue(document.contains("char", Character.class));
@@ -197,7 +199,7 @@ public class KofiCodecTest {
         }
 
         @Test
-        void addDouble() {
+        synchronized void addDouble() {
             assertDoesNotThrow(() -> document.addDouble("abc", "double", 123.567d));
             assertTrue(document.contains("abc", "double"));
             assertTrue(document.contains("abc", "double", Double.class));
@@ -205,7 +207,7 @@ public class KofiCodecTest {
         }
 
         @Test
-        void addFloat() {
+        synchronized void addFloat() {
             assertDoesNotThrow(() -> document.addFloat("def", "float", .999F));
             assertTrue(document.contains("def", "float"));
             assertTrue(document.contains("def", "float", Float.class));
@@ -213,7 +215,7 @@ public class KofiCodecTest {
         }
 
         @Test
-        void addInt() {
+        synchronized void addInt() {
             assertDoesNotThrow(() -> document.addInt("abc", "int", 4422));
             assertTrue(document.contains("abc", "int"));
             assertTrue(document.contains("abc", "int", Integer.class));
@@ -236,7 +238,7 @@ public class KofiCodecTest {
         }
 
         @Test
-        void addLong() {
+        synchronized void addLong() {
             assertDoesNotThrow(() -> document.addLong("def", "long", 111222333444L));
             assertTrue(document.contains("def", "long"));
             assertTrue(document.contains("def", "long", Long.class));
@@ -244,7 +246,7 @@ public class KofiCodecTest {
         }
 
         @Test
-        void addNull() {
+        synchronized void addNull() {
             assertDoesNotThrow(() -> document.addNull("null"));
             assertTrue(document.contains("null"));
             assertTrue(document.contains("null", Object.class));
@@ -257,7 +259,7 @@ public class KofiCodecTest {
         }
 
         @Test
-        void addString() {
+        synchronized void addString() {
             assertDoesNotThrow(() -> document.addString("abc", "string", "Hello, World!"));
             assertTrue(document.contains("abc", "string"));
             assertTrue(document.contains("abc", "string", String.class));
@@ -272,7 +274,7 @@ public class KofiCodecTest {
         }
 
         @AfterAll
-        void containsAll() {
+        synchronized void containsAll() {
             assertTrue(document.contains("bool"));
             assertTrue(document.contains("bool", Boolean.class));
             assertEquals(false, document.getBoolean("bool", true));
@@ -321,13 +323,17 @@ public class KofiCodecTest {
 
         @AfterAll
         void writeDocument() {
-            document.addElement(0, new Whitespace());
-            document.addElement(3, new Whitespace());
-            document.addElement(6, new Whitespace());
-
             final DocumentFileWriter writer = DocumentIO.getFileWriter(path, document);
             assertTrue(writer instanceof KofiCodec);
             assertDoesNotThrow(() -> writer.writeFile(path, document));
+
+            try {
+                System.out.println("WRITE DOCUMENT " + document);
+                System.out.println(KofiCodec.provider().writeString(document));
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
