@@ -69,7 +69,6 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
      *                                     whose name does not match the name
      *                                     of a field declared by {@code type}
      */
-    // TODO ensure that java strings are (un)escaped correctly when reflecting/reconstructing
     // TODO check for a JSON array named "0" and if found use as constructor args
     //  (this is safe because field names cannot begin with numbers
     // TODO provide more details on how entry values are assigned to fields
@@ -129,6 +128,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
                     // assignable Object type OR a primitive type where value
                     // is of a matching wrapper type
                     if (entry.value != null) {
+                        // TODO arrays and undefined objects will not be reconstructed
                         // assignable Object type
                         if (fieldType.isAssignableFrom(entry.value.getClass())) {
                             if (fieldType.equals(String.class)) {
@@ -225,8 +225,6 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
      * @return a new {@code JsonObject}
      * @throws NullPointerException if {@code object} is {@code null}
      */
-    // TODO ensure that java strings are (un)escaped correctly when reflecting/reconstructing
-    // TODO char is not specified in JSON
     @NotNull
     public static JsonObject reflect(@NotNull final Object object) {
         Objects.requireNonNull(object, "object is null");
@@ -496,8 +494,8 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         public boolean equals(@Nullable final Object obj) {
             if (this == obj)
                 return true;
-            else if (obj instanceof Entry entry) // TODO should not be case sensitive
-                return name.equals(entry.name) && Objects.equals(value, entry.value);
+            else if (obj instanceof Entry entry)
+                return name.equalsIgnoreCase(entry.name) && Objects.equals(value, entry.value);
             else
                 return false;
         }
