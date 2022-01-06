@@ -19,6 +19,8 @@ package dk.martinu.test;
 
 import org.junit.jupiter.api.Test;
 
+import java.awt.Rectangle;
+
 import dk.martinu.kofi.*;
 import dk.martinu.kofi.codecs.KofiCodec;
 
@@ -27,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class JsonObjectTest {
 
     final KofiCodec codec = KofiCodec.provider();
-    final Value<Document> value = new Value<>();
+    Document document = null;
 
     @Test
     void mixedObject() {
@@ -47,9 +49,8 @@ public class JsonObjectTest {
                 assertEquals(builder.get(entry.getName()), entry.getValue());
         }
 
-        assertDoesNotThrow(
-                () -> value.put(codec.readString("v = " + object.toJson())));
-        final JsonObject parsedObject = value.get().getObject("v");
+        assertDoesNotThrow(() -> document = codec.readString("v = " + object.toJson()));
+        final JsonObject parsedObject = document.getObject("v");
         assertNotNull(parsedObject);
         assertEquals(object, parsedObject);
         assertEquals(builder.size(), parsedObject.size());
@@ -79,9 +80,8 @@ public class JsonObjectTest {
                 assertEquals(builder.get(entry.getName()), entry.getValue());
         }
 
-        assertDoesNotThrow(
-                () -> value.put(codec.readString("v = " + object.toJson())));
-        final JsonObject parsedObject = value.get().getObject("v");
+        assertDoesNotThrow(() -> document = codec.readString("v = " + object.toJson()));
+        final JsonObject parsedObject = document.getObject("v");
         assertNotNull(parsedObject);
         assertEquals(object, parsedObject);
         assertEquals(builder.size(), parsedObject.size());
@@ -95,7 +95,25 @@ public class JsonObjectTest {
     }
 
     @Test
-    void reconstructNumberObject() {
+    void reconstructArea() {
+        final JsonObject.Builder builder = new JsonObject.Builder()
+                .put("union", new Rectangle[] {new Rectangle(0, 0, 400, 100),
+                        new Rectangle(0, 300, 400, 100)})
+                .put("subtract", new Rectangle[] {new Rectangle(50, 50, 300, 300)});
+        final JsonObject object = builder.build();
+
+        assertEquals(builder.size(), object.size());
+
+        assertDoesNotThrow(() -> {
+            final Area area = JsonObject.reconstruct(object, Area.class);
+            assertEquals(new Rectangle[] {new Rectangle(0, 0, 400, 100),
+                    new Rectangle(0, 300, 400, 100)}, area.union);
+            assertEquals(new Rectangle[] {new Rectangle(50, 50, 300, 300)}, area.subtract);
+        });
+    }
+
+    @Test
+    void reconstructNumbers() {
         final JsonObject.Builder builder = new JsonObject.Builder()
                 .put("n0", 4L)
                 .put("n1", 8L);
@@ -107,42 +125,80 @@ public class JsonObjectTest {
             assertEquals(builder.get(entry.getName()), entry.getValue());
         }
 
-        // TODO use reflection when asserting equals and add more fields to NumberObject
         assertDoesNotThrow(() -> {
-            final NumberObject numberObject = JsonObject.reconstruct(object, NumberObject.class);
-            assertEquals(4L, numberObject.n0);
-            assertEquals(8L, numberObject.n1);
+            final Numbers numbers = JsonObject.reconstruct(object, Numbers.class);
+            assertEquals(4L, numbers.n0);
+            assertEquals(8L, numbers.n1);
         });
     }
 
     @Test
-    void reflectNumberObject() {
-        final NumberObject object = new NumberObject();
-        final JsonObject json = JsonObject.reflect(object);
+    void reconstructText() {
+        final JsonObject.Builder builder = new JsonObject.Builder()
+                .put("text", "banana");
+        final JsonObject object = builder.build();
 
-        assertEquals(2, json.size());
-        assertEquals(1L, json.getEntry(0).getValue());
-        assertEquals(2L, json.getEntry(1).getValue());
-        assertEquals(1L, json.get("n0"));
-        assertEquals(2L, json.get("n1"));
+        assertEquals(builder.size(), object.size());
+
+        assertDoesNotThrow(() -> {
+            final Text text = JsonObject.reconstruct(object, Text.class);
+            assertEquals("banana", text.text);
+        });
     }
 
-    static class NumberObject {
+    @Test
+    void reflectArea() {
+        final Area area = new Area();
+        final JsonObject object = JsonObject.reflect(area);
+
+        assertEquals(2, object.size());
+        assertEquals(JsonArray.reflect(new Rectangle[] {
+                new Rectangle(0, 0, 100, 100),
+                new Rectangle(200, 0, 100, 100)
+        }), object.get("union"));
+        assertEquals(JsonArray.reflect(new Rectangle[] {
+                new Rectangle(50, 25, 200, 50)
+        }), object.get("subtract"));
+    }
+
+    @Test
+    void reflectNumbers() {
+        final Numbers numbers = new Numbers();
+        final JsonObject object = JsonObject.reflect(numbers);
+
+        assertEquals(2, object.size());
+        assertEquals(1L, object.get("n0"));
+        assertEquals(2L, object.get("n1"));
+    }
+
+    @Test
+    void reflectText() {
+        final Text text = new Text();
+        final JsonObject object = JsonObject.reflect(text);
+
+        assertEquals(1, object.size());
+        assertEquals("\"Hello, World!\"", object.get("text"));
+    }
+
+    static class Area {
+
+        public Rectangle[] union = {
+                new Rectangle(0, 0, 100, 100),
+                new Rectangle(200, 0, 100, 100)
+        };
+        public Rectangle[] subtract = {
+                new Rectangle(50, 25, 200, 50)
+        };
+    }
+
+    static class Numbers {
 
         public long n0 = 1L;
         public long n1 = 2L;
     }
 
-    static class Value<T> {
+    static class Text {
 
-        T value = null;
-
-        T get() {
-            return value;
-        }
-
-        void put(T value) {
-            this.value = value;
-        }
+        public String text = "Hello, World!";
     }
 }

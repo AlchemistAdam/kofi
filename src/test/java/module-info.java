@@ -22,6 +22,7 @@ module dk.martinu.kofi.test {
     requires dk.martinu.kofi;
     requires org.junit.jupiter.api;
     requires org.jetbrains.annotations;
+    requires java.desktop;
 
     uses KofiCodec;
 
