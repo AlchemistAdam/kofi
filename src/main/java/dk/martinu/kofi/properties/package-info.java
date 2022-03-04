@@ -16,8 +16,8 @@
  */
 
 /**
- * This package contains all {@link dk.martinu.kofi.Property Property}
- * implementations provided by the KOFI API.
+ * Contains all {@link dk.martinu.kofi.Property Property} implementations
+ * provided by the KoFi API.
  * <p>
  * The following value types are supported:
  * <ul>
@@ -55,11 +55,11 @@
  *         {@link dk.martinu.kofi.properties.CharProperty CharProperty}
  *     </li>
  *     <li>
- *         {@link dk.martinu.kofi.JsonArray JsonArray} as
+ *         {@link dk.martinu.kofi.KofiArray KofiArray} as
  *         {@link dk.martinu.kofi.properties.ArrayProperty ArrayProperty}
  *     </li>
  *     <li>
- *         {@link dk.martinu.kofi.JsonObject JsonObject} as
+ *         {@link dk.martinu.kofi.KofiObject KofiObject} as
  *         {@link dk.martinu.kofi.properties.ObjectProperty ObjectProperty}
  *     </li>
  * </ul>
