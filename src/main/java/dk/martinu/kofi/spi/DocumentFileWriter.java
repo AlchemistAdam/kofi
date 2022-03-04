@@ -21,7 +21,9 @@ import org.jetbrains.annotations.*;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
+import java.nio.file.*;
+import java.util.List;
+import java.util.Objects;
 
 import dk.martinu.kofi.Document;
 import dk.martinu.kofi.DocumentIO;
@@ -31,7 +33,7 @@ import dk.martinu.kofi.DocumentIO;
  * Implementations of this interface (service providers) can be retrieved with
  * the {@link DocumentIO} class.
  * <p>
- * For implementations of this interface provided by the KOFI API, see
+ * For implementations of this interface provided by the KoFi API, see
  * {@link dk.martinu.kofi.codecs}.
  *
  * @author Adam Martinu
@@ -42,8 +44,11 @@ public interface DocumentFileWriter {
 
     /**
      * Returns {@code true} if this writer can write {@link Document} to the
-     * specified path, otherwise {@code false}. This is usually determined by
-     * the path's file extension or by peeking the document's contents.
+     * specified path, otherwise {@code false}.
+     * <p>
+     * The default implementation returns {@code true} if {@code filePath} does
+     * not exist or is a regular file, and its file extenstion is equal to one
+     * of the extentions returned by {@link #getExtensions()}, ignoring case.
      * <p>
      * <b>NOTE:</b> a return value of {@code true} is not a guarantee that a
      * document can be written <i>successfully</i>; writing a document in an
@@ -56,9 +61,30 @@ public interface DocumentFileWriter {
      * {@code filePath}, otherwise {@code false}
      * @throws NullPointerException if {@code filePath} or {@code document} is
      *                              {@code null}
+     * @see Files#exists(Path, LinkOption...)
+     * @see Files#isRegularFile(Path, LinkOption...)
      */
     @Contract(pure = true)
-    boolean canWrite(@NotNull final Path filePath, @NotNull final Document document);
+    default boolean canWrite(@NotNull final Path filePath, @NotNull final Document document) {
+        Objects.requireNonNull(filePath, "filePath is null");
+        Objects.requireNonNull(document, "document is null");
+        if (!Files.exists(filePath) || Files.isRegularFile(filePath)) {
+            final String fileName = filePath.getFileName().toString();
+            final int index = fileName.lastIndexOf('.');
+            final String extension = index != -1 ? fileName.substring(index + 1) : fileName;
+            for (String ext : getExtensions())
+                if (extension.equalsIgnoreCase(ext))
+                    return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns a list of file extensions supported by this writer.
+     */
+    @Contract(pure = true)
+    @NotNull
+    List<String> getExtensions();
 
     /**
      * Writes {@code document} to the specified path. The default
