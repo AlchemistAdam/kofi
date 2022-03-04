@@ -21,7 +21,9 @@ import org.jetbrains.annotations.*;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
+import java.nio.file.*;
+import java.util.List;
+import java.util.Objects;
 
 import dk.martinu.kofi.Document;
 import dk.martinu.kofi.DocumentIO;
@@ -31,7 +33,7 @@ import dk.martinu.kofi.DocumentIO;
  * Implementations of this interface (service providers) can be retrieved with
  * the {@link DocumentIO} class.
  * <p>
- * For implementations of this interface provided by the KOFI API, see
+ * For implementations of this interface provided by the KoFi API, see
  * {@link dk.martinu.kofi.codecs}.
  *
  * @author Adam Martinu
@@ -42,8 +44,11 @@ public interface DocumentFileReader {
 
     /**
      * Returns {@code true} if this reader can read a {@link Document} from the
-     * specified path, otherwise {@code false}. This is usually determined by
-     * the path's file extension or by peeking the file's contents.
+     * specified path, otherwise {@code false}.
+     * <p>
+     * The default implementation returns {@code true} if {@code filePath} is a
+     * regular file and its file extenstion is equal to one of the extentions
+     * returned by {@link #getExtensions()}, ignoring case.
      * <p>
      * <b>NOTE:</b> a return value of {@code true} is not a guarantee that a
      * document can be read <i>successfully</i>; reading a file in an invalid
@@ -53,9 +58,28 @@ public interface DocumentFileReader {
      * @return {@code true} if this reader can read from {@code filePath},
      * otherwise {@code false}
      * @throws NullPointerException if {@code filePath} is {@code null}
+     * @see Files#isRegularFile(Path, LinkOption...)
      */
     @Contract(pure = true)
-    boolean canRead(@NotNull final Path filePath);
+    default boolean canRead(@NotNull final Path filePath) {
+        Objects.requireNonNull(filePath, "filePath is null");
+        if (Files.isRegularFile(filePath)) {
+            final String fileName = filePath.getFileName().toString();
+            final int index = fileName.lastIndexOf('.');
+            final String extension = index != -1 ? fileName.substring(index + 1) : fileName;
+            for (String ext : getExtensions())
+                if (extension.equalsIgnoreCase(ext))
+                    return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns a list of file extensions supported by this reader.
+     */
+    @Contract(pure = true)
+    @NotNull
+    List<String> getExtensions();
 
     /**
      * Reads a new {@link Document} from the specified path and returns it. The
@@ -77,7 +101,8 @@ public interface DocumentFileReader {
     /**
      * Reads a new {@link Document} from the specified path using the specified
      * {@link Charset}, and returns it. If {@code cs} is {@code null} then a
-     * default {@code Charset} is used.
+     * default {@code Charset} is used. If {@code filePath} is not a regular
+     * file, then an empty document is returned.
      *
      * @param filePath the path to read from
      * @param cs       the {@code Charset} to use, or {@code null}
@@ -85,6 +110,7 @@ public interface DocumentFileReader {
      * @throws NullPointerException if {@code filePath} is {@code null}
      * @throws IOException          if an error occurs is while reading from
      *                              the file
+     * @see Files#isRegularFile(Path, LinkOption...)
      */
     @Contract(value = "_, _ -> new", pure = true)
     @NotNull
