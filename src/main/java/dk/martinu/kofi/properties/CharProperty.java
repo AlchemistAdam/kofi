@@ -84,7 +84,7 @@ public class CharProperty extends Property<Character> implements Cloneable, Seri
      *
      * @see KofiUtil#escape_00_1F(char)
      */
-    @Contract(pure = true)
+    @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
     public String getValueString() {
@@ -92,6 +92,6 @@ public class CharProperty extends Property<Character> implements Cloneable, Seri
         if (value < 0x20)
             return '\'' + KofiUtil.escape_00_1F(value) + '\'';
         else
-            return String.copyValueOf(new char[] {'\'', value, '\''});
+            return new String(new char[] {'\'', value, '\''});
     }
 }
