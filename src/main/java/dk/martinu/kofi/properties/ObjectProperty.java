@@ -24,17 +24,17 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
 
-import dk.martinu.kofi.JsonObject;
+import dk.martinu.kofi.KofiObject;
 import dk.martinu.kofi.Property;
 
 /**
- * A {@link Property} that holds a {@link JsonObject} value.
+ * A {@link Property} that holds a {@link KofiObject} value.
  *
  * @author Adam Martinu
  * @since 1.0
  */
-public class ObjectProperty extends Property<JsonObject> implements Cloneable, Serializable,
-        Iterable<JsonObject.Entry> {
+public class ObjectProperty extends Property<KofiObject> implements Cloneable, Serializable,
+        Iterable<KofiObject.Entry> {
 
     @Serial
     private static final long serialVersionUID = 0L;
@@ -42,15 +42,15 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
     /**
      * Constructs a new property with the specified key and value. If
      * {@code value} is {@code null}, then the property value will default to
-     * an empty {@code JsonObject}.
+     * an empty {@code KofiObject}.
      *
      * @param key   The property key
      * @param value The property value, or {@code null}
      * @throws NullPointerException if {@code key} is {@code null}
      */
     @Contract(pure = true)
-    public ObjectProperty(@NotNull final String key, @Nullable final JsonObject value) {
-        super(key, Objects.requireNonNullElse(value, new JsonObject()));
+    public ObjectProperty(@NotNull final String key, @Nullable final KofiObject value) {
+        super(key, Objects.requireNonNullElse(value, new KofiObject()));
     }
 
     /**
@@ -72,41 +72,41 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
      * @throws NullPointerException if {@code action} is {@code null}
      */
     @Override
-    public void forEach(@NotNull final Consumer<? super JsonObject.Entry> action) {
+    public void forEach(@NotNull final Consumer<? super KofiObject.Entry> action) {
         Objects.requireNonNull(action, "action is null");
         //noinspection ConstantConditions
-        for (JsonObject.Entry o : value)
+        for (KofiObject.Entry o : value)
             action.accept(o);
     }
 
     /**
-     * Returns {@code JsonObject.class}.
+     * Returns {@code KofiObject.class}.
      */
     @Contract(pure = true)
     @NotNull
     @Override
-    public Class<JsonObject> getValueClass() {
-        return JsonObject.class;
+    public Class<KofiObject> getValueClass() {
+        return KofiObject.class;
     }
 
     /**
      * Returns a string representation of this property's value.
      *
-     * @see JsonObject#toJson()
+     * @see KofiObject#getString()
      */
     @Contract(pure = true)
     @NotNull
     @Override
     public String getValueString() {
         //noinspection ConstantConditions
-        return value.toJson();
+        return value.getString();
     }
 
     /**
      * Returns a combined hash code of this property's key, in upper-case, and
      * value. The returned value is equal to:
      * <pre>
-     *     keyHash | valueHash << 16
+     *     keyHash | valueHash &lt;&lt; 16
      * </pre>
      */
     @Contract(pure = true)
@@ -128,28 +128,28 @@ public class ObjectProperty extends Property<JsonObject> implements Cloneable, S
 
     /**
      * Returns an iterator over the entries in this property's
-     * {@code JsonObject}.
+     * {@code KofiObject} value.
      *
-     * @see JsonObject#iterator()
+     * @see KofiObject#iterator()
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
-    public Iterator<JsonObject.Entry> iterator() {
+    public Iterator<KofiObject.Entry> iterator() {
         //noinspection ConstantConditions
         return value.iterator();
     }
 
     /**
      * Returns a spliterator over the entries in this property's
-     * {@code JsonObject}.
+     * {@code KofiObject} value.
      *
-     * @see JsonObject#spliterator()
+     * @see KofiObject#spliterator()
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
     @Override
-    public Spliterator<JsonObject.Entry> spliterator() {
+    public Spliterator<KofiObject.Entry> spliterator() {
         //noinspection ConstantConditions
         return value.spliterator();
     }

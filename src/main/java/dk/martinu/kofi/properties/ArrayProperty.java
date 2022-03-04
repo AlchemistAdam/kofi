@@ -24,16 +24,16 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
 
-import dk.martinu.kofi.JsonArray;
+import dk.martinu.kofi.KofiArray;
 import dk.martinu.kofi.Property;
 
 /**
- * A {@link Property} that holds a {@link JsonArray} value.
+ * A {@link Property} that holds a {@link KofiArray} value.
  *
  * @author Adam Martinu
  * @since 1.0
  */
-public class ArrayProperty extends Property<JsonArray> implements Cloneable, Serializable, Iterable<Object> {
+public class ArrayProperty extends Property<KofiArray> implements Cloneable, Serializable, Iterable<Object> {
 
     @Serial
     private static final long serialVersionUID = 0L;
@@ -48,8 +48,8 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
      * @throws NullPointerException if {@code key} is {@code null}
      */
     @Contract(pure = true)
-    public ArrayProperty(@NotNull final String key, @Nullable final JsonArray value) {
-        super(key, value != null ? value : new JsonArray());
+    public ArrayProperty(@NotNull final String key, @Nullable final KofiArray value) {
+        super(key, value != null ? value : new KofiArray());
     }
 
     /**
@@ -79,26 +79,26 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
     }
 
     /**
-     * Returns {@code JsonArray.class}.
+     * Returns {@code KofiArray.class}.
      */
     @Contract(pure = true)
     @NotNull
     @Override
-    public Class<JsonArray> getValueClass() {
-        return JsonArray.class;
+    public Class<KofiArray> getValueClass() {
+        return KofiArray.class;
     }
 
     /**
      * Returns a {@code String} representation of this property's value.
      *
-     * @see JsonArray#toJson()
+     * @see KofiArray#getString()
      */
     @Contract(pure = true)
     @NotNull
     @Override
     public String getValueString() {
         //noinspection ConstantConditions
-        return value.toJson();
+        return value.getString();
     }
 
     /**
@@ -127,9 +127,9 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
 
     /**
      * Returns an iterator over the elements in this property's
-     * {@code JsonArray}.
+     * {@code KofiArray} value.
      *
-     * @see JsonArray#iterator()
+     * @see KofiArray#iterator()
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
@@ -141,9 +141,9 @@ public class ArrayProperty extends Property<JsonArray> implements Cloneable, Ser
 
     /**
      * Returns a spliterator over the elements in this property's
-     * {@code JsonArray}.
+     * {@code KofiArray} value.
      *
-     * @see JsonArray#spliterator()
+     * @see KofiArray#spliterator()
      */
     @Contract(value = "-> new", pure = true)
     @NotNull
