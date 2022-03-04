@@ -28,13 +28,13 @@ import java.util.function.Consumer;
 import dk.martinu.kofi.properties.ObjectProperty;
 
 /**
- * {@link Json} implementation of an immutable JSON object value.
+ * Immutable {@link KofiValue} implementation of an object.
  *
  * @author Adam Martinu
  * @see ObjectProperty
  * @since 1.0
  */
-public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Serializable {
+public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>, Serializable {
 
     /**
      * Empty, zero-length entry array constant.
@@ -44,189 +44,16 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
     private static final long serialVersionUID = 0L;
 
     /**
-     * Reconstructs a new object of the specified type from the entries of
-     * {@code json} and returns it.
-     *
-     * @param json the {@code JsonObject} whose entries are used to reconstruct
-     *             the object
-     * @param type the class of the object to reconstruct
-     * @param <V>  the runtime type of the object to reconstruct
-     * @return a new, reconstructed object
-     * @throws NullPointerException        if {@code json} or {@code type} is
-     *                                     {@code null}
-     * @throws InstantiationException      if {@code type} does not represent a
-     *                                     non-abstract class
-     * @throws NoSuchMethodException       if {@code type} does not declare a
-     *                                     no-arg constructor
-     * @throws IllegalAccessException      if the no-arg constructor declared
-     *                                     by {@code type} is inaccessible
-     * @throws ExceptionInInitializerError if the initialization caused by
-     *                                     calling the constructor or setting
-     *                                     the value of a field fails.
-     * @throws InvocationTargetException   if calling the constructor throws an
-     *                                     exception
-     * @throws NoSuchFieldException        if {@code json} contains an entry
-     *                                     whose name does not match the name
-     *                                     of a field declared by {@code type}
-     */
-    // TODO check for a JSON array named "0" and if found use as constructor args
-    //  (this is safe because field names cannot begin with numbers
-    // TODO provide more details on how entry values are assigned to fields
-    @Contract(pure = true)
-    @NotNull
-    public static <V> V reconstruct(@NotNull final JsonObject json, @NotNull final Class<V> type) throws
-            InstantiationException, NoSuchMethodException, IllegalAccessException, InvocationTargetException,
-            NoSuchFieldException {
-        Objects.requireNonNull(json, "json is null");
-        Objects.requireNonNull(type, "type is null");
-        if (Modifier.isAbstract(type.getModifiers()) || Modifier.isInterface(type.getModifiers())) {
-            final InstantiationException exc = new InstantiationException(
-                    "type must represent a non-abstract class {" + type + "}");
-            KofiLog.throwing(JsonObject.class.getName(), "reconstruct", exc);
-            throw exc;
-        }
-
-        // no-arg constructor to create object
-        final Constructor<V> constructor;
-        try {
-            constructor = type.getDeclaredConstructor();
-            if (!constructor.canAccess(null) && !constructor.trySetAccessible()) {
-                final IllegalAccessException exc = new IllegalAccessException(
-                        "no-arg constructor to create object is inaccessible {" + type + "}");
-                KofiLog.throwing(JsonObject.class.getName(), "reconstruct", exc);
-                throw exc;
-            }
-        }
-        catch (NoSuchMethodException e) {
-            NoSuchMethodException exc = new NoSuchMethodException(
-                    "no-arg constructor not found {" + type + "}");
-            exc.initCause(e);
-            KofiLog.throwing(JsonObject.class.getName(), "reconstruct", exc);
-            throw exc;
-        }
-
-        // object to assign field values and return
-        final V obj;
-        try {
-            obj = constructor.newInstance();
-        }
-        catch (InvocationTargetException e) {
-            KofiLog.throwing(JsonObject.class.getName(), "reconstruct", e);
-            throw e;
-        }
-
-        // assign entry values to fields
-        for (Entry entry : json) {
-            try {
-                final Field field = type.getField(entry.name);
-                // field must be accessible and not final
-                if (!Modifier.isFinal(field.getModifiers()) && (field.canAccess(obj) || field.trySetAccessible())) {
-                    final Class<?> fieldType = field.getType();
-                    // set to false if the entry value is cast and assigned to the field
-                    boolean unassigned = true;
-                    // if value is not null, then field type must be an
-                    // assignable Object type OR a primitive type where value
-                    // is of a matching wrapper type
-                    if (entry.value != null) {
-                        // TODO arrays and undefined objects will not be reconstructed
-                        // assignable Object type
-                        if (fieldType.isAssignableFrom(entry.value.getClass())) {
-                            if (fieldType.equals(String.class)) {
-                                field.set(obj, json.getJavaString((String) entry.value));
-                            }
-                            else
-                                field.set(obj, entry.value);
-                            unassigned = false;
-                        }
-                        // below are primitive types
-                        else if (fieldType.equals(int.class)) {
-                            if (entry.value instanceof Number n) {
-                                field.setInt(obj, n.intValue());
-                                unassigned = false;
-                            }
-                        }
-                        else if (fieldType.equals(long.class)) {
-                            if (entry.value instanceof Number n) {
-                                field.setLong(obj, n.longValue());
-                                unassigned = false;
-                            }
-                        }
-                        else if (fieldType.equals(float.class)) {
-                            if (entry.value instanceof Number n) {
-                                field.setFloat(obj, n.floatValue());
-                                unassigned = false;
-                            }
-                        }
-                        else if (fieldType.equals(double.class)) {
-                            if (entry.value instanceof Number n) {
-                                field.setDouble(obj, n.doubleValue());
-                                unassigned = false;
-                            }
-                        }
-                        else if (fieldType.equals(byte.class)) {
-                            if (entry.value instanceof Number n) {
-                                field.setByte(obj, n.byteValue());
-                                unassigned = false;
-                            }
-                        }
-                        else if (fieldType.equals(short.class)) {
-                            if (entry.value instanceof Number n) {
-                                field.setShort(obj, n.shortValue());
-                                unassigned = false;
-                            }
-                        }
-                        // characters are not defined in the JSON specification,
-                        // use java style assignment of integers to chars
-                        else if (fieldType.equals(char.class)) {
-                            if (entry.value instanceof Number n) {
-                                field.setChar(obj, (char) n.intValue());
-                                unassigned = false;
-                            }
-                        }
-                        else if (fieldType.equals(boolean.class)) {
-                            if (entry.value instanceof Boolean b) {
-                                field.setBoolean(obj, b);
-                                unassigned = false;
-                            }
-                        }
-
-                    }
-                    // if field is an Object type assign null (value is null)
-                    else if (!fieldType.isPrimitive()) {
-                        field.set(obj, null);
-                        unassigned = false;
-                    }
-                    // throw exception if field was not assigned a value
-                    if (unassigned) {
-                        final IllegalArgumentException exc = new IllegalArgumentException(
-                                "cannot assign entry {" + entry + "} to field {" + field + "}");
-                        KofiLog.throwing(JsonObject.class.getName(), "reconstruct", exc);
-                        throw exc;
-                    }
-                }
-                else
-                    KofiLog.finest("field is inaccessible and cannot be assigned {" + field + "}");
-            }
-            catch (NoSuchFieldException e) {
-                KofiLog.throwing(JsonObject.class.getName(), "reconstruct", e);
-                throw e;
-            }
-        }
-
-        return obj;
-    }
-
-    /**
-     * Constructs a new {@code JsonObject} that wraps around the specified object
+     * Constructs a new {@code KofiObject} that wraps around the specified object
      * using reflection and returns it. Setting non-static field values in
      * {@code object} will not change the returned object.
      *
      * @param object the object to reflect
-     * @return a new {@code JsonObject}
+     * @return a new {@code KofiObject}
      * @throws NullPointerException if {@code object} is {@code null}
      */
     @NotNull
-    public static JsonObject reflect(@NotNull final Object object) {
+    public static KofiObject reflect(@NotNull final Object object) {
         Objects.requireNonNull(object, "object is null");
         // class for reflection
         final Class<?> cl = object.getClass();
@@ -242,48 +69,49 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
                     }
                     catch (IllegalAccessException e) {
                         // reflection access is already checked, this should never happen
-                        KofiLog.severe("field could not be accessed {" + object.getClass().getName()
-                                + ", " + field.getName() + "}");
+                        KofiLog.severe("field could not be accessed {"
+                                + object.getClass().getName() + ", " + field.getName() + "}");
                         throw new RuntimeException(e);
                     }
                     map.put(field.getName(), value);
                 }
                 else
-                    KofiLog.finest("field could not be accessed {" + object.getClass().getName()
-                            + ", " + field.getName() + "}");
-        return new JsonObject(map);
+                    KofiLog.finest("field could not be accessed {"
+                            + object.getClass().getName() + ", " + field.getName() + "}");
+        return new KofiObject(map);
     }
 
     /**
      * The entries contained in this object. Each entry value is guaranteed to
-     * be defined.
+     * be defined. The entries are sorted in lexicographical order.
      *
-     * @see Json#getDefinedObject(Object)
+     * @see KofiValue#getKofiValue(Object)
      */
     @NotNull
     protected final Entry[] entries;
 
     /**
-     * Construct a new, empty {@code JsonObject}.
+     * Construct a new, empty {@code KofiObject}.
      */
     @Contract(pure = true)
-    public JsonObject() {
+    public KofiObject() {
         entries = EMPTY;
     }
 
     /**
-     * Constructs a new {@code JsonObject} containing the defined name-value
+     * Constructs a new {@code KofiObject} containing the defined name-value
      * pairs of the specified map.
      *
      * @param map the map of name-value pairs, or {@code null}
-     * @see Json#getDefinedObject(Object)
+     * @see KofiValue#getKofiValue(Object)
      * @see Entry
      */
     @Contract(pure = true)
-    public JsonObject(@Nullable final Map<String, Object> map) {
+    public KofiObject(@Nullable final Map<String, Object> map) {
         if (map != null && map.size() > 0)
             entries = map.entrySet().parallelStream()
                     .map(entry -> new Entry(entry.getKey(), entry.getValue()))
+                    .sorted()
                     .toArray(Entry[]::new);
         else
             entries = EMPTY;
@@ -291,7 +119,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
 
     /**
      * Returns {@code true} if this object is equal to {@code obj}
-     * ({@code this == obj}), or {@code obj} is also a {@code JsonObject} and
+     * ({@code this == obj}), or {@code obj} is also a {@code KofiObject} and
      * its size and entries are equal to this object's size and entries.
      * Otherwise {@code false} is returned.
      */
@@ -300,12 +128,9 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
     public boolean equals(@Nullable final Object obj) {
         if (this == obj)
             return true;
-        else if (obj instanceof JsonObject json && entries.length == json.entries.length) {
+        else if (obj instanceof KofiObject kofi && entries.length == kofi.entries.length) {
             for (int i = 0; i < entries.length; i++)
-                if (!Objects.equals(entries[i].value, json.getEntry(i).value)
-                        && !(entries[i].value instanceof Number n0
-                        && json.getEntry(i).value instanceof Number n1
-                        && areNumbersEqual(n0, n1)))
+                if (!Objects.equals(entries[i].value, kofi.getEntry(i).value))
                     return false;
             return true;
         }
@@ -355,6 +180,18 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Contract(pure = true)
+    @NotNull
+    @Override
+    public String getString() {
+        final StringBuilder sb = new StringBuilder(size() * 16);
+        getString(sb);
+        return sb.toString();
+    }
+
+    /**
      * Returns the hash code of this object's entries.
      *
      * @see Arrays#hashCode(Object[])
@@ -374,6 +211,181 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
     @Override
     public Iterator<Entry> iterator() {
         return new EntryIterator();
+    }
+
+    /**
+     * Reconstructs a new object of the specified type from the entries of this
+     * object and returns it.
+     *
+     * @param type the class of the object to reconstruct
+     * @param <T>  the runtime type of the object to reconstruct
+     * @return a new, reconstructed object
+     * @throws NullPointerException        if {@code type} is {@code null}
+     * @throws InstantiationException      if {@code type} does not represent a
+     *                                     non-abstract class
+     * @throws NoSuchMethodException       if {@code type} does not declare a
+     *                                     no-arg constructor
+     * @throws IllegalAccessException      if the no-arg constructor declared
+     *                                     by {@code type} is inaccessible
+     * @throws ExceptionInInitializerError if the initialization caused by
+     *                                     calling the constructor or setting
+     *                                     the value of a field fails.
+     * @throws InvocationTargetException   if calling the constructor throws an
+     *                                     exception
+     * @throws NoSuchFieldException        if this object contains an entry
+     *                                     whose name does not match the name
+     *                                     of a field declared by {@code type}
+     * @throws IllegalArgumentException    if an entry value could not be
+     *                                     assigned to a field
+     * @throws ReconstructionException     if an exception ocurred when
+     *                                     reconstructing an array or object
+     *                                     from an entry value
+     */
+    // DOC provide more details on how entry values are assigned to fields
+    @Contract(pure = true)
+    @NotNull
+    public <T> T reconstruct(@NotNull final Class<T> type) throws ReflectiveOperationException, NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException, NoSuchFieldException {
+        Objects.requireNonNull(type, "type is null");
+        final KofiLog.Source src = new KofiLog.Source(KofiObject.class, "reconstruct(Class)");
+
+        if (Modifier.isAbstract(type.getModifiers()) || Modifier.isInterface(type.getModifiers()))
+            throw KofiLog.exception(src, new InstantiationException(
+                    "cannot create new instance of type {" + type + "}"));
+
+        // no-arg constructor to create object
+        final Constructor<T> constructor;
+        try {
+            constructor = type.getDeclaredConstructor();
+            if (!constructor.canAccess(null) && !constructor.trySetAccessible())
+                throw KofiLog.exception(src, new IllegalAccessException(
+                        "no-arg constructor to create object is inaccessible {" + type + "}"));
+        }
+        catch (NoSuchMethodException e) {
+            throw KofiLog.exception(src, e);
+        }
+
+        // object to assign field values and return
+        final T obj;
+        try {
+            obj = constructor.newInstance();
+        }
+        catch (InvocationTargetException e) {
+            throw KofiLog.exception(src, e);
+        }
+
+        // assign entry values to fields
+        for (Entry entry : entries) {
+            final Field field;
+            try {
+                field = type.getField(entry.name);
+            }
+            catch (NoSuchFieldException e) {
+                throw KofiLog.exception(src, e);
+            }
+            // skip final fields
+            if (Modifier.isFinal(field.getModifiers()))
+                continue;
+            // field must be accessible
+            else if (field.canAccess(obj) || field.trySetAccessible()) {
+                final Class<?> fieldType = field.getType();
+                // examine field type and set value if entry matches
+                if (entry.value != null) {
+                    // arrays
+                    if (fieldType.isArray()) {
+                        if (entry.value instanceof KofiArray array)
+                            try {
+                                field.set(obj, array.reconstruct(fieldType));
+                                continue;
+                            }
+                            catch (IllegalArgumentException e) {
+                                throw KofiLog.exception(src, new ReconstructionException(
+                                        "could not reconstruct array from entry {" + entry + "}", e));
+                            }
+                    }
+                    // strings and wrappers
+                    else if (fieldType.isAssignableFrom(entry.value.getClass())) {
+                        if (fieldType.equals(String.class))
+                            field.set(obj, getJavaString((String) entry.value));
+                        else
+                            field.set(obj, entry.value);
+                        continue;
+                    }
+                    // undefined objects
+                    else if (!fieldType.isPrimitive()) {
+                        if (entry.value instanceof KofiObject object)
+                            try {
+                                field.set(obj, object.reconstruct(fieldType));
+                                continue;
+                            }
+                            catch (IllegalArgumentException e) {
+                                throw KofiLog.exception(src, new ReconstructionException(
+                                        "could not reconstruct object from entry {" + entry + "}", e));
+                            }
+                    }
+                    // below are primitive types
+                    else if (fieldType == int.class) {
+                        if (entry.value instanceof Number n) {
+                            field.setInt(obj, n.intValue());
+                            continue;
+                        }
+                    }
+                    else if (fieldType == long.class) {
+                        if (entry.value instanceof Number n) {
+                            field.setLong(obj, n.longValue());
+                            continue;
+                        }
+                    }
+                    else if (fieldType == float.class) {
+                        if (entry.value instanceof Number n) {
+                            field.setFloat(obj, n.floatValue());
+                            continue;
+                        }
+                    }
+                    else if (fieldType == double.class) {
+                        if (entry.value instanceof Number n) {
+                            field.setDouble(obj, n.doubleValue());
+                            continue;
+                        }
+                    }
+                    else if (fieldType == byte.class) {
+                        if (entry.value instanceof Number n) {
+                            field.setByte(obj, n.byteValue());
+                            continue;
+                        }
+                    }
+                    else if (fieldType == short.class) {
+                        if (entry.value instanceof Number n) {
+                            field.setShort(obj, n.shortValue());
+                            continue;
+                        }
+                    }
+                    else if (fieldType == char.class) {
+                        if (entry.value instanceof Character c) {
+                            field.setChar(obj, c);
+                            continue;
+                        }
+                    }
+                    else // if (fieldType == boolean.class)
+                        if (entry.value instanceof Boolean b) {
+                            field.setBoolean(obj, b);
+                            continue;
+                        }
+                }
+                // if field is an Object type set to null (value is null)
+                else if (!fieldType.isPrimitive()) {
+                    field.set(obj, null);
+                    continue;
+                }
+                // throw exception if field value was not set
+                throw KofiLog.exception(src, new IllegalArgumentException(
+                        "cannot set field {" + field + "} to value of {" + entry.value + "}"));
+            }
+            else
+                KofiLog.finest("field is inaccessible and cannot be assigned {"
+                        + type.getName() + ", " + field + "}");
+        }
+        return obj;
     }
 
     /**
@@ -400,29 +412,17 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
      * {@inheritDoc}
      */
     @Contract(pure = true)
-    @NotNull
     @Override
-    public String toJson() {
-        final StringBuilder sb = new StringBuilder(size() * 16);
-        toJson(sb);
-        return sb.toString();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Contract(pure = true)
-    @Override
-    protected void toJson(@NotNull final StringBuilder sb) {
+    protected void getString(@NotNull final StringBuilder sb) {
         sb.append('{');
         if (entries.length > 0) {
             Entry entry = entries[0];
             sb.append(" \"").append(entry.name).append("\": ");
-            toJson(entry.value, sb);
+            getString(entry.value, sb);
             for (int index = 1; index < entries.length; index++) {
                 entry = entries[index];
                 sb.append(", \"").append(entry.name).append("\": ");
-                toJson(entry.value, sb);
+                getString(entry.value, sb);
             }
         }
         sb.append(" }");
@@ -431,7 +431,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
     /**
      * A name-value pair. The value of an entry is guaranteed to be defined.
      *
-     * @see Json#getDefinedObject(Object)
+     * @see KofiValue#getKofiValue(Object)
      */
     public class Entry implements Comparable<Entry> {
 
@@ -443,7 +443,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         /**
          * The defined object entry value.
          *
-         * @see Json#getDefinedObject(Object)
+         * @see KofiValue#getKofiValue(Object)
          */
         @Nullable
         public final Object value;
@@ -464,12 +464,12 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
          * @param value the value to get the defined object from, which will be
          *              the entry value
          * @throws NullPointerException if {@code name} is {@code null}
-         * @see Json#getDefinedObject(Object)
+         * @see KofiValue#getKofiValue(Object)
          */
         @Contract(pure = true)
         public Entry(@NotNull final String name, @Nullable final Object value) {
             this.name = Objects.requireNonNull(name, "name is null");
-            this.value = getDefinedObject(value);
+            this.value = getKofiValue(value);
         }
 
         /**
@@ -479,7 +479,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
          */
         @Contract(pure = true)
         @Override
-        public int compareTo(@NotNull final JsonObject.Entry entry) {
+        public int compareTo(@NotNull final KofiObject.Entry entry) {
             return name.compareTo(entry.name);
         }
 
@@ -522,7 +522,7 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
          * Returns a combined hash code of this entry's key, in upper-case, and
          * value. The returned value is equal to:
          * <pre>
-         *     keyHash | valueHash << 16
+         *     keyHash | valueHash &lt;&lt; 16
          * </pre>
          */
         @Contract(pure = true)
@@ -556,11 +556,12 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
     }
 
     /**
-     * A {@code JsonObject} builder. The values of name-value pairs in a
+     * A {@code KofiObject} builder. The values of name-value pairs in a
      * builder are not guaranteed to be defined.
      *
-     * @see Json#getDefinedObject(Object)
+     * @see KofiValue#getKofiValue(Object)
      */
+    @SuppressWarnings("unused")
     public static class Builder {
 
         /**
@@ -571,12 +572,12 @@ public class JsonObject extends Json implements Iterable<JsonObject.Entry>, Seri
         /**
          * Constructs a new object from the name-value pairs in this builder.
          *
-         * @see JsonObject#JsonObject(Map)
+         * @see KofiObject#KofiObject(Map)
          */
         @Contract(pure = true)
         @NotNull
-        public JsonObject build() {
-            return new JsonObject(map);
+        public KofiObject build() {
+            return new KofiObject(map);
         }
 
         /**
