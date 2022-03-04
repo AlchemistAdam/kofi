@@ -26,7 +26,7 @@ import dk.martinu.kofi.properties.NullProperty;
 
 /**
  * An abstract {@link Element element} used to store data as a key-value pair.
- * Property implementations provided by the KOFI API are located in the
+ * Property implementations provided by the KoFi API are located in the
  * {@link dk.martinu.kofi.properties} package. Properties have a string key and
  * a value of type {@code V}. Keys are not case-sensitive when compared. The
  * string representation of a property, returned by {@link #getString()}, is
@@ -116,8 +116,6 @@ public abstract class Property<V> extends Element {
      */
     @Contract(pure = true)
     @NotNull
-    // TODO include escaped names in test
-    //  \;key = ... (file) -> ;key (document)
     public String getKeyString() {
         return KofiUtil.escape(key, ';', '[');
     }

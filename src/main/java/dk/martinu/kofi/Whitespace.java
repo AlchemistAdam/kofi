@@ -24,8 +24,8 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * An {@link Element element} used to mark pure whitespace, such as a blank
- * line in a text file. The string representation of whitespace, returned by
+ * An {@link Element element} used to mark whitespace, such as a blank line in a
+ * text file. The string representation of whitespace, returned by
  * {@link #getString()}, is equal to an empty string {@code ""}.
  *
  * @author Adam Martinu

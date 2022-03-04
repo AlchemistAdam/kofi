@@ -22,11 +22,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * An abstract element, which can be represented as a string returned by
- * {@link #getString()}. This class does not define exactly what an element is
- * nor its string representation.
- * <p>
- * Examples of elements could be the lines of a text file, the values of an
- * array or the elements of a list.
+ * {@link #getString()}.
  *
  * @author Adam Martinu
  * @see Comment
