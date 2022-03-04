@@ -31,7 +31,7 @@ import dk.martinu.kofi.properties.*;
  * A collection of {@link Element elements} with {@code add}, {@code get},
  * {@code contains} and {@code remove} methods provided for {@link Section} and
  * {@link Property} elements.
- * <p id="global">
+ * <p>
  * Documents inherently contain the <i>global section</i>; a pseudo-section
  * that does not exist within the document, but can be thought of as a global
  * scope to access elements at the very beginning of a document (which are not
@@ -55,7 +55,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * A list of all elements in this document. The order of the elements in
      * this list defines how they are logically related to each other. For
      * example, a property at index {@code i} belongs to the section at the
-     * highest index {@code k} for which {@code k &lt i} is {@code true}.
+     * highest index {@code k} for which <code>k &lt; i</code> is {@code true}.
      */
     @NotNull
     protected final ArrayList<Element> list;
@@ -102,7 +102,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(Property)
      */
-    public void addArray(@NotNull final String key, @Nullable final JsonArray value) {
+    public void addArray(@NotNull final String key, @Nullable final KofiArray value) {
         addArray(null, key, value);
     }
 
@@ -116,7 +116,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(String, Property)
      */
-    public void addArray(@Nullable final String section, @NotNull final String key, @Nullable final JsonArray value) {
+    public void addArray(@Nullable final String section, @NotNull final String key, @Nullable final KofiArray value) {
         Objects.requireNonNull(key, "key is null");
         addProperty(section, new ArrayProperty(key, value));
     }
@@ -343,7 +343,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(Property)
      */
-    public void addObject(@NotNull final String key, @Nullable final JsonObject value) {
+    public void addObject(@NotNull final String key, @Nullable final KofiObject value) {
         addObject(null, key, value);
     }
 
@@ -357,7 +357,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @throws NullPointerException if {@code key} is {@code null}
      * @see #addProperty(String, Property)
      */
-    public void addObject(@Nullable final String section, @NotNull final String key, @Nullable final JsonObject value) {
+    public void addObject(@Nullable final String section, @NotNull final String key, @Nullable final KofiObject value) {
         Objects.requireNonNull(key, "key is null");
         addProperty(section, new ObjectProperty(key, value));
     }
@@ -386,8 +386,9 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     public void addProperties(@Nullable final String section, @NotNull final Property<?>... properties) {
         Objects.requireNonNull(properties, "properties array is null");
         final Property<?>[] a = Arrays.copyOf(properties, properties.length);
+        // TODO add properties in bulk for better performance if/when possible
         for (Property<?> property : a)
-            addProperty(section, property); // TODO add properties in bulk for better performance
+            addProperty(section, property);
     }
 
     /**
@@ -712,7 +713,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
 
     /**
      * Returns the value of an {@link ArrayProperty} in the global section that
-     * matches {@code key} and {@code JsonArray}, or {@code null} if no
+     * matches {@code key} and {@code KofiArray}, or {@code null} if no
      * property was found.
      *
      * @param key the property key to match against
@@ -723,13 +724,13 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(pure = true)
     @Nullable
-    public JsonArray getArray(@NotNull final String key) {
+    public KofiArray getArray(@NotNull final String key) {
         return getArray(null, key, null);
     }
 
     /**
      * Returns the value of an {@link ArrayProperty} in the specified section
-     * that matches {@code key} and {@code JsonArray}, or {@code null} if no
+     * that matches {@code key} and {@code KofiArray}, or {@code null} if no
      * property was found.
      *
      * @param section the name of the section to search in, can be
@@ -742,13 +743,13 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(pure = true)
     @Nullable
-    public JsonArray getArray(@Nullable final String section, @NotNull final String key) {
+    public KofiArray getArray(@Nullable final String section, @NotNull final String key) {
         return getArray(section, key, null);
     }
 
     /**
      * Returns the value of an {@link ArrayProperty} in the global section that
-     * matches {@code key} and {@code JsonArray}, or {@code def} if no
+     * matches {@code key} and {@code KofiArray}, or {@code def} if no
      * property was found.
      *
      * @param key the property key to match against
@@ -760,13 +761,13 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_, !null -> !null", pure = true)
     @Nullable
-    public JsonArray getArray(@NotNull final String key, @Nullable final JsonArray def) {
+    public KofiArray getArray(@NotNull final String key, @Nullable final KofiArray def) {
         return getArray(null, key, def);
     }
 
     /**
      * Returns the value of an {@link ArrayProperty} in the specified section
-     * that matches {@code key} and {@code JsonArray}, or {@code def} if no
+     * that matches {@code key} and {@code KofiArray}, or {@code def} if no
      * property was found.
      *
      * @param section the name of the section to search in, can be
@@ -780,9 +781,9 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public JsonArray getArray(@Nullable final String section, @NotNull final String key,
-            @Nullable final JsonArray def) {
-        return getValue(section, key, JsonArray.class, def);
+    public KofiArray getArray(@Nullable final String section, @NotNull final String key,
+            @Nullable final KofiArray def) {
+        return getValue(section, key, KofiArray.class, def);
     }
 
     /**
@@ -1234,7 +1235,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(pure = true)
     @Nullable
-    public JsonObject getObject(@NotNull final String key) {
+    public KofiObject getObject(@NotNull final String key) {
         return getObject(null, key, null);
     }
 
@@ -1252,7 +1253,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(pure = true)
     @Nullable
-    public JsonObject getObject(@Nullable final String section, @NotNull final String key) {
+    public KofiObject getObject(@Nullable final String section, @NotNull final String key) {
         return getObject(section, key, null);
     }
 
@@ -1269,7 +1270,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_, !null -> !null", pure = true)
     @Nullable
-    public JsonObject getObject(@NotNull final String key, @Nullable final JsonObject def) {
+    public KofiObject getObject(@NotNull final String key, @Nullable final KofiObject def) {
         return getObject(null, key, def);
     }
 
@@ -1288,9 +1289,9 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_, _, !null -> !null", pure = true)
     @Nullable
-    public JsonObject getObject(@Nullable final String section, @NotNull final String key,
-            @Nullable final JsonObject def) {
-        return getValue(section, key, JsonObject.class, def);
+    public KofiObject getObject(@Nullable final String section, @NotNull final String key,
+            @Nullable final KofiObject def) {
+        return getValue(section, key, KofiObject.class, def);
     }
 
     /**
@@ -1815,7 +1816,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * Removes a property and its comments, if any, from the global section
      * that matches {@code key}.
      *
-     * @param key     the property key to match against
+     * @param key the property key to match against
      * @return {@code true} if a property was removed, otherwise {@code false}
      * @throws NullPointerException if {@code key} is {@code null}
      * @see Property#matches(String)
@@ -1953,7 +1954,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
                 return -1;
             }
             // property found
-            else if (e instanceof Property<?> p && p.matches(key, valueType))
+            boolean b = e instanceof Property<?> p && p.matches(key, valueType);
+            if (b)
                 return i;
         }
         // property not found
