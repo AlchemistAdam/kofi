@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Adam Martinu. All rights reserved. Altering or
+ * Copyright (c) 2022, Adam Martinu. All rights reserved. Altering or
  * removing copyright notices or this file header is not allowed.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");  you may not
@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package dk.martinu.kofi;
+package dk.martinu.kofi.codecs;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -23,8 +23,10 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Serial;
 import java.io.Serializable;
 
+import dk.martinu.kofi.Document;
+
 /**
- * Signals that an error occurred while parsing data to a {@link Document}.
+ * Signals that an error occurred while parsing character data.
  *
  * @author Adam Martinu
  * @since 1.0
@@ -35,19 +37,15 @@ public class ParseException extends Exception implements Serializable {
     private static final long serialVersionUID = 0L;
 
     /**
-     * Constructs a new exception with the specified message.
+     * Constructs a new exception with the specified message and location of
+     * the data the caused this exception.
+     *
+     * @param line the line number
+     * @param column the column at the specified line
+     * @param msg the message
      */
     @Contract(pure = true)
-    public ParseException(@NotNull final String msg) {
-        super(msg);
-    }
-
-    /**
-     * Constructs a new exception with the specified, line, message and cause.
-     */
-    // TODO retain line/column information or implement better constructors
-    @Contract(pure = true)
-    public ParseException(final int line, @NotNull final String msg, @NotNull final Throwable cause) {
-        super("line " + line + " {" + msg + "}", cause);
+    public ParseException(final int line, final int column, @NotNull final String msg) {
+        super("[" + line + ":" + column + "] " + msg);
     }
 }
