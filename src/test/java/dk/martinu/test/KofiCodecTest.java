@@ -19,21 +19,18 @@ package dk.martinu.test;
 
 import org.junit.jupiter.api.*;
 
-import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
 
 import dk.martinu.kofi.*;
 import dk.martinu.kofi.codecs.KofiCodec;
-import dk.martinu.kofi.spi.DocumentFileReader;
-import dk.martinu.kofi.spi.DocumentFileWriter;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Testing write and read of {@link KofiCodec} with all property types in
  * {@link dk.martinu.kofi.properties}. This test consists of two subtests;
- * {@link WriteTest} and {@link ReadTest}. First properties are written, then
+ * {@link WriteFile} and {@link ReadFile}. First properties are written, then
  * read, both in random order.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -47,23 +44,36 @@ public class KofiCodecTest {
         assertDoesNotThrow(() -> Files.deleteIfExists(path));
     }
 
-    @DisplayName("B ReadTest")
+    @Test
+    void readString() {
+        final Document document =
+                assertDoesNotThrow(() -> KofiCodec.provider().readString("\\;key = null"));
+
+        KofiUtil.printDocument(document, System.out);
+
+        assertTrue(document.contains(";key"));
+        assertTrue(document.contains(";key", Object.class));
+        assertNull(document.getValue(";key", Object.class, new Object()));
+        assertTrue(document.isNull(";key"));
+    }
+
+    @DisplayName("B ReadFile")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @TestMethodOrder(MethodOrderer.Random.class)
-    public class ReadTest {
+    public class ReadFile {
 
         Document document;
 
         @Test
         void containsArray() {
             assertTrue(document.contains("mix"));
-            assertTrue(document.contains("mix", JsonArray.class));
-            assertEquals(new JsonArray("Hello", "World", true, 97), document.getArray("mix"));
+            assertTrue(document.contains("mix", KofiArray.class));
+            assertEquals(new KofiArray("Hello", "World", true, 97), document.getArray("mix"));
 
             assertTrue(document.contains("abc", "numbers"));
-            assertTrue(document.contains("abc", "numbers", JsonArray.class));
-            assertEquals(new JsonArray(123, 567, 890), document.getArray("abc", "numbers"));
+            assertTrue(document.contains("abc", "numbers", KofiArray.class));
+            assertEquals(new KofiArray(123, 567, 890), document.getArray("abc", "numbers"));
         }
 
         @Test
@@ -85,6 +95,15 @@ public class KofiCodecTest {
             assertTrue(document.contains("abc", "double"));
             assertTrue(document.contains("abc", "double", Double.class));
             assertEquals(123.567d, document.getDouble("abc", "double", 12d));
+        }
+
+        @Test
+        void containsEscapedKeys() {
+            assertTrue(document.contains(";key"));
+            assertTrue(document.isNull(";key"));
+
+            assertTrue(document.contains("[key"));
+            assertTrue(document.isNull("[key"));
         }
 
         @Test
@@ -147,39 +166,29 @@ public class KofiCodecTest {
 
         @BeforeAll
         void readDocument() {
-            final DocumentFileReader reader = DocumentIO.getFileReader(path);
-            assertTrue(reader instanceof KofiCodec);
-            assertDoesNotThrow(() -> document = reader.readFile(path));
-
-            try {
-                System.out.println("READ DOCUMENT " + document);
-                System.out.println(KofiCodec.provider().writeString(document));
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
+            document = assertDoesNotThrow(() -> KofiCodec.provider().readFile(path));
         }
     }
 
-    @DisplayName("A WriteTest")
+    @DisplayName("A WriteFile")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @TestMethodOrder(MethodOrderer.Random.class)
-    public class WriteTest {
+    public class WriteFile {
 
         Document document;
 
         @Test
         synchronized void addArray() {
-            assertDoesNotThrow(() -> document.addArray("mix", new JsonArray("Hello", "World", true, 97)));
+            assertDoesNotThrow(() -> document.addArray("mix", new KofiArray("Hello", "World", true, 97)));
             assertTrue(document.contains("mix"));
-            assertTrue(document.contains("mix", JsonArray.class));
-            assertEquals(new JsonArray("Hello", "World", true, 97), document.getArray("mix"));
+            assertTrue(document.contains("mix", KofiArray.class));
+            assertEquals(new KofiArray("Hello", "World", true, 97), document.getArray("mix"));
 
-            assertDoesNotThrow(() -> document.addArray("abc", "numbers", new JsonArray(123, 567, 890)));
+            assertDoesNotThrow(() -> document.addArray("abc", "numbers", new KofiArray(123, 567, 890)));
             assertTrue(document.contains("abc", "numbers"));
-            assertTrue(document.contains("abc", "numbers", JsonArray.class));
-            assertEquals(new JsonArray(123, 567, 890), document.getArray("abc", "numbers"));
+            assertTrue(document.contains("abc", "numbers", KofiArray.class));
+            assertEquals(new KofiArray(123, 567, 890), document.getArray("abc", "numbers"));
         }
 
         @Test
@@ -204,6 +213,15 @@ public class KofiCodecTest {
             assertTrue(document.contains("abc", "double"));
             assertTrue(document.contains("abc", "double", Double.class));
             assertEquals(123.567d, document.getDouble("abc", "double", 12d));
+        }
+
+        @Test
+        synchronized void addEscapedKeys() {
+            assertDoesNotThrow(() -> document.addNull(";key"));
+            assertTrue(document.contains(";key"));
+
+            assertDoesNotThrow(() -> document.addNull("[key"));
+            assertTrue(document.contains("[key"));
         }
 
         @Test
@@ -323,17 +341,7 @@ public class KofiCodecTest {
 
         @AfterAll
         void writeDocument() {
-            final DocumentFileWriter writer = DocumentIO.getFileWriter(path, document);
-            assertTrue(writer instanceof KofiCodec);
-            assertDoesNotThrow(() -> writer.writeFile(path, document));
-
-            try {
-                System.out.println("WRITE DOCUMENT " + document);
-                System.out.println(KofiCodec.provider().writeString(document));
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
+            assertDoesNotThrow(() -> KofiCodec.provider().writeFile(path, document));
         }
     }
 }

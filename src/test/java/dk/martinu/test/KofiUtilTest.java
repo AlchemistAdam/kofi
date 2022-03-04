@@ -22,10 +22,91 @@ import org.junit.jupiter.api.TestInstance;
 
 import dk.martinu.kofi.KofiUtil;
 
+import static dk.martinu.kofi.KofiUtil.trim;
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class KofiUtilTest {
+
+    @Test
+    void equalsIgnoreCase() {
+        // assert true
+        final String[] tstrings = {
+                "", "",
+                "NULL", "",
+                "NULL", "NULL",
+                "null", "NULL",
+                "NuLl", "NULL",
+                "Hello", "HELLO",
+                "hI", "HI",
+                "nulll", "NULL",
+                "Helloo", "HELLO",
+                "hIi", "HI"
+        };
+        final char[][] tchars = new char[tstrings.length][2];
+        for (int i = 0; i < tstrings.length; i++)
+            tchars[i] = tstrings[i].toCharArray();
+        for (int i = 0; i < tchars.length - 1; i += 2) {
+            final int fi = i;
+            assertTrue(KofiUtil.equalsIgnoreCase(tchars[i], 0, tchars[i].length, tchars[i + 1]),
+                    () -> "{" + new String(tchars[fi]) + "} {" + new String(tchars[fi + 1]) + "}");
+        }
+
+        // assert false
+        final String[] fstrings = {
+                "", "NULL",
+                "nul", "NULL",
+                "ull", "NULL",
+                "nnull", "NULL",
+                "NuLl", "null"
+        };
+        final char[][] fchars = new char[fstrings.length][2];
+        for (int i = 0; i < fstrings.length; i++)
+            fchars[i] = fstrings[i].toCharArray();
+        for (int i = 0; i < fchars.length - 1; i += 2) {
+            final int fi = i;
+            assertFalse(KofiUtil.equalsIgnoreCase(fchars[i], 0, fchars[i].length, fchars[i + 1]),
+                    () -> "{" + new String(fchars[fi]) + "} {" + new String(fchars[fi + 1]) + "}");
+        }
+
+        // assert true - specified start index
+        final String[] tsstrings = {
+                "", "",
+                "NULL", "",
+                "abcdNULL", "NULL",
+                "abcdnull", "NULL",
+                "abcdNuLl", "NULL",
+                "abcdeHello", "HELLO",
+                "abhI", "HI",
+                "abcdnulll", "NULL",
+                "abcdeHelloo", "HELLO",
+                "abhIi", "HI"
+        };
+        final char[][] tschars = new char[tsstrings.length][2];
+        for (int i = 0; i < tsstrings.length; i++)
+            tschars[i] = tsstrings[i].toCharArray();
+        for (int i = 0; i < tschars.length - 1; i += 2) {
+            final int fi = i;
+            assertTrue(KofiUtil.equalsIgnoreCase(tschars[i], tschars[i + 1].length, tschars[i].length, tschars[i + 1]),
+                    () -> "{" + new String(tschars[fi]) + "} {" + new String(tschars[fi + 1]) + "}");
+        }
+
+        // assert false - specified start index
+        final String[] fsstrings = {
+                "", "NULL",
+                "nul", "NULL",
+                "ull", "NULL",
+                "nnull", "NULL",
+        };
+        final char[][] fschars = new char[fsstrings.length][2];
+        for (int i = 0; i < fsstrings.length; i++)
+            fschars[i] = fsstrings[i].toCharArray();
+        for (int i = 0; i < fschars.length - 1; i += 2) {
+            final int fi = i;
+            assertFalse(KofiUtil.equalsIgnoreCase(fschars[i], 0, fschars[i].length, fschars[i + 1]),
+                    () -> "{" + new String(fschars[fi]) + "} {" + new String(fschars[fi + 1]) + "}");
+        }
+    }
 
     @Test
     void escape() {
@@ -46,10 +127,6 @@ public class KofiUtilTest {
         final char[] digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
         for (char c : digits)
             assertTrue(KofiUtil.isDigit(c), "isDigit(" + c + ")");
-
-        final char[] notDigits = {'\\', ' ', 'A', 'a', '\0', '\t', 'B', 'b'};
-        for (char c : notDigits)
-            assertFalse(KofiUtil.isDigit(c), "isDigit(" + c + ")");
     }
 
     @Test
@@ -64,9 +141,21 @@ public class KofiUtilTest {
     }
 
     @Test
+    void trimEquals() {
+        assertEquals("", trim(""));
+        assertEquals("", trim("     "));
+        assertEquals("", trim("\t  \r"));
+        assertEquals("abc", trim("  abc     "));
+        assertEquals("abc", trim("abc"));
+        assertEquals("abc", trim("\t  abc     "));
+        assertEquals("abc def", trim("abc def"));
+        assertEquals("abc def", trim("  abc def     "));
+    }
+
+    @Test
     void unescape() {
-        final String escaped = "\\t\\\\Hello, World!\\\\\\r\\n";
-        final String unescaped = "\t\\Hello, World!\\\r\n";
-        assertEquals(unescaped, KofiUtil.unescape(escaped.toCharArray(), 0, escaped.length()));
+        final String escaped = "\\t\\\\Hello, \\u0041!\\\\\\r\\n";
+        final String unescaped = "\t\\Hello, A!\\\r\n";
+        assertEquals(unescaped, KofiUtil.unescape(escaped, 0, escaped.length()));
     }
 }

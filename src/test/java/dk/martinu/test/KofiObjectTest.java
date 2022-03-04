@@ -26,36 +26,36 @@ import dk.martinu.kofi.codecs.KofiCodec;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class JsonObjectTest {
+public class KofiObjectTest {
 
     final KofiCodec codec = KofiCodec.provider();
     Document document = null;
 
     @Test
     void mixedObject() {
-        final JsonObject.Builder builder = new JsonObject.Builder()
+        final KofiObject.Builder builder = new KofiObject.Builder()
                 .put("number", 1L)
                 .put("string", "Hello, World!")
                 .put("bool", true)
-                .put("array", new JsonArray(1, 2, 3));
-        final JsonObject object = builder.build();
+                .put("array", new KofiArray(1, 2, 3));
+        final KofiObject object = builder.build();
 
         assertEquals(builder.size(), object.size());
         for (int i = 0; i < builder.size(); i++) {
-            final JsonObject.Entry entry = object.getEntry(i);
+            final KofiObject.Entry entry = object.getEntry(i);
             if (entry.getValue() instanceof String s)
                 assertEquals('"' + (String) builder.get(entry.getName()) + '"', s);
             else
                 assertEquals(builder.get(entry.getName()), entry.getValue());
         }
 
-        assertDoesNotThrow(() -> document = codec.readString("v = " + object.toJson()));
-        final JsonObject parsedObject = document.getObject("v");
+        assertDoesNotThrow(() -> document = codec.readString("v = " + object.getString()));
+        final KofiObject parsedObject = document.getObject("v");
         assertNotNull(parsedObject);
         assertEquals(object, parsedObject);
         assertEquals(builder.size(), parsedObject.size());
         for (int i = 0; i < builder.size(); i++) {
-            final JsonObject.Entry entry = parsedObject.getEntry(i);
+            final KofiObject.Entry entry = parsedObject.getEntry(i);
             if (entry.getValue() instanceof String s)
                 assertEquals('"' + (String) builder.get(entry.getName()) + '"', s);
             else
@@ -64,29 +64,29 @@ public class JsonObjectTest {
     }
 
     @Test
-    void nestedJsonObject() {
-        final JsonObject.Builder builder = new JsonObject.Builder()
-                .put("n0", new JsonObject.Builder().put("number", 1L).build())
-                .put("n1", new JsonObject.Builder().put("string", "Hello, World").build())
-                .put("n2", new JsonObject.Builder().put("bool", false).build());
-        final JsonObject object = builder.build();
+    void nestedKofiObject() {
+        final KofiObject.Builder builder = new KofiObject.Builder()
+                .put("n0", new KofiObject.Builder().put("number", 1L).build())
+                .put("n1", new KofiObject.Builder().put("string", "Hello, World").build())
+                .put("n2", new KofiObject.Builder().put("bool", false).build());
+        final KofiObject object = builder.build();
 
         assertEquals(builder.size(), object.size());
         for (int i = 0; i < builder.size(); i++) {
-            final JsonObject.Entry entry = object.getEntry(i);
+            final KofiObject.Entry entry = object.getEntry(i);
             if (entry.getValue() instanceof String s)
                 assertEquals('"' + (String) builder.get(entry.getName()) + '"', s);
             else
                 assertEquals(builder.get(entry.getName()), entry.getValue());
         }
 
-        assertDoesNotThrow(() -> document = codec.readString("v = " + object.toJson()));
-        final JsonObject parsedObject = document.getObject("v");
+        assertDoesNotThrow(() -> document = codec.readString("v = " + object.getString()));
+        final KofiObject parsedObject = document.getObject("v");
         assertNotNull(parsedObject);
         assertEquals(object, parsedObject);
         assertEquals(builder.size(), parsedObject.size());
         for (int i = 0; i < builder.size(); i++) {
-            final JsonObject.Entry entry = parsedObject.getEntry(i);
+            final KofiObject.Entry entry = parsedObject.getEntry(i);
             if (entry.getValue() instanceof String s)
                 assertEquals('"' + (String) builder.get(entry.getName()) + '"', s);
             else
@@ -96,37 +96,39 @@ public class JsonObjectTest {
 
     @Test
     void reconstructArea() {
-        final JsonObject.Builder builder = new JsonObject.Builder()
+        final KofiObject.Builder builder = new KofiObject.Builder()
                 .put("union", new Rectangle[] {new Rectangle(0, 0, 400, 100),
                         new Rectangle(0, 300, 400, 100)})
-                .put("subtract", new Rectangle[] {new Rectangle(50, 50, 300, 300)});
-        final JsonObject object = builder.build();
+                .put("subtract", new Rectangle[] {new Rectangle(50, 50, 300, 300)})
+                .put("bounds", new Rectangle(13, 16, 100, 80));
+        final KofiObject object = builder.build();
 
         assertEquals(builder.size(), object.size());
 
         assertDoesNotThrow(() -> {
-            final Area area = JsonObject.reconstruct(object, Area.class);
-            assertEquals(new Rectangle[] {new Rectangle(0, 0, 400, 100),
+            final Area area = object.reconstruct(Area.class);
+            assertArrayEquals(new Rectangle[] {new Rectangle(0, 0, 400, 100),
                     new Rectangle(0, 300, 400, 100)}, area.union);
-            assertEquals(new Rectangle[] {new Rectangle(50, 50, 300, 300)}, area.subtract);
+            assertArrayEquals(new Rectangle[] {new Rectangle(50, 50, 300, 300)}, area.subtract);
+            assertEquals(new Rectangle(13, 16, 100, 80), area.bounds);
         });
     }
 
     @Test
     void reconstructNumbers() {
-        final JsonObject.Builder builder = new JsonObject.Builder()
+        final KofiObject.Builder builder = new KofiObject.Builder()
                 .put("n0", 4L)
                 .put("n1", 8L);
-        final JsonObject object = builder.build();
+        final KofiObject object = builder.build();
 
         assertEquals(builder.size(), object.size());
         for (int i = 0; i < builder.size(); i++) {
-            final JsonObject.Entry entry = object.getEntry(i);
+            final KofiObject.Entry entry = object.getEntry(i);
             assertEquals(builder.get(entry.getName()), entry.getValue());
         }
 
         assertDoesNotThrow(() -> {
-            final Numbers numbers = JsonObject.reconstruct(object, Numbers.class);
+            final Numbers numbers = object.reconstruct(Numbers.class);
             assertEquals(4L, numbers.n0);
             assertEquals(8L, numbers.n1);
         });
@@ -134,14 +136,14 @@ public class JsonObjectTest {
 
     @Test
     void reconstructText() {
-        final JsonObject.Builder builder = new JsonObject.Builder()
+        final KofiObject.Builder builder = new KofiObject.Builder()
                 .put("text", "banana");
-        final JsonObject object = builder.build();
+        final KofiObject object = builder.build();
 
         assertEquals(builder.size(), object.size());
 
         assertDoesNotThrow(() -> {
-            final Text text = JsonObject.reconstruct(object, Text.class);
+            final Text text = object.reconstruct(Text.class);
             assertEquals("banana", text.text);
         });
     }
@@ -149,22 +151,23 @@ public class JsonObjectTest {
     @Test
     void reflectArea() {
         final Area area = new Area();
-        final JsonObject object = JsonObject.reflect(area);
+        final KofiObject object = KofiObject.reflect(area);
 
-        assertEquals(2, object.size());
-        assertEquals(JsonArray.reflect(new Rectangle[] {
+        assertEquals(Area.class.getFields().length, object.size());
+        assertEquals(KofiArray.reflect(new Rectangle[] {
                 new Rectangle(0, 0, 100, 100),
                 new Rectangle(200, 0, 100, 100)
         }), object.get("union"));
-        assertEquals(JsonArray.reflect(new Rectangle[] {
+        assertEquals(KofiArray.reflect(new Rectangle[] {
                 new Rectangle(50, 25, 200, 50)
         }), object.get("subtract"));
+        assertEquals(KofiObject.reflect(new Rectangle(13, 16, 100, 80)), object.get("bounds"));
     }
 
     @Test
     void reflectNumbers() {
         final Numbers numbers = new Numbers();
-        final JsonObject object = JsonObject.reflect(numbers);
+        final KofiObject object = KofiObject.reflect(numbers);
 
         assertEquals(2, object.size());
         assertEquals(1L, object.get("n0"));
@@ -174,7 +177,7 @@ public class JsonObjectTest {
     @Test
     void reflectText() {
         final Text text = new Text();
-        final JsonObject object = JsonObject.reflect(text);
+        final KofiObject object = KofiObject.reflect(text);
 
         assertEquals(1, object.size());
         assertEquals("\"Hello, World!\"", object.get("text"));
@@ -189,6 +192,7 @@ public class JsonObjectTest {
         public Rectangle[] subtract = {
                 new Rectangle(50, 25, 200, 50)
         };
+        public Rectangle bounds = new Rectangle(13, 16, 100, 80);
     }
 
     static class Numbers {

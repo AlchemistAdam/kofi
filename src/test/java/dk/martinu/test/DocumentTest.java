@@ -50,7 +50,7 @@ public class DocumentTest {
             negative=-8
             empty=[      ]
             null=null
-              char =  \\u0025 \s
+              char =  '\\u0025' \s
                       \s
             ;mixed
             ;array
@@ -86,19 +86,19 @@ public class DocumentTest {
     @Test
     void containsArray() {
         assertTrue(document.contains("nestedArray"));
-        assertTrue(document.contains("nestedArray", JsonArray.class));
+        assertTrue(document.contains("nestedArray", KofiArray.class));
 
         assertTrue(document.contains("empty"));
-        assertTrue(document.contains("empty", JsonArray.class));
+        assertTrue(document.contains("empty", KofiArray.class));
 
         assertTrue(document.contains("mix"));
-        assertTrue(document.contains("mix", JsonArray.class));
+        assertTrue(document.contains("mix", KofiArray.class));
 
         assertTrue(document.contains("abc", "empty"));
-        assertTrue(document.contains("abc", "empty", JsonArray.class));
+        assertTrue(document.contains("abc", "empty", KofiArray.class));
 
         assertTrue(document.contains("def", "numbers"));
-        assertTrue(document.contains("def", "numbers", JsonArray.class));
+        assertTrue(document.contains("def", "numbers", KofiArray.class));
     }
 
     @Test
@@ -160,16 +160,16 @@ public class DocumentTest {
     @Test
     void containsObject() {
         assertTrue(document.contains("nestedObject"));
-        assertTrue(document.contains("nestedObject", JsonObject.class));
+        assertTrue(document.contains("nestedObject", KofiObject.class));
 
         assertTrue(document.contains("abc", "object"));
-        assertTrue(document.contains("abc", "object", JsonObject.class));
+        assertTrue(document.contains("abc", "object", KofiObject.class));
 
         assertTrue(document.contains("def", "empty"));
-        assertTrue(document.contains("def", "empty", JsonObject.class));
+        assertTrue(document.contains("def", "empty", KofiObject.class));
 
         assertTrue(document.contains("def", "object2"));
-        assertTrue(document.contains("def", "object2", JsonObject.class));
+        assertTrue(document.contains("def", "object2", KofiObject.class));
     }
 
     @Test
@@ -235,16 +235,16 @@ public class DocumentTest {
 
     @Test
     void getArray() {
-        assertEquals(JsonArray.reflect(new int[][] {{1, 2, 3}, {2, 2, 3}, {3, 3, 3}}),
+        assertEquals(KofiArray.reflect(new int[][] {{1, 2, 3}, {2, 2, 3}, {3, 3, 3}}),
                 document.getArray("nestedArray"));
 
-        assertEquals(new JsonArray(), document.getArray("empty"));
+        assertEquals(new KofiArray(), document.getArray("empty"));
 
-        assertEquals(new JsonArray("Hello", "World", true, 2, null), document.getArray("mix"));
+        assertEquals(new KofiArray("Hello", "World", true, 2, null), document.getArray("mix"));
 
-        assertEquals(new JsonArray(), document.getArray("abc", "empty"));
+        assertEquals(new KofiArray(), document.getArray("abc", "empty"));
 
-        assertEquals(new JsonArray(123, 567, 890), document.getArray("def", "numbers"));
+        assertEquals(new KofiArray(123, 567, 890), document.getArray("def", "numbers"));
     }
 
     @Test
@@ -328,23 +328,23 @@ public class DocumentTest {
 
     @Test
     void getObject() {
-        assertEquals(new JsonObject.Builder()
-                        .put("d0", new JsonObject.Builder().put("v", 6).build())
-                        .put("d1", new JsonObject.Builder().put("v", 7).build())
-                        .put("d2", new JsonObject.Builder().put("v", 9).build())
+        assertEquals(new KofiObject.Builder()
+                        .put("d0", new KofiObject.Builder().put("v", 6).build())
+                        .put("d1", new KofiObject.Builder().put("v", 7).build())
+                        .put("d2", new KofiObject.Builder().put("v", 9).build())
                         .build(),
                 document.getObject("nestedObject"));
 
-        assertEquals(new JsonObject.Builder()
+        assertEquals(new KofiObject.Builder()
                         .put("name", "John")
                         .put("age", 50)
                         .put("sex", "male")
                         .build(),
                 document.getObject("abc", "object"));
 
-        assertEquals(new JsonObject(), document.getObject("def", "empty"));
+        assertEquals(new KofiObject(), document.getObject("def", "empty"));
 
-        assertEquals(new JsonObject.Builder()
+        assertEquals(new KofiObject.Builder()
                         .put("animal", "cat")
                         .put("color", "black")
                         .put("age", 4)
@@ -384,7 +384,7 @@ public class DocumentTest {
         assertEquals(442211, document.getValue("int2", Number.class, 0));
         assertEquals(123.567d, document.getValue("abc", "double", Number.class, 0.0d));
         assertEquals("Hello, World!", document.getValue("abc", "string", CharSequence.class, ""));
-        assertNotNull(document.getValue("empty", Json.class, null));
+        assertNotNull(document.getValue("empty", KofiValue.class, null));
     }
 
     @AfterAll
