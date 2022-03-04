@@ -19,11 +19,12 @@ package dk.martinu.kofi;
 
 import org.jetbrains.annotations.*;
 
+import java.util.Objects;
 import java.util.logging.*;
 
 /**
- * Singleton logger used by the KOFI API, based on the Java logging API. Contains static
- * convenience methods for logging messages to this logger.
+ * Logging utility used by the KoFi API, based on the Java logging API. Contains
+ * static convenience methods for logging messages.
  *
  * @author Adam Martinu
  * @see #getLogger()
@@ -44,6 +45,39 @@ public class KofiLog {
      * never be accessed, use {@link #getLogger()} instead.
      */
     private static volatile Logger logger = null;
+
+    @Contract(value = "_, _ -> param2", pure = true)
+    @NotNull
+    public static <T extends Throwable> T exception(@NotNull final Source source, @NotNull final T throwable) {
+        Objects.requireNonNull(source, "source is null");
+        return exception(source.scn, source.smn, throwable);
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Contract(value = "_, _ , _-> param3", pure = true)
+    @NotNull
+    public static <T extends Throwable> T exception(@NotNull final Class cls, @Nullable final String sourceMethod,
+            @NotNull final T throwable) {
+        Objects.requireNonNull(cls, "cls is null");
+        return exception(cls.getName(), sourceMethod, throwable);
+    }
+
+    @Contract(value = "_, _, _ -> param3", pure = true)
+    @NotNull
+    public static <T extends Throwable> T exception(@Nullable final String sourceClass,
+            @Nullable final String sourceMethod, @NotNull final T throwable) {
+        Objects.requireNonNull(throwable, "throwable is null");
+        throwing(sourceClass, sourceMethod, throwable);
+        return throwable;
+    }
+
+    /**
+     * See {@link Logger#fine(String)}.
+     */
+    @Contract(pure = true)
+    public static void fine(@Nullable final String msg) {
+        getLogger().fine(msg);
+    }
 
     /**
      * See {@link Logger#finest(String)}.
@@ -96,8 +130,8 @@ public class KofiLog {
      * See {@link Logger#throwing(String, String, Throwable)}.
      */
     @Contract(pure = true)
-    public static void throwing(@Nullable final String sourceClass, @Nullable final String sourceMethod,
-            @Nullable final Throwable thrown) {
+    public static void throwing(@Nullable final String sourceClass,
+            @Nullable final String sourceMethod, @Nullable final Throwable thrown) {
         getLogger().throwing(sourceClass, sourceMethod, thrown);
     }
 
@@ -115,4 +149,15 @@ public class KofiLog {
     @Contract(pure = true)
     private KofiLog() { }
 
+    /**
+     * @param scn the source class name
+     * @param smn the source method name
+     */
+    public static record Source(String scn, String smn) {
+
+        @Contract(pure = true)
+        public Source(@Nullable final Class<?> sourceClass, @Nullable final String sourceMethod) {
+            this(sourceClass != null ? sourceClass.getName() : null, sourceMethod);
+        }
+    }
 }
