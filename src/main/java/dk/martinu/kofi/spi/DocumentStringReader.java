@@ -39,6 +39,7 @@ public interface DocumentStringReader {
 
     /**
      * Reads a new {@link Document} from the specified string and returns it.
+     * If the string is empty, then an empty document is returned.
      *
      * @param string the string to read
      * @return a new document read from {@code string}

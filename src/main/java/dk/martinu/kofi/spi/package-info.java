@@ -16,9 +16,12 @@
  */
 
 /**
- * This package contains service provider interfaces for reading and writing
+ * Contains service provider interfaces for reading and writing
  * {@link dk.martinu.kofi.Document documents}. Implementations of these
  * interfaces (service providers) can be retrieved with the
  * {@link dk.martinu.kofi.DocumentIO DocumentIO} class.
+ *
+ * @author Adam Martinu
+ * @since 1.0
  */
 package dk.martinu.kofi.spi;
