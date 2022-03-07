@@ -17,6 +17,7 @@
 
 plugins {
     id 'java'
+    id 'maven-publish'
 }
 
 group 'dk.martinu'
@@ -35,4 +36,18 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(16)
+    }
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            from components.java
+        }
+    }
 }
