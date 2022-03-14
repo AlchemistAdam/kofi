@@ -31,7 +31,7 @@ import dk.martinu.kofi.DocumentIO;
  * the {@link DocumentIO} class.
  *
  * @author Adam Martinu
- * @see DocumentIO#getStringReaders()
+ * @see DocumentIO#getStringWriters()
  * @since 1.0
  */
 @FunctionalInterface
