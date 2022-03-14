@@ -114,7 +114,7 @@ public class DocumentIO {
     @SuppressWarnings("unused")
     @Contract(value = "-> new", pure = true)
     @NotNull
-    public static Iterator<DocumentFileReader> getFileReaders() throws ServiceConfigurationError {
+    public static ArrayList<DocumentFileReader> getFileReaders() throws ServiceConfigurationError {
         fileReadLock.lock();
         try {
             if (fileReaders == null)
@@ -122,7 +122,7 @@ public class DocumentIO {
             final List<ServiceLoader.Provider<DocumentFileReader>> providers = fileReaders.stream().toList();
             final ArrayList<DocumentFileReader> readers = new ArrayList<>(providers.size());
             providers.forEach(provider -> readers.add(provider.get()));
-            return readers.iterator();
+            return readers;
         }
         finally {
             fileReadLock.unlock();
@@ -174,9 +174,9 @@ public class DocumentIO {
      * @throws ServiceConfigurationError see {@link ServiceLoader} for details
      */
     @SuppressWarnings("unused")
-    @Contract(pure = true)
+    @Contract(value = "-> new", pure = true)
     @NotNull
-    public static Iterator<DocumentFileWriter> getFileWriters() {
+    public static ArrayList<DocumentFileWriter> getFileWriters() {
         fileWriteLock.lock();
         try {
             if (fileWriters == null)
@@ -184,7 +184,7 @@ public class DocumentIO {
             final List<ServiceLoader.Provider<DocumentFileWriter>> providers = fileWriters.stream().toList();
             final ArrayList<DocumentFileWriter> writers = new ArrayList<>(providers.size());
             providers.forEach(provider -> writers.add(provider.get()));
-            return writers.iterator();
+            return writers;
         }
         finally {
             fileWriteLock.unlock();
@@ -202,7 +202,7 @@ public class DocumentIO {
     @SuppressWarnings("unused")
     @Contract(value = "-> new", pure = true)
     @NotNull
-    public static Iterator<DocumentStringReader> getStringReaders() throws ServiceConfigurationError {
+    public static ArrayList<DocumentStringReader> getStringReaders() throws ServiceConfigurationError {
         stringReadLock.lock();
         try {
             if (stringReaders == null)
@@ -210,7 +210,7 @@ public class DocumentIO {
             final List<ServiceLoader.Provider<DocumentStringReader>> providers = stringReaders.stream().toList();
             final ArrayList<DocumentStringReader> readers = new ArrayList<>(providers.size());
             providers.forEach(provider -> readers.add(provider.get()));
-            return readers.iterator();
+            return readers;
         }
         finally {
             stringReadLock.unlock();
@@ -228,7 +228,7 @@ public class DocumentIO {
     @SuppressWarnings("unused")
     @Contract(value = "-> new", pure = true)
     @NotNull
-    public static Iterator<DocumentStringWriter> getStringWriters() throws ServiceConfigurationError {
+    public static ArrayList<DocumentStringWriter> getStringWriters() throws ServiceConfigurationError {
         stringWriteLock.lock();
         try {
             if (stringWriters == null)
@@ -236,7 +236,7 @@ public class DocumentIO {
             final List<ServiceLoader.Provider<DocumentStringWriter>> providers = stringWriters.stream().toList();
             final ArrayList<DocumentStringWriter> writers = new ArrayList<>(providers.size());
             providers.forEach(provider -> writers.add(provider.get()));
-            return writers.iterator();
+            return writers;
         }
         finally {
             stringWriteLock.unlock();
