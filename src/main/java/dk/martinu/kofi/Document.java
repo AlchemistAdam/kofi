@@ -94,6 +94,67 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
             list.add(Objects.requireNonNull(element, "element is null"));
     }
 
+    // DOC
+    public void acceptArray(@Nullable final String section, @NotNull final String key,
+            final Consumer<KofiArray> consumer) {
+        acceptValue(section, key, KofiArray.class, consumer);
+    }
+
+    // DOC
+    public void acceptBoolean(@Nullable final String section, @NotNull final String key,
+            final Consumer<Boolean> consumer) {
+        acceptValue(section, key, Boolean.class, consumer);
+    }
+
+    // DOC
+    public void acceptChar(@Nullable final String section, @NotNull final String key,
+            final Consumer<Character> consumer) {
+        acceptValue(section, key, Character.class, consumer);
+    }
+
+    // DOC
+    public void acceptDouble(@Nullable final String section, @NotNull final String key,
+            final Consumer<Double> consumer) {
+        acceptValue(section, key, Double.class, consumer);
+    }
+
+    // DOC
+    public void acceptFloat(@Nullable final String section, @NotNull final String key,
+            final Consumer<Float> consumer) {
+        acceptValue(section, key, Float.class, consumer);
+    }
+
+    // DOC
+    public void acceptInt(@Nullable final String section, @NotNull final String key,
+            final Consumer<Integer> consumer) {
+        acceptValue(section, key, Integer.class, consumer);
+    }
+
+    // DOC
+    public void acceptLong(@Nullable final String section, @NotNull final String key, final Consumer<Long> consumer) {
+        acceptValue(section, key, Long.class, consumer);
+    }
+
+    // DOC
+    public void acceptObject(@Nullable final String section, @NotNull final String key,
+            final Consumer<KofiObject> consumer) {
+        acceptValue(section, key, KofiObject.class, consumer);
+    }
+
+    // DOC
+    public void acceptString(@Nullable final String section, @NotNull final String key,
+            final Consumer<String> consumer) {
+        acceptValue(section, key, String.class, consumer);
+    }
+
+    // DOC
+    public <V> void acceptValue(@Nullable final String section, @NotNull final String key, Class<V> valueType,
+            final Consumer<V> consumer) {
+        final V value = getValue(section, key, valueType, null);
+        if (value != null)
+            consumer.accept(value);
+    }
+
     /**
      * Adds an {@link ArrayProperty} to the global section.
      *
