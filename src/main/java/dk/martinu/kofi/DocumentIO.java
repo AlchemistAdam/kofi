@@ -20,6 +20,7 @@ package dk.martinu.kofi;
 import org.jetbrains.annotations.*;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
@@ -263,11 +264,15 @@ public class DocumentIO {
     @NotNull
     public static Document readFile(@NotNull final Path filePath) throws ServiceConfigurationError, IOException,
             ServiceUnavailableException {
-        final DocumentFileReader reader = getFileReader(filePath);
-        if (reader != null)
-            return reader.readFile(filePath);
+        if (Files.exists(filePath)) {
+            final DocumentFileReader reader = getFileReader(filePath);
+            if (reader != null)
+                return reader.readFile(filePath);
+            else
+                throw new ServiceUnavailableException("no available file readers for " + filePath);
+        }
         else
-            throw new ServiceUnavailableException("no available file readers for " + filePath);
+            return new Document();
     }
 
     /**
