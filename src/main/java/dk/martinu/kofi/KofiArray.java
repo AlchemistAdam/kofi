@@ -353,17 +353,18 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      * @param index the index of the element
      * @param type  the Java type of the element
      * @return the Java value of the element at the specified index
+     * @throws NullPointerException           if {@code type} is {@code null}
      * @throws ArrayIndexOutOfBoundsException if <code>index &lt; 0</code> or
      *                                        <code>index &ge; length()</code>
      *                                        is {@code true}
-     * @throws NullPointerException           if {@code type} is {@code null}
+     * @throws ReconstructionException        if an exception ocurred when
+     *                                        reconstructing an array or object
      * @see KofiValue#getJavaValue(Object, Class)
      */
     @Contract(pure = true)
     @Nullable
     protected Object getJavaValue(@Range(from = 0, to = Integer.MAX_VALUE) final int index,
-            @NotNull final Class<?> type) throws ArrayIndexOutOfBoundsException, NullPointerException,
-            ReconstructionException {
+            @NotNull final Class<?> type) {
         return getJavaValue(array[index], type);
     }
 

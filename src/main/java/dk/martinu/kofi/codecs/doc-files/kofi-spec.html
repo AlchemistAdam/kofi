@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="author" content="Adam Martinu">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KoFi Specification</title>
+    <style>
+    body {
+        font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace;
+        font-size: 100%;
+        line-height: 1.5;
+        margin: 0px;
+        background-color: #303030;
+        color: #F0F0B0;
+    }
+    h3 { margin-bottom: 0px; }
+    p { margin-top: 0px; }
+    a { color: #FFD866; }
+    span {
+        padding: 2px 6px;
+        font-family: monospace;
+        background-color: #303030;
+        white-space: nowrap;
+    }
+    pre {
+        padding: 6px;
+        background-color: #303030;
+        white-space: pre-wrap;
+    }
+    .content {
+        max-width: 600px;
+        margin: 0px auto;
+        padding: 20px 50px;
+        background-color: #393939;
+    }
+    .title {
+        text-align: center;
+        margin: 50px auto;
+    }
+
+    </style>
+</head>
+<body>
+<div class="content">
+<p class="title">
+    <b>KoFi Specification</b><br>
+    Adam Martinu<br>
+    Version 1.0</p>
+<br>
+
+<h2>Copyright Notice</h2>
+<p>Copyright (c) 2022, Adam Martinu. All rights reserved. Altering or removing
+    copyright notices is not allowed.</p>
+<p>Licensed under the Apache License, Version 2.0 (the "License"); you may not
+    use this file except in compliance with the License. You may obtain a copy
+    of the License at</p>
+<p><a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">
+    http://www.apache.org/licenses/LICENSE-2.0</a></p>
+<p>Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+    License for the specific language governing permissions and limitations
+    under the License.</p>
+<br>
+
+<h2>Contents</h2>
+<ol>
+    <li><a href="#section-1">Introduction</a></li>
+    <li><a href="#section-2">Notation</a></li>
+    <li><a href="#section-3">Document</a></li>
+    <li><a href="#section-4">Elements</a></li>
+    <li><a href="#section-5">Values</a></li>
+    <li><a href="#section-6">KoFi Text Syntax</a></li>
+</ol>
+<br>
+
+<h2 id="section-1">1. Introduction</h2>
+<p>KoFi is a text syntax for serializing and deserializing Java arrays, objects
+    and primitive values in a human-readable format.
+<p>All rules and examples of the text syntax in this document are written in a
+    highlighted block:</p>
+<pre>
+rule = "Hello, " , "World!" ;
+example = [1, 1, 2, 3, 5]
+</pre>
+<p>This document frequently refers to Unicode characters. These are written
+    on a highlighted background with the character first, if visible, followed
+    by the character name: <span>% Percent Sign</span></p>
+<p>It is intentionally not specified how a value should be serialized or
+    deserialized in situations where the representation is ambiguous. Consider
+    the following:</p>
+<pre>
+number = 20
+</pre>
+<p>While it is clear the value of "number" is equal to 20, it is not clear
+    whether the value is a byte, an int or something else. That is up to an
+    implementation of the syntactic rules in this document to decide.</p>
+<br>
+
+<h2 id="section-2">2. Notation</h2>
+<h3>Rules</h3>
+<p>The grammatical rules in this document are written in Extended Backus-Naur
+    Form notation. Rules are composed of a symbol, an assignment operator, an
+    expression and a termination operator:</p>
+<pre>
+symbol = expression ;
+</pre>
+<p>Some of the characters used in expressions cannot be represented with a
+    single visible character. Hexadecimal values corresponding to Unicode
+    codepoints are used for such characters, starting with a <span>% Percent
+    Sign</span>:</p>
+<pre>
+lineFeed = %A ;
+</pre>
+<p>defines a symbol that matches a single Line Feed character. For wildcard
+    characters, a <span>. Full Stop</span> is used:</p>
+<pre>
+anyCharacter = . ;
+</pre>
+<p>Character ranges match a subset of unicode characters. The beginning and
+    ending characters are surrounded with <span>' Apostrophe</span> characters
+    and separated with a <span>_ Low Line</span>:</p>
+<pre>
+A_Z = 'A'_'Z' ;
+</pre>
+<p>defines a symbol that matches all characters between "A" and "Z"
+    (inclusive).</p>
+<p>
+    All other values are surrounded with <span>" Quotation Mark</span> or
+    <span>' Apostrophe</span> characters and are case-insensitive:</p>
+<pre>
+A = "A" ;
+</pre>
+<p>defines a symbol that matches both "A" and "a".</p>
+
+<h3>Group Operators</h3>
+<p>Expressions can be either a single terminal value, or a group of terminal
+    values and other symbols. Values and symbols can be combined with group
+    operators and are evaluated left-to-right:</p>
+<ul style="list-style-type:square;">
+<li><p>Concatenation - X and Y.</p>
+<pre>
+X , Y
+</pre></li>
+<li><p>Alternation - X or Y.</p>
+<pre>
+X | Y
+</pre></li>
+<li><p>Exception - X, but not Y.</p>
+<pre>
+X - Y
+</pre></li>
+</ul>
+
+<h3>Bracket Operators</h3>
+<p>The pattern of values and groups can be altered with bracket operators, and
+    are evaluated before group operators:</p>
+<ul style="list-style-type:square;">
+<li><p>Optional - X or nothing.</p>
+<pre>
+[X]
+</pre></li>
+<li><p>Repetition - X one or more times.</p>
+<pre>
+{X}+
+</pre></li>
+<li><p>Optional Repetition - X one or more times, or nothing.</p>
+<pre>
+{X}
+</pre></li>
+</ul>
+
+<h3>Precedence</h3>
+<p>The evaluation order of values and groups is changed by surrounding them with
+    parentheses. Parenthesized values and groups have higher precedence and are
+    evaluated first, starting at the deepest level.</p>
+<br>
+
+<h2 id="section-3">3. Document</h2>
+<p>Text that conforms to the KoFi text syntax is referred to as a document; a
+    sequence of zero or more elements, each separated with a <span>Line
+    Feed</span> character. A document is defined as:</p>
+<pre>
+document   = [docElement , {lf , docElement}] ;
+docElement = [ws] , element , [ws] ;
+lf         = %A ;
+ws         = {%9 | %D | %20}+ ;
+</pre>
+<p>The "nc" symbol defines a valid character and is used later in this
+    document. It allows for a character to be escaped, and is defined as:</p>
+<pre>
+nc = . - (lf | "\") | ("\" , (. - lf)) ;
+</pre>
+<br>
+
+<h2 id="section-4">4. Elements</h2>
+<p>There are four types of elements: whitespace, comment, section and
+    property:</p>
+<pre>
+element = whitespace | comment | section | property ;
+</pre>
+<p>Whitespace elements do not carry any information. They are empty strings or
+    strings consisting of only whitespace characters, and are used to separate
+    other elements and increase readability:</p>
+<pre>
+whitespace = [ws] ;
+</pre>
+<p>Comment elements are used to describe documents and other elements. A comment
+    begins with a <span>; Semicolon</span> followed by a possibly empty
+    string:</p>
+<pre>
+comment = ";" , {. - lf} ;
+</pre>
+<p>Section elements are used to logically group other elements together. A
+    section begins with a <span>[ Left Square Bracket</span>, followed by a
+    possibly empty section name, and ends with a <span>] Right Square
+    Bracket</span>:</p>
+<pre>
+section = "[" , {nc} , "]" ;
+</pre>
+<p>Property elements are used to store data as a key-value pair. The value of
+    a property is complex and can be many things; it is covered in its own
+    section. A property begins with a possibly empty property name, followed by
+    an <span>= Equals Sign</span>, and ends with a property value:</p>
+<pre>
+property     = [propertyName] , [ws] , "=" , [ws] , value ;
+propertyName = pns , [{pnc} , pne] ;
+pns          = pne - (";" | "[") ;
+pne          = pnc - ws ;
+pnc          = nc - "=" ;
+</pre>
+<p><span>; Semicolon</span> and <span>[ Left Square Bracket</span> cannot be
+    used as the first character of a property name, unless escaped, as these are
+    used to begin comment and section elements. Nor can the name contain the
+    <span>= Equals Sign</span>, unless escaped, as it is used to separate the
+    name from the value.</p>
+<br>
+
+<h2 id="section-5">5. Values</h2>
+<p>Property values can be null, primitive Java values, strings, arrays or
+    objects:</p>
+<pre>
+value = null | boolean | string | char | number | array | object ;
+</pre>
+<p>Null and boolean values are the simplest and are self-explanatory:</p>
+<pre>
+null    = "null" ;
+boolean = "true" | "false" ;
+</pre>
+<p>String values are surrounded with <span>" Quotation Mark</span> characters.
+    <span>" Quotation Mark</span> characters inside the string must be
+    escaped:</p>
+<pre>
+string = '"' , {nc - '"'} , '"' ;
+</pre>
+<p>Character values are surrounded with <span>' Apostrophe</span> characters.
+    <span>' Apostrophe</span> and <span>\ Reverse Solidus</span> characters must
+    be escaped. They can be a single character, a two-character escape sequence
+    or a six-character escape sequence:</p>
+<pre>
+char     = "'" , (. - (lf | "\" | "'") | 2esc | 6esc) , "'" ;
+2esc     = "\0" | "\b" | "\t" | "\n" | "\f" | "\r" | "\\" | "\'" | '\"' ;
+6esc     = "\u" , hexDigit , hexDigit , hexDigit , hexDigit ;
+hexDigit = '0'_'9' | 'A'_'F' | 'a'_'f' ;
+</pre>
+<p>Number values include all primitive number types in Java. Numbers can be
+    sequences of digits, or infinity or NaN constants. Type specifiers can be
+    appended to sequences to denote their value type, and floating-point numbers
+    can have an exponent:</p>
+<pre>
+number    = ([sign] , (integer | float | "infinity")) | "nan" ;
+integer   = int , ["L" | "F" | "d"] ;
+float     = fraction , [exponent] , ["F" | "d"] ;
+fraction  = ([int] , "." , [int]) - "." ;
+exponent  = "e" , [sign] , int ;
+sign      = "+" | "-" ;
+int       = {'0'_'9'}+ ;
+</pre>
+<p>Array values are indexed sequences of property values, separated with a
+    <span>, Comma</span>. An array begins with a <span>[ Left Square
+    Bracket</span> and ends with a <span>] Right Square Bracket</span>:</p>
+<pre>
+array   = "[" , [entity , {"," , entity}] , "]" ;
+entity  = [ws] , value , [ws] ;
+</pre>
+<p>Object values are sequences of property values mapped to strings, separated
+    with a <span>, Comma</span>. An object begins with a <span>{ Left Curly
+    Bracket</span> and ends with a <span>} Right Curly Bracket</span>:</p>
+<pre>
+object = "{" , [entry , {"," , entry}] , "}" ;
+entry  = [ws] , string , [ws] , ":" , value , [ws] ;
+</pre>
+<br>
+
+<h2 id="section-6">6. KoFi Text Syntax</h2>
+<pre>
+document     = [docElement , {lf , docElement}] ;
+docElement   = [ws] , element , [ws] ;
+lf           = %A ;
+ws           = {%9 | %D | %20}+ ;
+
+nc           = . - (lf | "\") | ("\" , (. - lf)) ;
+
+element      = whitespace | comment | section | property ;
+whitespace   = [ws] ;
+comment      = ";" , {. - lf} ;
+section      = "[" , {nc} , "]" ;
+
+property     = [propertyName] , [ws] , "=" , [ws] , value ;
+propertyName = pns , [{pnc} , pne] ;
+pns          = pne - (";" | "[")  ;
+pne          = pnc - ws ;
+pnc          = nc - "=" ;
+
+value        = null | boolean | string |
+               char | number  | array  | object ;
+null         = "null" ;
+boolean      = "true" | "false" ;
+string       = '"' , {nc - '"'} , '"' ;
+
+char         = "'" , (. - (lf | "\" | "'") | 2esc | 6esc) , "'" ;
+2esc         = "\0" | "\b" | "\t" |
+               "\n" | "\f" | "\r" |
+               "\\" | "\'" | '\"' ;
+6esc         = "\u" , hexDigit , hexDigit , hexDigit , hexDigit ;
+hexDigit     = '0'_'9' | 'A'_'F' | 'a'_'f' ;
+
+number       = ([sign] , (integer | float | "infinity")) | "nan" ;
+integer      = int , ["L" | "F" | "d"] ;
+float        = fraction , [exponent] , ["F" | "d"] ;
+fraction     = ([int] , "." , [int]) - "." ;
+exponent     = "e" , [sign] , int ;
+sign         = "+" | "-" ;
+int          = {'0'_'9'}+ ;
+
+array        = "[" , [element , {"," , element}] , "]" ;
+element      = [ws] , value , [ws] ;
+
+object       = "{" , [entry , {"," , entry}] , "}" ;
+entry        = [ws] , string , [ws] , ":" , value , [ws] ;
+</pre>
+<br>
+
+</div>
+</body>
+</html>
