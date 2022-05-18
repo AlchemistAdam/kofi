@@ -23,7 +23,7 @@ module dk.martinu.kofi {
 
     requires java.base;
     requires java.logging;
-    requires org.jetbrains.annotations;
+    requires static org.jetbrains.annotations;
 
     uses DocumentFileReader;
     uses DocumentFileWriter;
