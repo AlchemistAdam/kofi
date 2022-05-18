@@ -57,7 +57,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      */
     @Contract(value = "_ -> new", pure = true)
     @NotNull
-    public static KofiArray reflect(@NotNull final Object array) throws IllegalArgumentException {
+    public static KofiArray reflect(@NotNull final Object array) {
         Objects.requireNonNull(array, "array is null");
         if (!array.getClass().isArray())
             throw new IllegalArgumentException("array is not an array type");
@@ -168,7 +168,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      */
     @Contract(pure = true)
     @Nullable
-    public Object get(@Range(from = 0, to = Integer.MAX_VALUE) final int index) throws ArrayIndexOutOfBoundsException {
+    public Object get(@Range(from = 0, to = Integer.MAX_VALUE) final int index) {
         return array[index];
     }
 
@@ -246,7 +246,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      *                                  cannot be converted to the component
      *                                  type
      */
-    public <V> V reconstruct(@NotNull final Class<V> type) throws IllegalArgumentException {
+    public <V> V reconstruct(@NotNull final Class<V> type) {
         Objects.requireNonNull(type, "type is null");
         final KofiLog.Source src = new KofiLog.Source(KofiArray.class, "reconstruct(Class)");
 
@@ -410,7 +410,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
         @Contract(pure = true)
         @NotNull
         @Override
-        public Object next() throws NoSuchElementException {
+        public Object next() {
             if (index >= array.length)
                 throw new NoSuchElementException();
             return array[index++];
@@ -421,7 +421,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
          */
         @Contract(value = "-> fail", pure = true)
         @Override
-        public void remove() throws UnsupportedOperationException {
+        public void remove() {
             throw new UnsupportedOperationException("remove");
         }
     }
