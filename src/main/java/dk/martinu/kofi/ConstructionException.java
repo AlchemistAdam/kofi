@@ -18,29 +18,28 @@
 package dk.martinu.kofi;
 
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * Thrown when an exception is caught while reconstructing an array or object.
+ * Thrown when an exception is caught while constructing an array or object.
  *
  * @author Adam Martinu
- * @see KofiArray#reconstruct(Class)
- * @see KofiObject#reconstruct(Class)
+ * @see KofiArray#construct(Class)
+ * @see KofiObject#construct(Class)
  * @since 1.0
  */
-public class ReconstructionException extends RuntimeException implements Serializable {
+public class ConstructionException extends RuntimeException implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 0L;
 
     /**
-     * Constructs a new exception with the specified message and cause.
+     * Creates a new exception with the specified message and cause.
      */
     @Contract(pure = true)
-    public ReconstructionException(final String msg, final Throwable cause) {
+    public ConstructionException(final String msg, final Throwable cause) {
         super(msg, cause);
     }
 }

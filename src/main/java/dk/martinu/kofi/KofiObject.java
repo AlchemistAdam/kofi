@@ -118,6 +118,181 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
     }
 
     /**
+     * Constructs a new object of the specified type from the entries of this
+     * object and returns it.
+     *
+     * @param type the class of the object to construct
+     * @param <T>  the runtime type of the object to construct
+     * @return a new object
+     * @throws NullPointerException        if {@code type} is {@code null}
+     * @throws InstantiationException      if {@code type} does not represent a
+     *                                     non-abstract class
+     * @throws NoSuchMethodException       if {@code type} does not declare a
+     *                                     no-arg constructor
+     * @throws IllegalAccessException      if the no-arg constructor declared
+     *                                     by {@code type} is inaccessible
+     * @throws ExceptionInInitializerError if the initialization caused by
+     *                                     calling the constructor or setting
+     *                                     the value of a field fails.
+     * @throws InvocationTargetException   if calling the constructor throws an
+     *                                     exception
+     * @throws NoSuchFieldException        if this object contains an entry
+     *                                     whose name does not match the name
+     *                                     of a field declared by {@code type}
+     * @throws IllegalArgumentException    if an entry value could not be
+     *                                     assigned to a field
+     * @throws ConstructionException       if an exception ocurred when
+     *                                     constructing an array or object
+     *                                     from an entry value
+     */
+    // DOC provide more details on how entry values are assigned to fields
+    @Contract(value = "_ -> new", pure = true)
+    @NotNull
+    public <T> T construct(@NotNull final Class<T> type) throws ReflectiveOperationException, NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException, NoSuchFieldException {
+        Objects.requireNonNull(type, "type is null");
+        final KofiLog.Source src = new KofiLog.Source(KofiObject.class, "construct(Class)");
+
+        if (Modifier.isAbstract(type.getModifiers()) || Modifier.isInterface(type.getModifiers()))
+            throw KofiLog.exception(src, new InstantiationException(
+                    "cannot create new instance of type {" + type + "}"));
+
+        // no-arg constructor to create object
+        final Constructor<T> constructor;
+        try {
+            constructor = type.getDeclaredConstructor();
+            if (!constructor.canAccess(null) && !constructor.trySetAccessible())
+                throw KofiLog.exception(src, new IllegalAccessException(
+                        "no-arg constructor to create object is inaccessible {" + type + "}"));
+        }
+        catch (NoSuchMethodException e) {
+            throw KofiLog.exception(src, e);
+        }
+
+        // object to assign field values and return
+        final T obj;
+        try {
+            obj = constructor.newInstance();
+        }
+        catch (InvocationTargetException e) {
+            throw KofiLog.exception(src, e);
+        }
+
+        // assign entry values to fields
+        for (Entry entry : entries) {
+            final Field field;
+            try {
+                field = type.getField(entry.name);
+            }
+            catch (NoSuchFieldException e) {
+                throw KofiLog.exception(src, e);
+            }
+            // skip final fields
+            if (Modifier.isFinal(field.getModifiers()))
+                continue;
+                // field must be accessible
+            else if (field.canAccess(obj) || field.trySetAccessible()) {
+                final Class<?> fieldType = field.getType();
+                // examine field type and set value if entry matches
+                if (entry.value != null) {
+                    // arrays
+                    if (fieldType.isArray()) {
+                        if (entry.value instanceof KofiArray array)
+                            try {
+                                field.set(obj, array.construct(fieldType));
+                                continue;
+                            }
+                            catch (IllegalArgumentException e) {
+                                throw KofiLog.exception(src, new ConstructionException(
+                                        "could not construct array from entry {" + entry + "}", e));
+                            }
+                    }
+                    // strings and wrappers
+                    else if (fieldType.isAssignableFrom(entry.value.getClass())) {
+                        if (fieldType.equals(String.class))
+                            field.set(obj, getJavaString((String) entry.value));
+                        else
+                            field.set(obj, entry.value);
+                        continue;
+                    }
+                    // undefined objects
+                    else if (!fieldType.isPrimitive()) {
+                        if (entry.value instanceof KofiObject object)
+                            try {
+                                field.set(obj, object.construct(fieldType));
+                                continue;
+                            }
+                            catch (IllegalArgumentException e) {
+                                throw KofiLog.exception(src, new ConstructionException(
+                                        "could not construct object from entry {" + entry + "}", e));
+                            }
+                    }
+                    // below are primitive types
+                    else if (fieldType == int.class) {
+                        if (entry.value instanceof Number n) {
+                            field.setInt(obj, n.intValue());
+                            continue;
+                        }
+                    }
+                    else if (fieldType == long.class) {
+                        if (entry.value instanceof Number n) {
+                            field.setLong(obj, n.longValue());
+                            continue;
+                        }
+                    }
+                    else if (fieldType == float.class) {
+                        if (entry.value instanceof Number n) {
+                            field.setFloat(obj, n.floatValue());
+                            continue;
+                        }
+                    }
+                    else if (fieldType == double.class) {
+                        if (entry.value instanceof Number n) {
+                            field.setDouble(obj, n.doubleValue());
+                            continue;
+                        }
+                    }
+                    else if (fieldType == byte.class) {
+                        if (entry.value instanceof Number n) {
+                            field.setByte(obj, n.byteValue());
+                            continue;
+                        }
+                    }
+                    else if (fieldType == short.class) {
+                        if (entry.value instanceof Number n) {
+                            field.setShort(obj, n.shortValue());
+                            continue;
+                        }
+                    }
+                    else if (fieldType == char.class) {
+                        if (entry.value instanceof Character c) {
+                            field.setChar(obj, c);
+                            continue;
+                        }
+                    }
+                    else // if (fieldType == boolean.class)
+                        if (entry.value instanceof Boolean b) {
+                            field.setBoolean(obj, b);
+                            continue;
+                        }
+                }
+                // if field is an Object type set to null (value is null)
+                else if (!fieldType.isPrimitive()) {
+                    field.set(obj, null);
+                    continue;
+                }
+                // throw exception if field value was not set
+                throw KofiLog.exception(src, new IllegalArgumentException(
+                        "cannot set field {" + field + "} to value of {" + entry.value + "}"));
+            }
+            else
+                KofiLog.finest("field is inaccessible and cannot be assigned {"
+                        + type.getName() + ", " + field + "}");
+        }
+        return obj;
+    }
+
+    /**
      * Returns {@code true} if this object is equal to {@code obj}
      * ({@code this == obj}), or {@code obj} is also a {@code KofiObject} and
      * its size and entries are equal to this object's size and entries.
@@ -211,181 +386,6 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
     @Override
     public Iterator<Entry> iterator() {
         return new EntryIterator();
-    }
-
-    /**
-     * Reconstructs a new object of the specified type from the entries of this
-     * object and returns it.
-     *
-     * @param type the class of the object to reconstruct
-     * @param <T>  the runtime type of the object to reconstruct
-     * @return a new, reconstructed object
-     * @throws NullPointerException        if {@code type} is {@code null}
-     * @throws InstantiationException      if {@code type} does not represent a
-     *                                     non-abstract class
-     * @throws NoSuchMethodException       if {@code type} does not declare a
-     *                                     no-arg constructor
-     * @throws IllegalAccessException      if the no-arg constructor declared
-     *                                     by {@code type} is inaccessible
-     * @throws ExceptionInInitializerError if the initialization caused by
-     *                                     calling the constructor or setting
-     *                                     the value of a field fails.
-     * @throws InvocationTargetException   if calling the constructor throws an
-     *                                     exception
-     * @throws NoSuchFieldException        if this object contains an entry
-     *                                     whose name does not match the name
-     *                                     of a field declared by {@code type}
-     * @throws IllegalArgumentException    if an entry value could not be
-     *                                     assigned to a field
-     * @throws ReconstructionException     if an exception ocurred when
-     *                                     reconstructing an array or object
-     *                                     from an entry value
-     */
-    // DOC provide more details on how entry values are assigned to fields
-    @Contract(pure = true)
-    @NotNull
-    public <T> T reconstruct(@NotNull final Class<T> type) throws ReflectiveOperationException, NoSuchMethodException,
-            IllegalAccessException, InvocationTargetException, NoSuchFieldException {
-        Objects.requireNonNull(type, "type is null");
-        final KofiLog.Source src = new KofiLog.Source(KofiObject.class, "reconstruct(Class)");
-
-        if (Modifier.isAbstract(type.getModifiers()) || Modifier.isInterface(type.getModifiers()))
-            throw KofiLog.exception(src, new InstantiationException(
-                    "cannot create new instance of type {" + type + "}"));
-
-        // no-arg constructor to create object
-        final Constructor<T> constructor;
-        try {
-            constructor = type.getDeclaredConstructor();
-            if (!constructor.canAccess(null) && !constructor.trySetAccessible())
-                throw KofiLog.exception(src, new IllegalAccessException(
-                        "no-arg constructor to create object is inaccessible {" + type + "}"));
-        }
-        catch (NoSuchMethodException e) {
-            throw KofiLog.exception(src, e);
-        }
-
-        // object to assign field values and return
-        final T obj;
-        try {
-            obj = constructor.newInstance();
-        }
-        catch (InvocationTargetException e) {
-            throw KofiLog.exception(src, e);
-        }
-
-        // assign entry values to fields
-        for (Entry entry : entries) {
-            final Field field;
-            try {
-                field = type.getField(entry.name);
-            }
-            catch (NoSuchFieldException e) {
-                throw KofiLog.exception(src, e);
-            }
-            // skip final fields
-            if (Modifier.isFinal(field.getModifiers()))
-                continue;
-            // field must be accessible
-            else if (field.canAccess(obj) || field.trySetAccessible()) {
-                final Class<?> fieldType = field.getType();
-                // examine field type and set value if entry matches
-                if (entry.value != null) {
-                    // arrays
-                    if (fieldType.isArray()) {
-                        if (entry.value instanceof KofiArray array)
-                            try {
-                                field.set(obj, array.reconstruct(fieldType));
-                                continue;
-                            }
-                            catch (IllegalArgumentException e) {
-                                throw KofiLog.exception(src, new ReconstructionException(
-                                        "could not reconstruct array from entry {" + entry + "}", e));
-                            }
-                    }
-                    // strings and wrappers
-                    else if (fieldType.isAssignableFrom(entry.value.getClass())) {
-                        if (fieldType.equals(String.class))
-                            field.set(obj, getJavaString((String) entry.value));
-                        else
-                            field.set(obj, entry.value);
-                        continue;
-                    }
-                    // undefined objects
-                    else if (!fieldType.isPrimitive()) {
-                        if (entry.value instanceof KofiObject object)
-                            try {
-                                field.set(obj, object.reconstruct(fieldType));
-                                continue;
-                            }
-                            catch (IllegalArgumentException e) {
-                                throw KofiLog.exception(src, new ReconstructionException(
-                                        "could not reconstruct object from entry {" + entry + "}", e));
-                            }
-                    }
-                    // below are primitive types
-                    else if (fieldType == int.class) {
-                        if (entry.value instanceof Number n) {
-                            field.setInt(obj, n.intValue());
-                            continue;
-                        }
-                    }
-                    else if (fieldType == long.class) {
-                        if (entry.value instanceof Number n) {
-                            field.setLong(obj, n.longValue());
-                            continue;
-                        }
-                    }
-                    else if (fieldType == float.class) {
-                        if (entry.value instanceof Number n) {
-                            field.setFloat(obj, n.floatValue());
-                            continue;
-                        }
-                    }
-                    else if (fieldType == double.class) {
-                        if (entry.value instanceof Number n) {
-                            field.setDouble(obj, n.doubleValue());
-                            continue;
-                        }
-                    }
-                    else if (fieldType == byte.class) {
-                        if (entry.value instanceof Number n) {
-                            field.setByte(obj, n.byteValue());
-                            continue;
-                        }
-                    }
-                    else if (fieldType == short.class) {
-                        if (entry.value instanceof Number n) {
-                            field.setShort(obj, n.shortValue());
-                            continue;
-                        }
-                    }
-                    else if (fieldType == char.class) {
-                        if (entry.value instanceof Character c) {
-                            field.setChar(obj, c);
-                            continue;
-                        }
-                    }
-                    else // if (fieldType == boolean.class)
-                        if (entry.value instanceof Boolean b) {
-                            field.setBoolean(obj, b);
-                            continue;
-                        }
-                }
-                // if field is an Object type set to null (value is null)
-                else if (!fieldType.isPrimitive()) {
-                    field.set(obj, null);
-                    continue;
-                }
-                // throw exception if field value was not set
-                throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot set field {" + field + "} to value of {" + entry.value + "}"));
-            }
-            else
-                KofiLog.finest("field is inaccessible and cannot be assigned {"
-                        + type.getName() + ", " + field + "}");
-        }
-        return obj;
     }
 
     /**

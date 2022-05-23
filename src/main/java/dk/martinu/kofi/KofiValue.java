@@ -71,8 +71,8 @@ public abstract class KofiValue {
      *                                  {@code null}
      * @throws IllegalArgumentException if a value cannot be converted to the
      *                                  specified type
-     * @throws ReconstructionException  if an exception ocurred when
-     *                                  reconstructing an array or object from
+     * @throws ConstructionException    if an exception ocurred when
+     *                                  constructing an array or object from
      *                                  a value
      * @see #getKofiValue(Object)
      */
@@ -89,10 +89,10 @@ public abstract class KofiValue {
         if (type.isArray()) {
             if (value instanceof KofiArray array)
                 try {
-                    return array.reconstruct(type);
+                    return array.construct(type);
                 }
                 catch (IllegalArgumentException e) {
-                    throw KofiLog.exception(src, new ReconstructionException("could not reconstruct "
+                    throw KofiLog.exception(src, new ConstructionException("could not construct "
                             + type.getSimpleName() + " array from value {" + value + "}", e));
                 }
             else
@@ -112,10 +112,10 @@ public abstract class KofiValue {
         else if (!type.isPrimitive()) {
             if (value instanceof KofiObject object) {
                 try {
-                    return object.reconstruct(type);
+                    return object.construct(type);
                 }
                 catch (ReflectiveOperationException e) {
-                    throw KofiLog.exception(src, new ReconstructionException("could not reconstruct "
+                    throw KofiLog.exception(src, new ConstructionException("could not construct "
                             + type.getSimpleName() + " object from value {" + value + "}", e));
                 }
             }
@@ -269,7 +269,7 @@ public abstract class KofiValue {
      * @throws NullPointerException     if {@code sb} is {@code null}
      * @see #getKofiValue(Object)
      */
-    protected void getString(@Nullable Object value, @NotNull final StringBuilder sb) throws IllegalArgumentException {
+    protected void getString(@Nullable Object value, @NotNull final StringBuilder sb) {
         if (isDefinedType(value)) {
             if (value == null)
                 sb.append("null");

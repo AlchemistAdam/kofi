@@ -123,6 +123,110 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
+     * Constructs a new array of the specified type from the elements of this
+     * array and returns it.
+     *
+     * @param type the class of the array to construct
+     * @param <V>  the runtime type of the array to construct
+     * @return a new array
+     * @throws NullPointerException     if {@code type} is {@code null}
+     * @throws IllegalArgumentException if {@code type} does not represent an
+     *                                  array class, or if one of the elements
+     *                                  cannot be converted to the component
+     *                                  type
+     */
+    @Contract(value = "_ -> new", pure = true)
+    public <V> V construct(@NotNull final Class<V> type) {
+        Objects.requireNonNull(type, "type is null");
+        final KofiLog.Source src = new KofiLog.Source(KofiArray.class, "construct(Class)");
+
+        if (!type.isArray())
+            throw KofiLog.exception(src, new IllegalArgumentException("type must represent an array class"));
+
+        final Class<?> componentType = type.componentType();
+        //noinspection unchecked
+        final V array = (V) Array.newInstance(componentType, length());
+
+        // Java objects (including nested arrays)
+        if (!componentType.isPrimitive()) {
+            for (int i = 0; i < length(); i++)
+                try {
+                    Array.set(array, i, getJavaValue(i, componentType));
+                }
+                catch (IllegalArgumentException | ConstructionException e) {
+                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set value in "
+                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}", e));
+                }
+        }
+        // primitives
+        else if (componentType == int.class)
+            for (int i = 0; i < length(); i++) {
+                if (get(i) instanceof Integer integer)
+                    Array.setInt(array, i, integer);
+                else
+                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set int value in "
+                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
+            }
+        else if (componentType == long.class)
+            for (int i = 0; i < length(); i++) {
+                if (get(i) instanceof Long l)
+                    Array.setLong(array, i, l);
+                else
+                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set long value in "
+                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
+            }
+        else if (componentType == float.class)
+            for (int i = 0; i < length(); i++) {
+                if (get(i) instanceof Float f)
+                    Array.setFloat(array, i, f);
+                else
+                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set float value in "
+                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
+            }
+        else if (componentType == double.class)
+            for (int i = 0; i < length(); i++) {
+                if (get(i) instanceof Double d)
+                    Array.setDouble(array, i, d);
+                else
+                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set double value in "
+                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
+            }
+        else if (componentType == boolean.class)
+            for (int i = 0; i < length(); i++) {
+                if (get(i) instanceof Boolean b)
+                    Array.setBoolean(array, i, b);
+                else
+                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set boolean value in "
+                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
+            }
+        else if (componentType == byte.class)
+            for (int i = 0; i < length(); i++) {
+                if (get(i) instanceof Byte b)
+                    Array.setByte(array, i, b);
+                else
+                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set byte value in "
+                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
+            }
+        else if (componentType == short.class)
+            for (int i = 0; i < length(); i++) {
+                if (get(i) instanceof Short s)
+                    Array.setShort(array, i, s);
+                else
+                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set short value in "
+                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
+            }
+        else // if (componentType == char.class)
+            for (int i = 0; i < length(); i++) {
+                if (get(i) instanceof Character c)
+                    Array.setChar(array, i, c);
+                else
+                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set char value in "
+                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
+            }
+        return array;
+    }
+
+    /**
      * Returns {@code true} if this array is equal to {@code obj}
      * ({@code this == obj}), or {@code obj} is also a {@code KofiArray} and
      * its length and elements are equal to this array's length and elements.
@@ -234,109 +338,6 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * Reconstructs a new array of the specified type from the elements of this
-     * array and returns it.
-     *
-     * @param type the class of the array to reconstruct
-     * @param <V>  the runtime type of the array to reconstruct
-     * @return a new, reconstructed array
-     * @throws NullPointerException     if {@code type} is {@code null}
-     * @throws IllegalArgumentException if {@code type} does not represent an
-     *                                  array class, or if one of the elements
-     *                                  cannot be converted to the component
-     *                                  type
-     */
-    public <V> V reconstruct(@NotNull final Class<V> type) {
-        Objects.requireNonNull(type, "type is null");
-        final KofiLog.Source src = new KofiLog.Source(KofiArray.class, "reconstruct(Class)");
-
-        if (!type.isArray())
-            throw KofiLog.exception(src, new IllegalArgumentException("type must represent an array class"));
-
-        final Class<?> componentType = type.componentType();
-        //noinspection unchecked
-        final V array = (V) Array.newInstance(componentType, length());
-
-        // Java objects (including nested arrays)
-        if (!componentType.isPrimitive()) {
-            for (int i = 0; i < length(); i++)
-                try {
-                    Array.set(array, i, getJavaValue(i, componentType));
-                }
-                catch (IllegalArgumentException | ReconstructionException e) {
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}", e));
-                }
-        }
-        // primitives
-        else if (componentType == int.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Integer integer)
-                    Array.setInt(array, i, integer);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set int value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
-        else if (componentType == long.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Long l)
-                    Array.setLong(array, i, l);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set long value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
-        else if (componentType == float.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Float f)
-                    Array.setFloat(array, i, f);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set float value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
-        else if (componentType == double.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Double d)
-                    Array.setDouble(array, i, d);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set double value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
-        else if (componentType == boolean.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Boolean b)
-                    Array.setBoolean(array, i, b);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set boolean value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
-        else if (componentType == byte.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Byte b)
-                    Array.setByte(array, i, b);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set byte value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
-        else if (componentType == short.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Short s)
-                    Array.setShort(array, i, s);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set short value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
-        else // if (componentType == char.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Character c)
-                    Array.setChar(array, i, c);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set char value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
-        return array;
-    }
-
-    /**
      * Returns a spliterator covering the objects this array.
      *
      * @see Arrays#spliterator(Object[])
@@ -357,8 +358,8 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      * @throws ArrayIndexOutOfBoundsException if <code>index &lt; 0</code> or
      *                                        <code>index &ge; length()</code>
      *                                        is {@code true}
-     * @throws ReconstructionException        if an exception ocurred when
-     *                                        reconstructing an array or object
+     * @throws ConstructionException          if an exception ocurred when
+     *                                        constructing an array or object
      * @see KofiValue#getJavaValue(Object, Class)
      */
     @Contract(pure = true)
