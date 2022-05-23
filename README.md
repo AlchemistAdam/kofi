@@ -24,7 +24,8 @@ frequently cross-references relevant code.
 
 ## Example
 
-The following is a brief example of what KoFi can do. It shows some formatted data and how it is interacted with in code:
+The following is a brief example of what KoFi can do. It shows some formatted
+data and how it is interacted with in code:
 
 *sampleData.kofi*
 ```ini
@@ -52,7 +53,7 @@ class Pet {
     }
     public static void main(String[] args) throws Exception {
         Document doc = DocumentIO.readFile(Paths.get("sampleData.kofi"));
-        Pet p0 = new dk.martinu.kofi.Pet(doc.getString("type"), 
+        Pet p0 = new Pet(doc.getString("type"), 
                 doc.getString("name"), doc.getInt("age"));
         System.out.println(p0.name + " the " + p0.type 
                 + " is " + p0.age + " years old.");
