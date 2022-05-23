@@ -95,7 +95,7 @@ public class KofiObjectTest {
     }
 
     @Test
-    void reconstructArea() {
+    void constructArea() {
         final KofiObject.Builder builder = new KofiObject.Builder()
                 .put("union", new Rectangle[] {new Rectangle(0, 0, 400, 100),
                         new Rectangle(0, 300, 400, 100)})
@@ -106,7 +106,7 @@ public class KofiObjectTest {
         assertEquals(builder.size(), object.size());
 
         assertDoesNotThrow(() -> {
-            final Area area = object.reconstruct(Area.class);
+            final Area area = object.construct(Area.class);
             assertArrayEquals(new Rectangle[] {new Rectangle(0, 0, 400, 100),
                     new Rectangle(0, 300, 400, 100)}, area.union);
             assertArrayEquals(new Rectangle[] {new Rectangle(50, 50, 300, 300)}, area.subtract);
@@ -115,7 +115,7 @@ public class KofiObjectTest {
     }
 
     @Test
-    void reconstructNumbers() {
+    void constructNumbers() {
         final KofiObject.Builder builder = new KofiObject.Builder()
                 .put("n0", 4L)
                 .put("n1", 8L);
@@ -128,14 +128,14 @@ public class KofiObjectTest {
         }
 
         assertDoesNotThrow(() -> {
-            final Numbers numbers = object.reconstruct(Numbers.class);
+            final Numbers numbers = object.construct(Numbers.class);
             assertEquals(4L, numbers.n0);
             assertEquals(8L, numbers.n1);
         });
     }
 
     @Test
-    void reconstructText() {
+    void constructText() {
         final KofiObject.Builder builder = new KofiObject.Builder()
                 .put("text", "banana");
         final KofiObject object = builder.build();
@@ -143,7 +143,7 @@ public class KofiObjectTest {
         assertEquals(builder.size(), object.size());
 
         assertDoesNotThrow(() -> {
-            final Text text = object.reconstruct(Text.class);
+            final Text text = object.construct(Text.class);
             assertEquals("banana", text.text);
         });
     }
