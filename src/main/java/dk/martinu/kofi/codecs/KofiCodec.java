@@ -38,8 +38,7 @@ import static dk.martinu.kofi.KofiUtil.*;
  * specification.
  * <p>
  * For information on the textual representations of documents and their
- * contents, and how they are parsed back to documents, see the KoFi Syntax
- * specification.
+ * contents, see the KoFi Syntax specification.
  *
  * @author Adam Martinu
  * @since 1.0
@@ -49,11 +48,13 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
     // list returned by getExtensions
     private static final List<String> EXTENSIONS = List.of("kofi");
     // constants used for KofiUtil.equalsIgnoreCase
+    // @formatter:off
     private static final char[] NULL = {'N', 'U', 'L', 'L'};
     private static final char[] TRUE = {'T', 'R', 'U', 'E'};
     private static final char[] FALSE = {'F', 'A', 'L', 'S', 'E'};
     private static final char[] NAN = {'N', 'A', 'N'};
     private static final char[] INFINITY = {'I', 'N', 'F', 'I', 'N', 'I', 'T', 'Y'};
+    // @formatter:on
 
     /**
      * Returns a new instance of this service provider.
@@ -309,266 +310,267 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             }
 
             // Number and signed infinity
-            else number:if (isDigit(c) || c == '-' || c == '+' || c == '.') {
-                    boolean hasDigits = false, positive = true;
-                    // flags for fraction, exponent and bit precision (set with type specifiers)
-                    NumFlag fraction = null;
-                    NumFlag exponent = null;
-                    NumFlag precision = null;
-                    int end = start;
-                    for (; end < l; end++) {
-                        c = chars[end];
-                        // ws or separator - not part of number
-                        if (isWhitespace(c) || c == ',') {
-                            break;
-                        }
-                        // digits 0-9
-                        else if (isDigit(c)) {
-                            if (exponent != null)
-                                exponent = NumFlag.EXP_NUM;
-                            else if (fraction != null)
-                                fraction = NumFlag.FRAC_NUM;
-                            hasDigits = true;
+            else if (isDigit(c) || c == '-' || c == '+' || c == '.') {
+                boolean hasDigits = false, positive = true;
+                // flags for fraction, exponent and bit precision (set with type specifiers)
+                NumFlag fraction = null;
+                NumFlag exponent = null;
+                NumFlag precision = null;
+                int end = start;
+                for (; end < l; end++) {
+                    c = chars[end];
+                    // ws or separator - not part of number
+                    if (isWhitespace(c) || c == ',') {
+                        break;
+                    }
+                    // digits 0-9
+                    else if (isDigit(c)) {
+                        if (exponent != null)
+                            exponent = NumFlag.EXP_NUM;
+                        else if (fraction != null)
+                            fraction = NumFlag.FRAC_NUM;
+                        hasDigits = true;
+                        continue;
+                    }
+                    // decimal separator
+                    else if (c == '.') {
+                        if (exponent == null && fraction == null) {
+                            fraction = NumFlag.FRAC_SEP;
                             continue;
                         }
-                        // decimal separator
-                        else if (c == '.') {
-                            if (exponent == null && fraction == null) {
-                                fraction = NumFlag.FRAC_SEP;
-                                continue;
-                            }
-                        }
-                        // signs
-                        else if (c == '-' || c == '+') {
-                            if (exponent == null) {
-                                if (end == start) {
-                                    positive = c == '+';
-                                    continue;
-                                }
-                            }
-                            else if (exponent == NumFlag.EXP_PREFIX) {
-                                exponent = NumFlag.EXP_SIGN;
+                    }
+                    // signs
+                    else if (c == '-' || c == '+') {
+                        if (exponent == null) {
+                            if (end == start) {
                                 positive = c == '+';
                                 continue;
                             }
                         }
-                        // exponent
-                        else if (c == 'e' || c == 'E') {
-                            if (hasDigits && exponent == null) {
-                                exponent = NumFlag.EXP_PREFIX;
-                                continue;
-                            }
+                        else if (exponent == NumFlag.EXP_PREFIX) {
+                            exponent = NumFlag.EXP_SIGN;
+                            positive = c == '+';
+                            continue;
                         }
-                        // signed infinity
-                        else if (c == 'i' || c == 'I') {
-                            if (!hasDigits && fraction == null && equalsIgnoreCase(chars, end, l, INFINITY))
-                                if (positive)
-                                    return ParsableFloat.getPositiveInfinity(chars, start, l);
+                    }
+                    // exponent
+                    else if (c == 'e' || c == 'E') {
+                        if (hasDigits && exponent == null) {
+                            exponent = NumFlag.EXP_PREFIX;
+                            continue;
+                        }
+                    }
+                    // signed infinity
+                    else if (c == 'i' || c == 'I') {
+                        if (!hasDigits && fraction == null && equalsIgnoreCase(chars, end, l, INFINITY))
+                            if (positive)
+                                return ParsableFloat.getPositiveInfinity(chars, start, l);
+                            else
+                                return ParsableFloat.getNegativeInfinity(chars, start, l);
+                    }
+                    // long
+                    else if (c == 'L' || c == 'l') {
+                        if (hasDigits && fraction == null && exponent == null && precision == null) {
+                            precision = NumFlag.P64;
+                            continue;
+                        }
+                    }
+                    // double
+                    else if (c == 'd' || c == 'D') {
+                        if (hasDigits && precision == null) {
+                            precision = NumFlag.P64;
+                            continue;
+                        }
+                    }
+                    // float
+                    else if (c == 'F' || c == 'f') {
+                        if (hasDigits && precision == null) {
+                            precision = NumFlag.P32;
+                            continue;
+                        }
+                    }
+                    // invalid number character
+                    hasDigits = false;
+                    break;
+                }
+
+                if (hasDigits && (exponent == null || exponent == NumFlag.EXP_NUM)) {
+                    // double and float
+                    if (fraction != null || exponent != null) {
+                        if (precision != null)
+                            return precision == NumFlag.P64 ?
+                                    new ParsableDouble(chars, start, end, l) :
+                                    new ParsableFloat(chars, start, end, l);
+                        else
+                            return new ParsableFloat(chars, start, end, l);
+                    }
+                    // long and int
+                    else {
+                        if (precision != null)
+                            return precision == NumFlag.P64 ?
+                                    new ParsableLong(chars, start, end, l) :
+                                    new ParsableInt(chars, start, end, l);
+                        else
+                            return new ParsableInt(chars, start, end, l);
+                    }
+                }
+            }
+
+            // array
+            else if (c == '[') {
+                // scan for index of closing array bracket
+                int end = -1;
+                {
+                    int depth = 0, string = -1;
+                    char prev;
+                    for (int i = start + 1; i < l; i++) {
+                        prev = c;
+                        c = chars[i];
+                        if (string == -1) {
+                            if (c == '[')
+                                depth++;
+                            else if (c == ']')
+                                if (depth == 0) {
+                                    end = i + 1;
+                                    break;
+                                }
                                 else
-                                    return ParsableFloat.getNegativeInfinity(chars, start, l);
-                        }
-                        // long
-                        else if (c == 'L' || c == 'l') {
-                            if (hasDigits && fraction == null && exponent == null && precision == null) {
-                                precision = NumFlag.P64;
-                                continue;
-                            }
-                        }
-                        // double
-                        else if (c == 'd' || c == 'D') {
-                            if (hasDigits && precision == null) {
-                                precision = NumFlag.P64;
-                                continue;
-                            }
-                        }
-                        // float
-                        else if (c == 'F' || c == 'f') {
-                            if (hasDigits && precision == null) {
-                                precision = NumFlag.P32;
-                                continue;
-                            }
-                        }
-                        // invalid number character
-                        break number;
-                    }
-
-                    if (hasDigits && (exponent == null || exponent == NumFlag.EXP_NUM)) {
-                        // double and float
-                        if (fraction != null || exponent != null) {
-                            if (precision != null)
-                                return precision == NumFlag.P64 ?
-                                        new ParsableDouble(chars, start, end, l) :
-                                        new ParsableFloat(chars, start, end, l);
-                            else
-                                return new ParsableFloat(chars, start, end, l);
-                        }
-                        // long and int
-                        else {
-                            if (precision != null)
-                                return precision == NumFlag.P64 ?
-                                        new ParsableLong(chars, start, end, l) :
-                                        new ParsableInt(chars, start, end, l);
-                            else
-                                return new ParsableInt(chars, start, end, l);
-                        }
-                    }
-                }
-
-                // array
-                else if (c == '[') {
-                    // scan for index of closing array bracket
-                    int end = -1;
-                    {
-                        int depth = 0, string = -1;
-                        char prev;
-                        for (int i = start + 1; i < l; i++) {
-                            prev = c;
-                            c = chars[i];
-                            if (string == -1) {
-                                if (c == '[')
-                                    depth++;
-                                else if (c == ']')
-                                    if (depth == 0) {
-                                        end = i + 1;
-                                        break;
-                                    }
-                                    else
-                                        depth--;
-                                else if (c == '\"')
-                                    string = i;
-                            }
+                                    depth--;
                             else if (c == '\"')
-                                if (prev != '\\')
+                                string = i;
+                        }
+                        else if (c == '\"')
+                            if (prev != '\\')
+                                string = -1;
+                            else {
+                                // count joined backslashes
+                                int n = 1, k = i - 2;
+                                while (k > string && chars[k--] == '\\')
+                                    n++;
+                                // if n is even then the string is enclosed
+                                if ((n & 0x1) == 0)
                                     string = -1;
-                                else {
-                                    // count joined backslashes
-                                    int n = 1, k = i - 2;
-                                    while (k > string && chars[k--] == '\\')
-                                        n++;
-                                    // if n is even then the string is enclosed
-                                    if ((n & 0x1) == 0)
-                                        string = -1;
-                                    else
-                                        break;
-                                }
-                        }
-                    }
-                    if (end == -1)
-                        throw KofiLog.exception(src, new ParseException(line, start + 1, "array missing closing bracket"));
-
-                    // list of parsable values in the array
-                    final ArrayList<Parsable<?>> values = new ArrayList<>();
-                    boolean parse = true;
-                    for (int i = start + 1; i < end - 1; ) {
-                        if (parse) {
-                            final Parsable<?> pv = parseValue(chars, i, end - 1, line);
-                            // add non-empty values to list
-                            if (pv != null) {
-                                values.add(pv);
-                                i = pv.length;
-                                parse = false;
+                                else
+                                    break;
                             }
-                            // allow empty arrays, but not empty values in populated arrays
-                            else if (values.isEmpty())
-                                break;
-                            else
-                                throw KofiLog.exception(src, new ParseException(line, i + 1, "expecting array value"));
-                        }
-                        else if (chars[i] == ',') {
-                            parse = true;
-                            i++;
-                        }
-                        else
-                            throw KofiLog.exception(src,
-                                    new ParseException(line, i + 1, "array values must be separated by a comma"));
                     }
-                    return new ParsableKofiArray(chars, start, end, l, values);
                 }
+                if (end == -1)
+                    throw KofiLog.exception(src, new ParseException(line, start + 1, "array missing closing bracket"));
 
-                // object
-                else if (c == '{') {
-                    // find index of closing object bracket
-                    int end = -1;
-                    {
-                        int depth = 0, string = -1;
-                        char prev;
-                        for (int i = start + 1; i < l; i++) {
-                            prev = c;
-                            c = chars[i];
-                            if (string == -1) {
-                                if (c == '{')
-                                    depth++;
-                                else if (c == '}')
-                                    if (depth == 0) {
-                                        end = i + 1;
-                                        break;
-                                    }
-                                    else
-                                        depth--;
-                                else if (c == '\"')
-                                    string = i;
-                            }
+                // list of parsable values in the array
+                final ArrayList<Parsable<?>> values = new ArrayList<>();
+                boolean parse = true;
+                for (int i = start + 1; i < end - 1; ) {
+                    if (parse) {
+                        final Parsable<?> pv = parseValue(chars, i, end - 1, line);
+                        // add non-empty values to list
+                        if (pv != null) {
+                            values.add(pv);
+                            i = pv.length;
+                            parse = false;
+                        }
+                        // allow empty arrays, but not empty values in populated arrays
+                        else if (values.isEmpty())
+                            break;
+                        else
+                            throw KofiLog.exception(src, new ParseException(line, i + 1, "expecting array value"));
+                    }
+                    else if (chars[i] == ',') {
+                        parse = true;
+                        i++;
+                    }
+                    else
+                        throw KofiLog.exception(src,
+                                new ParseException(line, i + 1, "array values must be separated by a comma"));
+                }
+                return new ParsableKofiArray(chars, start, end, l, values);
+            }
+
+            // object
+            else if (c == '{') {
+                // find index of closing object bracket
+                int end = -1;
+                {
+                    int depth = 0, string = -1;
+                    char prev;
+                    for (int i = start + 1; i < l; i++) {
+                        prev = c;
+                        c = chars[i];
+                        if (string == -1) {
+                            if (c == '{')
+                                depth++;
+                            else if (c == '}')
+                                if (depth == 0) {
+                                    end = i + 1;
+                                    break;
+                                }
+                                else
+                                    depth--;
                             else if (c == '\"')
-                                if (prev != '\\')
+                                string = i;
+                        }
+                        else if (c == '\"')
+                            if (prev != '\\')
+                                string = -1;
+                            else {
+                                // count joined backslashes
+                                int n = 1, k = i - 2;
+                                while (k > string && chars[k--] == '\\')
+                                    n++;
+                                // if n is even then the string is enclosed
+                                if ((n & 0x1) == 0)
                                     string = -1;
-                                else {
-                                    // count joined backslashes
-                                    int n = 1, k = i - 2;
-                                    while (k > string && chars[k--] == '\\')
-                                        n++;
-                                    // if n is even then the string is enclosed
-                                    if ((n & 0x1) == 0)
-                                        string = -1;
-                                    else
-                                        break;
-                                }
-                        }
-                    }
-                    if (end == -1)
-                        throw KofiLog.exception(src, new ParseException(line, start + 1, "object missing closing bracket"));
-
-                    // list of parsable key/value pairs in the object
-                    final ArrayList<Parsable<?>> properties = new ArrayList<>();
-                    boolean parse = true;
-                    for (int i = start + 1; i < end - 1; ) {
-                        if (parse) {
-                            // get property key
-                            final Parsable<?> key = parseValue(chars, i, end - 1, line);
-                            if (key != null && key.getType() != Parsable.Type.STRING)
-                                throw KofiLog.exception(src, new ParseException(line, i + 1, "invalid entry key"));
-                            if (key != null) {
-                                if (key.length == end - 1 || chars[key.length] != ':') {
-                                    throw KofiLog.exception(src,
-                                            new ParseException(line, key.length + 1, "expecting separator"));
-                                }
-                                final Parsable<?> value =
-                                        parseValue(chars, key.length + 1, end - 1, line);
-                                if (value == null) {
-                                    throw KofiLog.exception(src,
-                                            new ParseException(line, key.length + 2, "expecting entry value"));
-                                }
-                                properties.add(key);
-                                properties.add(value);
-                                i = value.length;
-                                parse = false;
+                                else
+                                    break;
                             }
-                            // allow empty objects, but not null entries in populated objects
-                            else if (properties.isEmpty())
-                                break;
-                            else
-                                throw KofiLog.exception(src, new ParseException(line, i + 1, "expecting object entry"));
-                        }
-                        else if (chars[i] == ',') {
-                            parse = true;
-                            i++;
-                        }
-                        else
-                            throw KofiLog.exception(src,
-                                    new ParseException(line, i + 1, "object entries must be separated by a comma"));
                     }
-
-                    return new ParsableKofiObject(chars, start, end, l, properties);
                 }
+                if (end == -1)
+                    throw KofiLog.exception(src, new ParseException(line, start + 1, "object missing closing bracket"));
+
+                // list of parsable key/value pairs in the object
+                final ArrayList<Parsable<?>> properties = new ArrayList<>();
+                boolean parse = true;
+                for (int i = start + 1; i < end - 1; ) {
+                    if (parse) {
+                        // get property key
+                        final Parsable<?> key = parseValue(chars, i, end - 1, line);
+                        if (key != null && key.getType() != Parsable.Type.STRING)
+                            throw KofiLog.exception(src, new ParseException(line, i + 1, "invalid entry key"));
+                        if (key != null) {
+                            if (key.length == end - 1 || chars[key.length] != ':') {
+                                throw KofiLog.exception(src,
+                                        new ParseException(line, key.length + 1, "expecting separator"));
+                            }
+                            final Parsable<?> value =
+                                    parseValue(chars, key.length + 1, end - 1, line);
+                            if (value == null) {
+                                throw KofiLog.exception(src,
+                                        new ParseException(line, key.length + 2, "expecting entry value"));
+                            }
+                            properties.add(key);
+                            properties.add(value);
+                            i = value.length;
+                            parse = false;
+                        }
+                        // allow empty objects, but not null entries in populated objects
+                        else if (properties.isEmpty())
+                            break;
+                        else
+                            throw KofiLog.exception(src, new ParseException(line, i + 1, "expecting object entry"));
+                    }
+                    else if (chars[i] == ',') {
+                        parse = true;
+                        i++;
+                    }
+                    else
+                        throw KofiLog.exception(src,
+                                new ParseException(line, i + 1, "object entries must be separated by a comma"));
+                }
+
+                return new ParsableKofiObject(chars, start, end, l, properties);
+            }
 
             // unknown value type
             throw KofiLog.exception(src, new ParseException(line, start + 1, "invalid value"));
