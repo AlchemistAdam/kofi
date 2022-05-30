@@ -22,140 +22,184 @@ import org.junit.jupiter.api.TestInstance;
 
 import dk.martinu.kofi.KofiUtil;
 
-import static dk.martinu.kofi.KofiUtil.trim;
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class KofiUtilTest {
 
+    /**
+     * Test for {@link KofiUtil#equalsIgnoreCase(char[], int, int, char[])}
+     */
     @Test
     void equalsIgnoreCase() {
-        // assert true
-        final String[] tstrings = {
-                "", "",
-                "NULL", "",
-                "NULL", "NULL",
-                "null", "NULL",
-                "NuLl", "NULL",
-                "Hello", "HELLO",
-                "hI", "HI",
-                "nulll", "NULL",
-                "Helloo", "HELLO",
-                "hIi", "HI"
-        };
-        final char[][] tchars = new char[tstrings.length][2];
-        for (int i = 0; i < tstrings.length; i++)
-            tchars[i] = tstrings[i].toCharArray();
-        for (int i = 0; i < tchars.length - 1; i += 2) {
-            final int fi = i;
-            assertTrue(KofiUtil.equalsIgnoreCase(tchars[i], 0, tchars[i].length, tchars[i + 1]),
-                    () -> "{" + new String(tchars[fi]) + "} {" + new String(tchars[fi + 1]) + "}");
+        // assert entire content matches
+        {
+            final String[][] content = {
+                    /* 0 */ {"", ""},
+                    /* 1 */ {"true", ""},
+                    /* 2 */ {"true", "TRUE"},
+                    /* 3 */ {"TRUE", "TRUE"},
+                    /* 4 */ {"True", "TRUE"}
+            };
+            for (int i = 0; i < content.length; i++) {
+                // string to compare to
+                final char[] string = content[i][0].toCharArray();
+                // string to compare with
+                final char[] comp = content[i][1].toCharArray();
+                assertTrue(KofiUtil.equalsIgnoreCase(string, 0, string.length, comp), i + ":");
+            }
         }
 
-        // assert false
-        final String[] fstrings = {
-                "", "NULL",
-                "nul", "NULL",
-                "ull", "NULL",
-                "nnull", "NULL",
-                "NuLl", "null"
-        };
-        final char[][] fchars = new char[fstrings.length][2];
-        for (int i = 0; i < fstrings.length; i++)
-            fchars[i] = fstrings[i].toCharArray();
-        for (int i = 0; i < fchars.length - 1; i += 2) {
-            final int fi = i;
-            assertFalse(KofiUtil.equalsIgnoreCase(fchars[i], 0, fchars[i].length, fchars[i + 1]),
-                    () -> "{" + new String(fchars[fi]) + "} {" + new String(fchars[fi + 1]) + "}");
-        }
-
-        // assert true - specified start index
-        final String[] tsstrings = {
-                "", "",
-                "NULL", "",
-                "abcdNULL", "NULL",
-                "abcdnull", "NULL",
-                "abcdNuLl", "NULL",
-                "abcdeHello", "HELLO",
-                "abhI", "HI",
-                "abcdnulll", "NULL",
-                "abcdeHelloo", "HELLO",
-                "abhIi", "HI"
-        };
-        final char[][] tschars = new char[tsstrings.length][2];
-        for (int i = 0; i < tsstrings.length; i++)
-            tschars[i] = tsstrings[i].toCharArray();
-        for (int i = 0; i < tschars.length - 1; i += 2) {
-            final int fi = i;
-            assertTrue(KofiUtil.equalsIgnoreCase(tschars[i], tschars[i + 1].length, tschars[i].length, tschars[i + 1]),
-                    () -> "{" + new String(tschars[fi]) + "} {" + new String(tschars[fi + 1]) + "}");
-        }
-
-        // assert false - specified start index
-        final String[] fsstrings = {
-                "", "NULL",
-                "nul", "NULL",
-                "ull", "NULL",
-                "nnull", "NULL",
-        };
-        final char[][] fschars = new char[fsstrings.length][2];
-        for (int i = 0; i < fsstrings.length; i++)
-            fschars[i] = fsstrings[i].toCharArray();
-        for (int i = 0; i < fschars.length - 1; i += 2) {
-            final int fi = i;
-            assertFalse(KofiUtil.equalsIgnoreCase(fschars[i], 0, fschars[i].length, fschars[i + 1]),
-                    () -> "{" + new String(fschars[fi]) + "} {" + new String(fschars[fi + 1]) + "}");
+        // assert subcontent matches
+        {
+            // string to compare to
+            final char[] content = "Hello, World!".toCharArray();
+            // string to compare with
+            final char[] comp = "WORLD".toCharArray();
+            assertTrue(KofiUtil.equalsIgnoreCase(content, 7, content.length, comp));
         }
     }
 
+    /**
+     * Test for {@link KofiUtil#escape(String)} and
+     * {@link KofiUtil#escape(String, char...)}.
+     */
     @Test
     void escape() {
-        final String unescaped = "\t\\Hello, World!\\\r\n";
-        final String escaped = "\\t\\\\Hello, World!\\\\\\r\\n";
-        assertEquals(escaped, KofiUtil.escape(unescaped));
+        // assert escaped string is equal
+        {
+            final String expected = "\\t\\\\Hello, World!\\r\\n";
+            // string to escape
+            final String temp = "\t\\Hello, World!\r\n";
+            final String actual = KofiUtil.escape(temp);
+            assertEquals(expected, actual);
+        }
+
+        // assert escaped string (and other) is equal
+        {
+            // 'l' and 'W' are escaped
+            final String expected = "\\t\\\\He\\l\\lo, \\Wor\\ld!\\r\\n";
+            // string to escape
+            final String temp = "\t\\Hello, World!\r\n";
+            final String actual = KofiUtil.escape(temp, 'l', 'W');
+            assertEquals(expected, actual);
+        }
     }
 
-    @Test
-    void escapeOther() {
-        final String unescaped = "\t\\Hello, World!\\\r\n";
-        final String escaped = "\\t\\\\He\\l\\lo, \\Wor\\ld!\\\\\\r\\n";
-        assertEquals(escaped, KofiUtil.escape(unescaped, 'l', 'W'));
-    }
-
+    /**
+     * Test for {@link KofiUtil#isDigit(char)}.
+     */
     @Test
     void isDigit() {
-        final char[] digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+        // assert all characters are digits
+        final char[] digits = {
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+        };
         for (char c : digits)
             assertTrue(KofiUtil.isDigit(c), "isDigit(" + c + ")");
     }
 
+    /**
+     * Test for {@link KofiUtil#isHexDigit(char)}.
+     */
     @Test
     void isHexDigit() {
-        final char[] digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f'};
-        for (char c : digits)
+        // assert all characters are hex digits
+        final char[] hexDigits = {
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                'A', 'B', 'C', 'D', 'E', 'F',
+                'a', 'b', 'c', 'd', 'e', 'f'
+        };
+        for (char c : hexDigits)
             assertTrue(KofiUtil.isHexDigit(c), "isHexDigit(" + c + ")");
-
-        final char[] notDigits = {'\\', ' ', 'G', 'g', '\0', '\t', 'H', 'h'};
-        for (char c : notDigits)
-            assertFalse(KofiUtil.isHexDigit(c), "isHexDigit(" + c + ")");
     }
 
+    /**
+     * Test for {@link KofiUtil#trim(char[], int, int)}.
+     */
     @Test
-    void trimEquals() {
-        assertEquals("", trim(""));
-        assertEquals("", trim("     "));
-        assertEquals("", trim("\t  \r"));
-        assertEquals("abc", trim("  abc     "));
-        assertEquals("abc", trim("abc"));
-        assertEquals("abc", trim("\t  abc     "));
-        assertEquals("abc def", trim("abc def"));
-        assertEquals("abc def", trim("  abc def     "));
+    void trim() {
+        // assert content is equal -- trim whole string
+        {
+            final String[][] content = {
+                    /* 0 */ {"", ""},
+                    /* 1 */ {"", "   "},
+                    /* 3 */ {"trim", "trim"},
+                    /* 4 */ {"trim", "trim   "},
+                    /* 5 */ {"trim", "   trim"},
+                    /* 6 */ {"trim", "   trim   "}
+            };
+            for (int i = 0; i < content.length; i++) {
+                final char[] expected = content[i][0].toCharArray();
+                // string to trim
+                final char[] temp = content[i][1].toCharArray();
+                final char[] actual = KofiUtil.trim(temp);
+                assertArrayEquals(expected, actual, i + ":");
+            }
+        }
+
+        // assert content is equal -- trim between x and y
+        {
+            final String[][] content = {
+                    /* 0 */ {"trim", "xtrimy"},
+                    /* 1 */ {"trim", "   x   trimy"},
+                    /* 2 */ {"trim", "xtrim   y   "},
+                    /* 3 */ {"trim", " x  trim  y "},
+                    /* 4 */ {"trim", "x   trim   y"}
+            };
+            for (int i = 0; i < content.length; i++) {
+                final char[] expected = content[i][0].toCharArray();
+                // string to trim
+                final String temp = content[i][1];
+                final char[] actual = KofiUtil.trim(temp.toCharArray(), temp.indexOf('x') + 1, temp.indexOf('y'));
+                assertArrayEquals(expected, actual, i + ":");
+            }
+        }
+
+        // assert empty range (offset=length) returns empty array
+        {
+            final char[] c = "trim".toCharArray();
+            assertArrayEquals(new char[0], KofiUtil.trim(c, 0, 0));
+            assertArrayEquals(new char[0], KofiUtil.trim(c, 1, 1));
+            assertArrayEquals(new char[0], KofiUtil.trim(c, c.length, c.length));
+        }
+
+        // assert whitespace returns empty array
+        {
+            final char[] whitespace = "    ".toCharArray();
+            assertArrayEquals(new char[0], KofiUtil.trim(whitespace));
+        }
+
+        // assert returned array is same as passed array when equal
+        {
+            final char[] empty = "".toCharArray();
+            assertSame(empty, KofiUtil.trim(empty, 0, empty.length));
+
+            final char[] noTrim = "no trim".toCharArray();
+            assertSame(noTrim, KofiUtil.trim(noTrim, 0, noTrim.length));
+        }
     }
 
+
+    /**
+     * Test for {@link KofiUtil#unescape(String, int, int)}
+     */
     @Test
     void unescape() {
-        final String escaped = "\\t\\\\Hello, \\u0041!\\\\\\r\\n";
-        final String unescaped = "\t\\Hello, A!\\\r\n";
-        assertEquals(unescaped, KofiUtil.unescape(escaped, 0, escaped.length()));
+        // assert content is equal
+        {
+            final String expected = "\t\\Hello, A!\r\n";
+            // string to unescape
+            final String temp = "\\t\\\\Hello, \\u0041!\\r\\n";
+            final String actual = KofiUtil.unescape(temp, 0, temp.length());
+            assertEquals(expected, actual);
+        }
+
+        // assert returned string is same as passed if no characters were unescaped
+        {
+            final String expected = "No escapes";
+            final String actual = KofiUtil.unescape(expected, 0, expected.length());
+            assertSame(expected, actual);
+        }
     }
 }
