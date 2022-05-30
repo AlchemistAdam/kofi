@@ -60,28 +60,19 @@ public class KofiUtil {
             "\\u001E", "\\u001F"
     };
 
-    // DOC update javadoc to better describe what method actually does
     /**
-     * Returns {@code true} if the specified subarray of {@code chars} is equal
-     * to {@code comp}, ingoring case. Otherwise {@code false} is returned. The
+     * Returns {@code true} if the start of the specified region matches
+     * {@code comp}, ignoring case, otherwise {@code false} is returned. The
      * {@code comp} array must only contain uppercase Latin letters (A-Z).
-     * <p>
-     * <b>NOTE:</b> this is a specialized method that only works for Latin
-     * letters, and is not a replacement of
-     * {@link String#equalsIgnoreCase(String)}.
      *
-     * @param chars the characters to compare for equality
+     * @param chars the characters to match
      * @param start the starting index, inclusive
      * @param end   the ending index, exclusive
      * @param comp  the charaters to compare to
-     * @return {@code true} if equal ignoring case, otherwise {@code false}
-     * @throws NullPointerException     if {@code chars} is {@code null}
-     * @throws IllegalArgumentException if <code>start &lt; 0</code>,
-     *                                  <code>end &lt; start</code> or
-     *                                  <code>end &gt; chars.length</code>
+     * @return {@code true} if a match was found, otherwise {@code false}
      */
     @Contract(pure = true)
-    public static boolean equalsIgnoreCase(final char[] chars, final int start, final int end, final char[] comp) {
+    public static boolean matches(final char[] chars, final int start, final int end, final char[] comp) {
         if (end - start < comp.length)
             return false;
         for (int i = 0; i < comp.length; i++)
@@ -312,31 +303,6 @@ public class KofiUtil {
      */
     @Contract(value = "null -> fail", pure = true)
     public static char[] trim(final char[] chars) {
-//        int start = 0, end = chars.length;
-//        // trim leading whitespace
-//        for (; start < end; start++) {
-//            if (!isWhitespace(chars[start]))
-//                break;
-//        }
-//        // trim trailing whitespace
-//        for (; end > start; end--) {
-//            if (!isWhitespace(chars[end - 1]))
-//                break;
-//        }
-//        // no characters are whitespace
-//        if (start == 0 && end == chars.length) {
-//            return chars;
-//        }
-//        // all characters are whitespace
-//        else if (start == end) {
-//            return new char[0];
-//        }
-//        // some characters are whitespace
-//        else {
-//            final char[] sub = new char[end - start];
-//            System.arraycopy(chars, start, sub, 0, sub.length);
-//            return sub;
-//        }
         return trim(chars, 0, chars.length);
     }
 

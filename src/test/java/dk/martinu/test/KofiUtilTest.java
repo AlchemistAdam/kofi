@@ -28,10 +28,10 @@ import static org.junit.jupiter.api.Assertions.*;
 public class KofiUtilTest {
 
     /**
-     * Test for {@link KofiUtil#equalsIgnoreCase(char[], int, int, char[])}
+     * Test for {@link KofiUtil#matches(char[], int, int, char[])}
      */
     @Test
-    void equalsIgnoreCase() {
+    void matches() {
         // assert entire content matches
         {
             final String[][] content = {
@@ -46,7 +46,7 @@ public class KofiUtilTest {
                 final char[] string = content[i][0].toCharArray();
                 // string to compare with
                 final char[] comp = content[i][1].toCharArray();
-                assertTrue(KofiUtil.equalsIgnoreCase(string, 0, string.length, comp), i + ":");
+                assertTrue(KofiUtil.matches(string, 0, string.length, comp), i + ":");
             }
         }
 
@@ -56,7 +56,7 @@ public class KofiUtilTest {
             final char[] content = "Hello, World!".toCharArray();
             // string to compare with
             final char[] comp = "WORLD".toCharArray();
-            assertTrue(KofiUtil.equalsIgnoreCase(content, 7, content.length, comp));
+            assertTrue(KofiUtil.matches(content, 7, content.length, comp));
         }
     }
 
