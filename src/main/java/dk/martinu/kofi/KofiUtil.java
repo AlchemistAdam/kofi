@@ -21,7 +21,6 @@ import org.jetbrains.annotations.*;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Objects;
 
 import dk.martinu.kofi.codecs.KofiCodec;
 
@@ -61,13 +60,14 @@ public class KofiUtil {
             "\\u001E", "\\u001F"
     };
 
+    // DOC update javadoc to better describe what method actually does
     /**
      * Returns {@code true} if the specified subarray of {@code chars} is equal
      * to {@code comp}, ingoring case. Otherwise {@code false} is returned. The
-     * {@code comp} array must only contain uppercase ASCII letters.
+     * {@code comp} array must only contain uppercase Latin letters (A-Z).
      * <p>
-     * <b>NOTE:</b> this is a specialized method that only works for ASCII
-     * letters, and is not meant to replace
+     * <b>NOTE:</b> this is a specialized method that only works for Latin
+     * letters, and is not a replacement of
      * {@link String#equalsIgnoreCase(String)}.
      *
      * @param chars the characters to compare for equality
@@ -75,24 +75,18 @@ public class KofiUtil {
      * @param end   the ending index, exclusive
      * @param comp  the charaters to compare to
      * @return {@code true} if equal ignoring case, otherwise {@code false}
+     * @throws NullPointerException     if {@code chars} is {@code null}
      * @throws IllegalArgumentException if <code>start &lt; 0</code>,
      *                                  <code>end &lt; start</code> or
      *                                  <code>end &gt; chars.length</code>
      */
     @Contract(pure = true)
     public static boolean equalsIgnoreCase(final char[] chars, final int start, final int end, final char[] comp) {
-        if (start < 0)
-            throw new IllegalArgumentException("start is less than 0");
-        if (end < start)
-            throw new IllegalArgumentException("end is less than start");
-        if (end > chars.length)
-            throw new IllegalArgumentException("end is greater than array length");
         if (end - start < comp.length)
             return false;
-        for (int i = 0; i < comp.length; i++) {
+        for (int i = 0; i < comp.length; i++)
             if (chars[start + i] != comp[i] && chars[start + i] != (comp[i] | 0x20))
                 return false;
-        }
         return true;
     }
 
@@ -158,22 +152,22 @@ public class KofiUtil {
         final char[] chars = string.toCharArray();
         final StringBuilder sb = new StringBuilder(chars.length);
         outer:
-        for (char c0 : chars) {
-            if (c0 < 0x20) {
-                sb.append(ESCAPED_CHARS_00_1F[c0]);
+        for (char c : chars) {
+            if (c < 0x20) {
+                sb.append(ESCAPED_CHARS_00_1F[c]);
                 continue;
             }
-            else if (c0 == '\\') {
+            else if (c == '\\') {
                 sb.append("\\\\");
                 continue;
             }
             else
-                for (char c1 : other)
-                    if (c0 == c1) {
-                        sb.append('\\').append(c0);
+                for (char co : other)
+                    if (c == co) {
+                        sb.append('\\').append(c);
                         continue outer;
                     }
-            sb.append(c0);
+            sb.append(c);
         }
         return string.length() == sb.length() ? string : sb.toString();
     }
@@ -211,23 +205,15 @@ public class KofiUtil {
      * @param start the starting index, inclusive
      * @param end   the ending index, exclusive
      * @return the lowest index of {@code c}, or {@code -1}
-     * @throws NullPointerException     if {@code chars} is {@code null}
-     * @throws IllegalArgumentException if <code>start &lt; 0</code>,
-     *                                  <code>end &lt; start</code> or
-     *                                  <code>end &gt; chars.length</code>
      */
-    @Contract(value = "_, null, _, _ -> fail", pure = true)
+    // DOC escapable characters
+    // TODO does not work correctly for reverse solidus \
+    @Contract(pure = true)
     @Range(from = -1, to = Integer.MAX_VALUE)
     public static int indexOf(final char c, final char[] chars, final int start, final int end) {
-        Objects.requireNonNull(chars, "chars is null");
-        if (start < 0)
-            throw new IllegalArgumentException("start is less than 0");
-        if (end < start)
-            throw new IllegalArgumentException("end is less than start");
-        if (end > chars.length)
-            throw new IllegalArgumentException("end is greater than array length");
-        for (int i = start; i < end; i++) {
-            if (chars[i] == c) {
+        for (int i = start; i < end; i++)
+            if (chars[i] == c)
+                // TODO logic could be refactored into separate method - check for uses in other places (entry key fx)
                 if (i == 0 || chars[i - 1] != '\\')
                     return i;
                 else {
@@ -236,8 +222,6 @@ public class KofiUtil {
                     if ((count & 1) == 0)
                         return i;
                 }
-            }
-        }
         return -1;
     }
 
@@ -305,42 +289,15 @@ public class KofiUtil {
      *
      * @param doc         the document to print
      * @param printStream the stream to print to
-     * @throws NullPointerException if {@code doc} or {@code printStream} is
-     *                              {@code null}
      */
     @Contract(pure = true)
     public static void printDocument(@NotNull final Document doc, @NotNull final PrintStream printStream) {
-        Objects.requireNonNull(doc, "doc is null");
-        Objects.requireNonNull(printStream, "printStream is null");
         try {
             printStream.print(KofiCodec.provider().writeString(doc));
         }
         catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    /**
-     * Returns a substring of the specified string with all leading and
-     * trailing whitespace characters removed. If no characters were removed,
-     * then {@code string} is returned.
-     *
-     * @param string the string to trim
-     * @return a substring of {@code string} with no leading and trailing
-     * whitespace, or {@code string} if no characters were removed
-     * @throws NullPointerException if {@code string} is {@code null}
-     * @see #isWhitespace(char)
-     */
-    @Contract(pure = true)
-    @NotNull
-    public static String trim(@NotNull final String string) {
-        Objects.requireNonNull(string, "string is null");
-        final char[] chars = string.toCharArray();
-        final char[] trim = trim(chars);
-        if (chars != trim)
-            return new String(trim);
-        else
-            return string;
     }
 
     /**
@@ -351,57 +308,89 @@ public class KofiUtil {
      * @param chars the array to trim
      * @return a subarray of {@code chars} with no leading and trailing
      * whitespace, or {@code chars} if no characters were removed
-     * @throws NullPointerException if {@code chars} is {@code null}
      * @see #isWhitespace(char)
      */
     @Contract(value = "null -> fail", pure = true)
-//    @NotNull
     public static char[] trim(final char[] chars) {
-        Objects.requireNonNull(chars, "chars is null");
-        int len = chars.length;
-        int start = 0, end = len;
-        for (; start < len; start++)
+//        int start = 0, end = chars.length;
+//        // trim leading whitespace
+//        for (; start < end; start++) {
+//            if (!isWhitespace(chars[start]))
+//                break;
+//        }
+//        // trim trailing whitespace
+//        for (; end > start; end--) {
+//            if (!isWhitespace(chars[end - 1]))
+//                break;
+//        }
+//        // no characters are whitespace
+//        if (start == 0 && end == chars.length) {
+//            return chars;
+//        }
+//        // all characters are whitespace
+//        else if (start == end) {
+//            return new char[0];
+//        }
+//        // some characters are whitespace
+//        else {
+//            final char[] sub = new char[end - start];
+//            System.arraycopy(chars, start, sub, 0, sub.length);
+//            return sub;
+//        }
+        return trim(chars, 0, chars.length);
+    }
+
+    // DOC
+    @Contract(value = "null, _, _ -> fail", pure = true)
+    public static char[] trim(final char[] chars, final int offset, final int length) {
+        int start = offset, end = length;
+        // trim leading whitespace
+        for (; start < end; start++) {
             if (!isWhitespace(chars[start]))
                 break;
-        for (; end > start; end--)
+        }
+        // trim trailing whitespace
+        for (; end > start; end--) {
             if (!isWhitespace(chars[end - 1]))
                 break;
-        if (start == 0 && end == len)
-            return chars;
-        else if (start == end)
+        }
+        // no characters are whitespace
+        if (start == offset && end == length) {
+            // check if subarray and array are equal
+            if (offset == 0 && length == chars.length)
+                return chars;
+            else {
+                final char[] sub = new char[length - offset];
+                System.arraycopy(chars, offset, sub, 0, sub.length);
+                return sub;
+            }
+        }
+        // all characters are whitespace or subarry is empty
+        if (start == end) {
             return new char[0];
+        }
+        // some or no characters are whitespace
         else {
-            len = end - start;
-            final char[] copy = new char[len];
-            System.arraycopy(chars, start, copy, 0, len);
-            return copy;
+            final char[] sub = new char[end - start];
+            System.arraycopy(chars, start, sub, 0, sub.length);
+            return sub;
         }
     }
 
     /**
      * Returns an unescaped substring of {@code string} in the specified range.
-     * If the substring is equal to {@code string} then {@code string} is
-     * returned.
+     * If the unescaped substring is equal to {@code string} then
+     * {@code string} is returned.
      *
      * @param string the string to unescape
      * @param start  the starting index, inclusive
      * @param end    the ending index, exclusive
      * @return an unescaped substring
-     * @throws NullPointerException     if {@code string} is {@code null}
-     * @throws IllegalArgumentException if <code>start &lt; 0</code>
-     *                                  <code>end &lt; start</code> or
-     *                                  <code>end &gt; string.length()</code>
+     * @see #escape(String)
      */
     @Contract(pure = true)
     @NotNull
     public static String unescape(@NotNull final String string, final int start, final int end) {
-        Objects.requireNonNull(string, "string is null");
-        if (start < 0)
-            throw new IllegalArgumentException("start is less than 0");
-        if (end < start)
-            throw new IllegalArgumentException("end is less than start");
-        if (end > string.length())
-            throw new IllegalArgumentException("end is greater than length");
         final char[] chars0 = string.toCharArray();
         final char[] chars1 = unescape(chars0, start, end);
         if (chars0 != chars1)
@@ -410,50 +399,45 @@ public class KofiUtil {
             return string;
     }
 
+    // DOC
+    @Contract(value = "null -> fail", pure = true)
+    public static char[] unescape(final char[] chars) {
+        return unescape(chars, 0, chars.length);
+    }
+
     /**
      * Returns an unescaped subarray of {@code chars} in the specified range.
-     * If the subarray is equal to {@code chars} then {@code chars} is
-     * returned.
+     * If the unescaped subarray is equal to {@code chars} then {@code chars}
+     * is returned.
      *
      * @param chars the characters to unescape
      * @param start the starting index, inclusive
      * @param end   the ending index, exclusive
      * @return an unescaped subarray
-     * @throws NullPointerException     if {@code chars} is {@code null}
-     * @throws IllegalArgumentException if <code>start &lt; 0</code>,
-     *                                  <code>end &lt; start</code> or
-     *                                  <code>end &gt; chars.length</code>
      * @see #escape(String)
      */
     @Contract(value = "null, _, _ -> fail", pure = true)
-//    @NotNull
     public static char[] unescape(final char[] chars, final int start, final int end) {
-        Objects.requireNonNull(chars, "chars is null");
-        if (start < 0)
-            throw new IllegalArgumentException("start is less than 0");
-        if (end < start)
-            throw new IllegalArgumentException("end is less than start");
-        if (end > chars.length)
-            throw new IllegalArgumentException("end is greater than length");
         final CharBuffer cb = new CharBuffer(end - start);
         for (int i = start; i < end; ) {
             if (chars[i] == '\\') {
-                final int count = end - i;
+                // remaining characters
+                final int rem = end - i;
                 // no more chars
-                if (count == 1) {
+                if (rem == 1) {
                     break;
                 }
                 // six-character escape sequence
                 else if (chars[i + 1] == 'u' || chars[i + 1] == 'U') {
-                    if (count >= 6 && isHexDigit(chars[i + 2]) && isHexDigit(chars[i + 3])
+                    if (rem >= 6 && isHexDigit(chars[i + 2]) && isHexDigit(chars[i + 3])
                             && isHexDigit(chars[i + 4]) && isHexDigit(chars[i + 5])) {
                         // get int value of 4-digit hex and cast it to char
-                        cb.put((char) Integer.valueOf(String.copyValueOf(
+                        cb.append((char) Integer.valueOf(String.copyValueOf(
                                 chars, i + 2, 4), 16).intValue());
                         i += 6;
                     }
                     else {
-                        cb.put(chars[i + 1]);
+                        cb.append(chars[i + 1]);
                         i += 2;
                     }
                 }
@@ -461,24 +445,24 @@ public class KofiUtil {
                 else {
                     final char c = chars[i + 1];
                     if (c == '0')
-                        cb.put('\0');
+                        cb.append('\0');
                     else if (c == 'b')
-                        cb.put('\b');
+                        cb.append('\b');
                     else if (c == 't')
-                        cb.put('\t');
+                        cb.append('\t');
                     else if (c == 'n')
-                        cb.put('\n');
+                        cb.append('\n');
                     else if (c == 'f')
-                        cb.put('\f');
+                        cb.append('\f');
                     else if (c == 'r')
-                        cb.put('\r');
+                        cb.append('\r');
                     else
-                        cb.put(c);
+                        cb.append(c);
                     i += 2;
                 }
             }
             else
-                cb.put(chars[i++]);
+                cb.append(chars[i++]);
         }
         if (cb.length() != chars.length)
             return cb.toCharArray();
@@ -486,6 +470,7 @@ public class KofiUtil {
             return chars;
     }
 
+    // DOC
     private static class CharBuffer {
 
         final char[] chars;
@@ -495,18 +480,22 @@ public class KofiUtil {
             chars = new char[size];
         }
 
+        void append(final char c) {
+            chars[cursor++] = c;
+        }
+
         int length() {
             return cursor;
         }
 
-        void put(final char c) {
-            chars[cursor++] = c;
-        }
-
         char[] toCharArray() {
-            final char[] rv = new char[cursor];
-            System.arraycopy(chars, 0, rv, 0, cursor);
-            return rv;
+            if (cursor != chars.length) {
+                final char[] rv = new char[cursor];
+                System.arraycopy(chars, 0, rv, 0, cursor);
+                return rv;
+            }
+            else
+                return chars;
         }
     }
 }
