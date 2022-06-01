@@ -23,8 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Serial;
 import java.io.Serializable;
 
-import dk.martinu.kofi.Document;
-
 /**
  * Signals that an error occurred while parsing character data.
  *
@@ -40,9 +38,9 @@ public class ParseException extends Exception implements Serializable {
      * Constructs a new exception with the specified message and location of
      * the data the caused this exception.
      *
-     * @param line the line number
+     * @param line   the line number
      * @param column the column at the specified line
-     * @param msg the message
+     * @param msg    the message
      */
     @Contract(pure = true)
     public ParseException(final int line, final int column, @NotNull final String msg) {
