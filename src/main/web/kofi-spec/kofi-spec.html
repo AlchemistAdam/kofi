@@ -277,12 +277,12 @@ comment = ";" , {. - lf} ;
 section = "[" , {nc} , "]" ;
 </pre></div>
 <br>
-<p>Property elements store data as a key-value pair. The value of a property is
-    complex and can be many things; it is covered in its own section. A
-    property begins with a possibly empty property name, followed by an <span>=
+<p>Property elements store data as a name-value pair. The value of a property
+    is complex and can be many things; it is covered in its own section. A
+    property begins with a possibly empty property name, followed by <span>=
     Equals Sign</span>, and ends with a property value:</p>
 <div><pre>
-property     = [propertyName] , [ws] , "=" , [ws] , value ;
+property     = [ws] , [propertyName] , [ws] , "=" , [ws] , value ;
 propertyName = pns , [{pnc} , pne] ;
 pns          = pne - (";" | "[") ;
 pne          = pnc - ws ;
@@ -290,7 +290,7 @@ pnc          = nc - "=" ;
 </pre></div>
 <p><span>; Semicolon</span> and <span>[ Left Square Bracket</span> cannot be
     used as the first character of a property name, unless escaped, as these are
-    used to begin comment and section elements. Nor can the name contain the
+    used to begin comment and section elements. Nor can the name contain
     <span>= Equals Sign</span>, unless escaped, as it is used to separate the
     name from the value.</p>
 </section>
@@ -298,8 +298,7 @@ pnc          = nc - "=" ;
 
 <h2 id="section-5">5. Values</h2>
 <section>
-<p>Property values can be null, primitive Java values, strings, arrays or
-    objects:</p>
+<p>Values can be null, primitive Java values, strings, arrays or objects:</p>
 <div><pre>
 value = null | boolean | string | char | number | array | object ;
 </pre></div>
@@ -342,21 +341,30 @@ sign      = "+" | "-" ;
 int       = {'0'_'9'}+ ;
 </pre></div>
 <br>
-<p>Array values are an indexed sequence of property values, separated with a
-    <span>, Comma</span>. An array begins with a <span>[ Left Square
-    Bracket</span> and ends with a <span>] Right Square Bracket</span>:</p>
+<p>An array value is an indexed sequence of values, separated with a <span>,
+    Comma</span>. An array begins with a <span>[ Left Square Bracket</span> and
+    ends with a <span>] Right Square Bracket</span>:</p>
 <div><pre>
 array   = "[" , [entity , {"," , entity}] , "]" ;
 entity  = [ws] , value , [ws] ;
 </pre></div>
 <br>
-<p>Object values are an entry-based map of property values, separated with a
-    <span>, Comma</span>. An object begins with a <span>{ Left Curly
-    Bracket</span> and ends with a <span>} Right Curly Bracket</span>:</p>
+<p>An object value is an entry-based map of values, separated with a <span>,
+    Comma</span>. An object begins with a <span>{ Left Curly Bracket</span> and
+    ends with a <span>} Right Curly Bracket</span>:</p>
 <div><pre>
-object = "{" , [entry , {"," , entry}] , "}" ;
-entry  = [ws] , string , [ws] , ":" , value , [ws] ;
+object    = "{" , [entry , {"," , entry}] , "}" ;
+entry     = [ws] , entryName , [ws] , ":" , value , [ws] ;
+entryName = ens , [{enc} , ene] ;
+ens       = ene - ("{" | "}") ;
+ene       = enc - ws ;
+enc       = nc - ":" ;
 </pre></div>
+<p>Entries are very similar to properties; they both have a name, a value and a
+    separator. <span>{ Left Curly Bracket</span> and <span>} Right Curly
+    Bracket</span> cannot be used as the first character of an entry name,
+    unless escaped. Nor can the name contain <span>: Colon</span>, unless
+    escaped, as it is used to separate the name from the value.</p>
 </section>
 <br>
 
@@ -375,7 +383,7 @@ whitespace   = [ws] ;
 comment      = ";" , {. - lf} ;
 section      = "[" , {nc} , "]" ;
 
-property     = [propertyName] , [ws] , "=" , [ws] , value ;
+property     = [ws] , [propertyName] , [ws] , "=" , [ws] , value ;
 propertyName = pns , [{pnc} , pne] ;
 pns          = pne - (";" | "[")  ;
 pne          = pnc - ws ;
@@ -405,7 +413,11 @@ array        = "[" , [element , {"," , element}] , "]" ;
 element      = [ws] , value , [ws] ;
 
 object       = "{" , [entry , {"," , entry}] , "}" ;
-entry        = [ws] , string , [ws] , ":" , value , [ws] ;
+entry        = [ws] , entryName , [ws] , ":" , value , [ws] ;
+entryName    = ens , [{enc} , ene] ;
+ens          = ene - ("{" | "}") ;
+ene          = enc - ws ;
+enc          = nc - ":" ;
 </pre>
 </section>
 <br>

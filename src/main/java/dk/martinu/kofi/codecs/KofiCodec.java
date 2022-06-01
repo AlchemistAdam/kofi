@@ -38,7 +38,7 @@ import static dk.martinu.kofi.KofiUtil.*;
  * specification.
  * <p>
  * For information on the textual representations of documents and their
- * contents, see the KoFi Syntax specification.
+ * contents, see the KoFi Technical Specification.
  *
  * @author Adam Martinu
  * @since 1.0
@@ -47,7 +47,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
 
     // list returned by getExtensions
     private static final List<String> EXTENSIONS = List.of("kofi");
-    // constants used for KofiUtil.equalsIgnoreCase
+    // array constants used for KofiUtil.equalsIgnoreCase
     // @formatter:off
     private static final char[] NULL = {'N', 'U', 'L', 'L'};
     private static final char[] TRUE = {'T', 'R', 'U', 'E'};
@@ -130,75 +130,117 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
     }
 
     /**
-     * Parses the specified characters to an {@link Element} according to the
-     * KoFi Text Syntax.
-     * <p>
-     * See {@link KofiCodec} for details on parsing.
+     * Parses an entry name from the specified region of characters and returns
+     * a {@link Parsable Parsable} object to get the name.
+     *
+     * @param chars  the characters to parse
+     * @param offset start index in {@code chars}, inclusive
+     * @param length end index in {@code chars}, exclusive
+     * @return a new {@code Parsable} entry name
+     */
+    @Contract(value = "!null, _, _ -> new; null, _, _ -> fail", pure = true)
+    @NotNull
+    protected ParsableEntryName parseEntryName(final char[] chars, final int offset, final int length) {
+        assert chars != null : "chars is null";
+        // skip leading whitespace
+        int start = offset;
+        while (start < length && isWhitespace(chars[start]))
+            start++;
+
+        // last significant index of entry name, exclusive
+        int end = start;
+        // scan remaining chars for name
+        // stops when exhausted or separator ':' is found
+        for (int i = start; i < length; i++) {
+            if (chars[i] == ':') {
+                if (isEscaped(chars, i, start))
+                    end = i + 1;
+                else
+                    break;
+            }
+            else if (!isWhitespace(chars[i]))
+                end = i + 1;
+        }
+
+        return new ParsableEntryName(chars, start, end, length);
+    }
+
+    /**
+     * Parses an {@link Element} from the specified character array and returns
+     * it.
      *
      * @param chars the line to parse
      * @param line  the line number that is being parsed
-     * @return a new {@code Element} parsed from the specified line
-     * @throws ParseException if an exception occurred when parsing the line
+     * @return a new {@code Element}
+     * @throws ParseException if an error occurs while parsing
      */
-    @Contract(value = "_, _ -> new", pure = true)
+    @Contract(value = "!null, _ -> new; null, _ -> fail", pure = true)
     @NotNull
-    protected Element parseLine(final char[] chars, final int line) throws ParseException {
+    protected Element parseLine(char[] chars, final int line) throws ParseException {
+        assert chars != null : "chars is null";
+        final KofiLog.Source src = new KofiLog.Source(KofiCodec.class, "parseLine(char[], int)");
+        // TODO instead of trim, simply get start and end index of ws and use source array
+        chars = trim(chars);
+
         // line is whitespace
         if (chars.length == 0)
             return new Whitespace();
+
         switch (chars[0]) {
+
             // comment
             case ';' -> {
                 return new Comment(new String(chars, 1, chars.length - 1));
             }
+
             // section
             case '[' -> {
                 if (chars[chars.length - 1] == ']')
                     return new Section(new String(chars, 1, chars.length - 2));
                 else
-                    throw KofiLog.exception(KofiCodec.class, "parseLine(String)",
-                            new ParseException(line, 1, "section missing closing bracket"));
+                    throw KofiLog.exception(src, new ParseException(line, chars.length - 1,
+                            "section closing bracket ']' expected"));
             }
+
             // property
             default -> {
                 final Property<?> property = parseProperty(chars, line);
                 if (property != null)
                     return property;
                 else
-                    throw KofiLog.exception(KofiCodec.class, "parseLine(String)",
-                            new ParseException(line, 1, "invalid element"));
+                    throw KofiLog.exception(src, new ParseException(line, 0, "invalid element"));
             }
         }
     }
 
     /**
-     * Parses the specified array of characters as a {@link Property} and
-     * returns it. The {@code line} parameter is only used for exception
-     * messages and is not required. This method calls
-     * {@link #parseValue(char[], int, int, int)}, and the type of the returned
-     * property is determined by the type of the parsed value.
+     * Parses a {@link Property} from the specified character array and returns
+     * it, or {@code null} if it does not represent a property (no '=' delimiter).
      *
      * @param chars the characters to parse
-     * @param line  the line number of the characters to parse
-     * @return a new property
+     * @param line  the line number that is being parsed
+     * @return a new property, or {@code null}
      * @throws ParseException if an error occurs while parsing
      * @see dk.martinu.kofi.properties
      */
     @Contract(value = "null, _ -> fail", pure = true)
     @Nullable
     protected Property<?> parseProperty(final char[] chars, final int line) throws ParseException {
+        assert chars != null : "chars is null";
+        final KofiLog.Source src = new KofiLog.Source(KofiCodec.class, "parseProperty(char[], int)");
+
         // get index of delimiter
         final int delimiter = indexOf('=', chars, 0, chars.length);
         if (delimiter == -1)
             return null;
 
         // get parsable value
-        final Parsable<?> parsable = parseValue(chars, delimiter + 1, -1, line);
+        final Parsable<?> parsable = parseValue(chars, delimiter + 1, chars.length, line);
 
         // return property
         if (parsable != null) {
             if (parsable.length == chars.length) {
-                final String key = new String(trim(unescape(chars, 0, delimiter)));
+                final String key = new String(unescape(trim(chars, 0, delimiter)));
                 final Object value = parsable.getValue();
                 return switch (parsable.getType()) {
                     case NULL -> new NullProperty(key);
@@ -214,26 +256,23 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                 };
             }
             else
-                throw KofiLog.exception(KofiCodec.class, "parseProperty(char[])",
-                        new ParseException(line, parsable.length + 1, "property value has trailing data"));
+                throw KofiLog.exception(src, new ParseException(line, parsable.length,
+                        "property value has trailing characters"));
         }
         else
-            throw KofiLog.exception(KofiCodec.class, "parseProperty(char[])",
-                    new ParseException(line, delimiter + 2, "property value is empty"));
+            throw KofiLog.exception(src, new ParseException(line, delimiter + 1, "property value expected"));
     }
 
     /**
-     * Parses the specified array of characters as a {@link Parsable} and
-     * returns it, starting at the specified offset and reading no further than
-     * the specified length (exclusive). The {@code line} parameter is only used
-     * for exception messages and is not required.
+     * Parses a {@link Property} value from the specified region of characters
+     * and returns it, or {@code null} if the region is empty or contains only
+     * whitespace.
      *
      * @param chars  the characters to parse
-     * @param offset the starting offset
-     * @param length the maximum length to read into {@code chars} (exclusive),
-     *               or {@code -1}
-     * @param line   the line number of the characters to parse
-     * @return a new property
+     * @param offset start index in {@code chars}, inclusive
+     * @param length end index in {@code chars}, exclusive
+     * @param line   the line number that is being parsed
+     * @return a new property, or {@code null}
      * @throws ParseException if an error occurs while parsing
      */
     @Contract(value = "null, _, _, _ -> fail", pure = true)
@@ -241,13 +280,9 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
     protected KofiCodec.Parsable<?> parseValue(final char[] chars, final int offset, final int length,
             final int line) throws ParseException {
         assert chars != null : "chars is null";
-        final KofiLog.Source src = new KofiLog.Source(KofiCodec.class, "parseValue(char[], int, int)");
+        final KofiLog.Source src = new KofiLog.Source(KofiCodec.class, "parseValue(char[], int, int, int)");
 
-        // max length of value to iterate
-        final int l = length != -1 ? length : chars.length;
-
-
-        for (int start = offset; start < l; start++) {
+        for (int start = offset; start < length; start++) {
             char c = chars[start];
             if (isWhitespace(c)) {
                 continue;
@@ -255,69 +290,72 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
 
             // null and NaN
             else if (c == 'n' || c == 'N') {
-                if (equalsIgnoreCase(chars, start, l, NULL))
-                    return new ParsableNull(chars, start, l);
-                else if (equalsIgnoreCase(chars, start, l, NAN))
-                    return ParsableFloat.getNan(chars, start, l);
+                if (matches(chars, start, length, NULL))
+                    return new ParsableNull(chars, start, length);
+                else if (matches(chars, start, length, NAN))
+                    return ParsableFloat.getNan(chars, start, length);
             }
 
             // String
             else if (c == '"') {
-                final int end = indexOf('"', chars, start + 1, l);
+                final int end = indexOf('"', chars, start + 1, length);
                 if (end == -1)
                     throw KofiLog.exception(src, new ParseException(line, start + 1, "string is not enclosed"));
-                return new ParsableString(chars, start, end + 1, l);
+                return new ParsableString(chars, start, end + 1, length);
             }
 
-            // char
+            // Character
             else if (c == '\'') {
-                // TODO can char check be implemented better?
-                final int remainder = l - start;
+                final int remainder = length - start;
                 final int end;
+                // four-character unicode escape sequence
+                // '\UXXXX'
                 if (remainder >= 8 && chars[start + 1] == '\\'
                         && (chars[start + 2] == 'u' || chars[start + 2] == 'U')
                         && isHexDigit(chars[start + 3]) && isHexDigit(chars[start + 4])
                         && isHexDigit(chars[start + 5]) && isHexDigit(chars[start + 6])
                         && chars[start + 7] == '\'') {
                     end = start + 8;
-                    return new ParsableChar(chars, start, end, l);
+                    return new ParsableChar(chars, start, end, length);
                 }
+                // two-character escape sequence
+                // '\X'
                 else if (remainder >= 4 && chars[start + 1] == '\\' && chars[start + 3] == '\'') {
                     end = start + 4;
-                    return new ParsableChar(chars, start, end, l);
+                    return new ParsableChar(chars, start, end, length);
                 }
+                // single character
+                // 'X'
                 else if (remainder >= 3 && chars[start + 2] == '\'') {
                     end = start + 3;
-                    return new ParsableChar(chars, start, end, l);
+                    return new ParsableChar(chars, start, end, length);
                 }
             }
 
-            // boolean true
+            // Boolean
             else if (c == 't' || c == 'T') {
-                if (equalsIgnoreCase(chars, start, l, TRUE))
-                    return ParsableBoolean.getTrue(chars, start, l);
+                if (matches(chars, start, length, TRUE))
+                    return ParsableBoolean.getTrue(chars, start, length);
             }
-            // boolean false
             else if (c == 'f' || c == 'F') {
-                if (equalsIgnoreCase(chars, start, l, FALSE))
-                    return ParsableBoolean.getFalse(chars, start, l);
+                if (matches(chars, start, length, FALSE))
+                    return ParsableBoolean.getFalse(chars, start, length);
             }
 
             // unsigned infinity
             else if (c == 'i' || c == 'I') {
-                if (equalsIgnoreCase(chars, start, l, INFINITY))
-                    return ParsableFloat.getInfinity(chars, start, l);
+                if (matches(chars, start, length, INFINITY))
+                    return ParsableFloat.getInfinity(chars, start, length);
             }
 
             // Number and signed infinity
             else if (isDigit(c) || c == '-' || c == '+' || c == '.') {
                 boolean hasDigits = false, positive = true;
-                // flags for fraction, exponent and bit precision (set with type specifiers)
                 NumFlag fraction = null;
                 NumFlag exponent = null;
                 NumFlag precision = null;
                 int end = start;
-                for (; end < l; end++) {
+                for (; end < length; end++) {
                     c = chars[end];
                     // ws or separator - not part of number
                     if (isWhitespace(c) || c == ',') {
@@ -362,11 +400,11 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                     }
                     // signed infinity
                     else if (c == 'i' || c == 'I') {
-                        if (!hasDigits && fraction == null && equalsIgnoreCase(chars, end, l, INFINITY))
+                        if (!hasDigits && fraction == null && matches(chars, end, length, INFINITY))
                             if (positive)
-                                return ParsableFloat.getPositiveInfinity(chars, start, l);
+                                return ParsableFloat.getPositiveInfinity(chars, start, length);
                             else
-                                return ParsableFloat.getNegativeInfinity(chars, start, l);
+                                return ParsableFloat.getNegativeInfinity(chars, start, length);
                     }
                     // long
                     else if (c == 'L' || c == 'l') {
@@ -399,32 +437,34 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                     if (fraction != null || exponent != null) {
                         if (precision != null)
                             return precision == NumFlag.P64 ?
-                                    new ParsableDouble(chars, start, end, l) :
-                                    new ParsableFloat(chars, start, end, l);
+                                    new ParsableDouble(chars, start, end, length) :
+                                    new ParsableFloat(chars, start, end, length);
                         else
-                            return new ParsableFloat(chars, start, end, l);
+                            return new ParsableFloat(chars, start, end, length);
                     }
                     // long and int
                     else {
                         if (precision != null)
                             return precision == NumFlag.P64 ?
-                                    new ParsableLong(chars, start, end, l) :
-                                    new ParsableInt(chars, start, end, l);
+                                    new ParsableLong(chars, start, end, length) :
+                                    new ParsableInt(chars, start, end, length);
                         else
-                            return new ParsableInt(chars, start, end, l);
+                            return new ParsableInt(chars, start, end, length);
                     }
                 }
             }
 
-            // array
+            // KofiArray
             else if (c == '[') {
-                // scan for index of closing array bracket
+                // index of closing object bracket
                 int end = -1;
                 {
-                    int depth = 0, string = -1;
-                    char prev;
-                    for (int i = start + 1; i < l; i++) {
-                        prev = c;
+                    // nested object depth
+                    int depth = 0;
+                    // index of opening string quote, or -1
+                    int string = -1;
+                    // find index of closing array bracket
+                    for (int i = start + 1; i < length; i++) {
                         c = chars[i];
                         if (string == -1) {
                             if (c == '[')
@@ -439,24 +479,12 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                             else if (c == '\"')
                                 string = i;
                         }
-                        else if (c == '\"')
-                            if (prev != '\\')
-                                string = -1;
-                            else {
-                                // count joined backslashes
-                                int n = 1, k = i - 2;
-                                while (k > string && chars[k--] == '\\')
-                                    n++;
-                                // if n is even then the string is enclosed
-                                if ((n & 0x1) == 0)
-                                    string = -1;
-                                else
-                                    break;
-                            }
+                        else if (c == '\"' && !isEscaped(chars, i, start))
+                            string = -1;
                     }
                 }
                 if (end == -1)
-                    throw KofiLog.exception(src, new ParseException(line, start + 1, "array missing closing bracket"));
+                    throw KofiLog.exception(src, new ParseException(line, start, "array is not enclosed"));
 
                 // list of parsable values in the array
                 final ArrayList<Parsable<?>> values = new ArrayList<>();
@@ -474,7 +502,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                         else if (values.isEmpty())
                             break;
                         else
-                            throw KofiLog.exception(src, new ParseException(line, i + 1, "expecting array value"));
+                            throw KofiLog.exception(src, new ParseException(line, i + 1, "array value expected"));
                     }
                     else if (chars[i] == ',') {
                         parse = true;
@@ -482,94 +510,92 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                     }
                     else
                         throw KofiLog.exception(src,
-                                new ParseException(line, i + 1, "array values must be separated by a comma"));
+                                new ParseException(line, i + 1, "array value separator ',' expected"));
                 }
-                return new ParsableKofiArray(chars, start, end, l, values);
+                return new ParsableKofiArray(chars, start, end, length, values);
             }
 
-            // object
+            // KofiObject
             else if (c == '{') {
-                // find index of closing object bracket
+                // index of closing object bracket
                 int end = -1;
                 {
-                    int depth = 0, string = -1;
-                    char prev;
-                    for (int i = start + 1; i < l; i++) {
-                        prev = c;
+                    // nested object depth
+                    int depth = 0;
+                    // index of opening string quote, or -1
+                    int string = -1;
+                    // find index of closing object bracket
+                    for (int i = start + 1; i < length; i++) {
                         c = chars[i];
                         if (string == -1) {
-                            if (c == '{')
-                                depth++;
-                            else if (c == '}')
-                                if (depth == 0) {
-                                    end = i + 1;
-                                    break;
-                                }
-                                else
-                                    depth--;
-                            else if (c == '\"')
+                            if (c == '{') {
+                                if (!isEscaped(chars, i, start))
+                                    depth++;
+                            }
+                            else if (c == '}') {
+                                if (!isEscaped(chars, i, start))
+                                    if (depth == 0) {
+                                        end = i + 1;
+                                        break;
+                                    }
+                                    else
+                                        depth--;
+                            }
+                            else if (c == '\"' && !isEscaped(chars, i, start))
                                 string = i;
                         }
-                        else if (c == '\"')
-                            if (prev != '\\')
-                                string = -1;
-                            else {
-                                // count joined backslashes
-                                int n = 1, k = i - 2;
-                                while (k > string && chars[k--] == '\\')
-                                    n++;
-                                // if n is even then the string is enclosed
-                                if ((n & 0x1) == 0)
-                                    string = -1;
-                                else
-                                    break;
-                            }
+                        else if (c == '\"' && !isEscaped(chars, i, string))
+                            string = -1;
                     }
                 }
                 if (end == -1)
-                    throw KofiLog.exception(src, new ParseException(line, start + 1, "object missing closing bracket"));
+                    throw KofiLog.exception(src, new ParseException(line, start + 1, "object is not enclosed"));
 
-                // list of parsable key/value pairs in the object
-                final ArrayList<Parsable<?>> properties = new ArrayList<>();
+                // list of parsable name/value pairs in the object
+                final ArrayList<Parsable<?>> entries = new ArrayList<>();
                 boolean parse = true;
                 for (int i = start + 1; i < end - 1; ) {
                     if (parse) {
-                        // get property key
-                        final Parsable<?> key = parseValue(chars, i, end - 1, line);
-                        if (key != null && key.getType() != Parsable.Type.STRING)
-                            throw KofiLog.exception(src, new ParseException(line, i + 1, "invalid entry key"));
-                        if (key != null) {
-                            if (key.length == end - 1 || chars[key.length] != ':') {
-                                throw KofiLog.exception(src,
-                                        new ParseException(line, key.length + 1, "expecting separator"));
+                        // get name - stops at index of separator or consumes all remaining chars
+                        final ParsableEntryName name = parseEntryName(chars, i, end - 1);
+
+                        // name spans all remaining chars
+                        if (name.length == end - 1) {
+                            // name is not empty
+                            if (name.start != name.end) {
+                                throw KofiLog.exception(src, new ParseException(line, name.end,
+                                        "object name-value separator ':' expected"));
                             }
-                            final Parsable<?> value =
-                                    parseValue(chars, key.length + 1, end - 1, line);
-                            if (value == null) {
-                                throw KofiLog.exception(src,
-                                        new ParseException(line, key.length + 2, "expecting entry value"));
+                            // name is empty but object is already populated
+                            else if (!entries.isEmpty()) {
+                                throw KofiLog.exception(src, new ParseException(line, i + 1, "object entry expected"));
                             }
-                            properties.add(key);
-                            properties.add(value);
-                            i = value.length;
-                            parse = false;
+                            // object is empty
+                            else
+                                break;
                         }
-                        // allow empty objects, but not null entries in populated objects
-                        else if (properties.isEmpty())
-                            break;
-                        else
-                            throw KofiLog.exception(src, new ParseException(line, i + 1, "expecting object entry"));
+
+                        // get value
+                        final Parsable<?> value = parseValue(chars, name.length + 1, end - 1, line);
+                        if (value == null)
+                            throw KofiLog.exception(src,
+                                    new ParseException(line, name.length + 2, "object entry value expected"));
+
+                        entries.add(name);
+                        entries.add(value);
+                        i = value.length;
+                        parse = false;
                     }
                     else if (chars[i] == ',') {
                         parse = true;
                         i++;
                     }
                     else
-                        throw KofiLog.exception(src,
-                                new ParseException(line, i + 1, "object entries must be separated by a comma"));
+                        throw KofiLog.exception(src, new ParseException(line, i + 1,
+                                "object entry separator ',' expected"));
                 }
 
-                return new ParsableKofiObject(chars, start, end, l, properties);
+                return new ParsableKofiObject(chars, start, end, length, entries);
             }
 
             // unknown value type
@@ -610,7 +636,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                         document.addElement(future.get());
                     }
                     catch (InterruptedException | ExecutionException e) {
-                        throw new IOException("an exception occurred while reading", e);
+                        throw new IOException("an error occurred while reading", e);
                     }
             }
             return document;
@@ -686,44 +712,72 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
     }
 
     /**
-     * Specialized supplier that can throw {@link IOException}.
+     * Specialized supplier that can throw {@link IOException}. Used to create
+     * instances of readers and writers as lambda expressions which can be
+     * passed to other methods as parameters.
      */
     @FunctionalInterface
-    protected interface Supplier<T> {
+    protected interface Supplier<T extends Closeable> {
 
+        /**
+         * Returns a new value, potentially throwing an {@code IOException}.
+         */
         @Contract(value = "-> new", pure = true)
         @NotNull
         T get() throws IOException;
     }
 
     /**
-     * A task that parses a line of characters into an {@link Element}.
+     * A task that parses a line of characters to an {@link Element}.
+     *
+     * @see #parseLine(char[], int)
      */
     protected class ParseTask implements Callable<Element> {
 
+        /**
+         * The characters to parse.
+         */
         public final char[] chars;
+        /**
+         * The line number of the characters.
+         */
         public final int line;
 
-        @Contract(pure = true)
+        /**
+         * Constructs a new {@code ParseTask} with the specified characters and
+         * line numer.
+         *
+         * @param chars the characters to parse
+         * @param line  the line number of the characters
+         */
+        @Contract(value = "null, _ -> fail", pure = true)
         public ParseTask(final char[] chars, final int line) {
+            assert chars != null : "chars is null";
             this.chars = chars;
             this.line = line;
         }
 
+        /**
+         * Calls {@link #parseLine(char[], int)} and returns the parsed
+         * element.
+         *
+         * @return a new element
+         * @throws ParseException if an error occurs while parsing
+         */
         @Contract(value = "-> new", pure = true)
         @NotNull
         @Override
         public Element call() throws ParseException {
-            return parseLine(KofiUtil.trim(chars), line);
+            return parseLine(chars, line);
         }
     }
 
     /**
-     * A subarray of a {@code char} array source representing a value of type
-     * {@code T}. The value can be retrieved with {@link #getValue()}.
+     * A specific region in a {@code char} array representing a value of type
+     * {@code T}, which can be parsed to get the represented value with
+     * {@link #getValue()}.
      *
      * @param <T> the runtime type of the value
-     * @see #parseValue(char[], int, int, int)
      */
     protected abstract static class Parsable<T> {
 
@@ -741,30 +795,38 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         public final int end;
         /**
          * The length into the {@link #chars} array. More specifically, the
-         * last index in the array (including whitespace), exclusive. This is
-         * <b>not</b> the length of this parsable itself. Any character at or
-         * after this index in the array is not part of this parsable value.
+         * last index in the array which is part of this parsable (including
+         * whitespace), exclusive. This is <b>not</b> the length of this
+         * parsable itself. Any character at or after this index in the array
+         * is not part of this parsable.
          */
         public final int length;
 
         /**
          * Constructs a new parsable with the specified source, start, end and
-         * length. {@code len} is not the length of the subarray, but the length
-         * into the array source from index {@code 0}, including any
-         * insignificant such as whitespace. Any character at or after
-         * {@code len} is not part of this parsable.
+         * length. {@code len} is not the length of this parsable, but the
+         * highest possible length into the array source from index {@code 0}
+         * that can be a part of this parsable, exclusive. Any character at or
+         * after {@code len} is guaranteed to not be a part of this parsable.
+         * <p>
+         * Remaining characters between {@code end} and {@code len} are
+         * iterated, and the final length will be the highest index before any
+         * non-whitespace character, or {@code len} if all remaining characters
+         * are whitespace.
          *
          * @param chars the array source
          * @param start the start of this parsable, inclusive
          * @param end   the end of this parsable, exclusive
-         * @param len   the last index of this parsable in the array source,
-         *              exclusive
+         * @param len   the highest possible index of this parsable in the
+         *              array source, exclusive
          */
         public Parsable(final char[] chars, final int start, final int end, final int len) {
             this.chars = chars;
             this.start = start;
             this.end = end;
 
+            // most parsing loops break their cycle when a value can be
+            // determined, scan for remaining whitespace here
             int n = end;
             while (n < len && isWhitespace(chars[n]))
                 n++;
@@ -772,13 +834,14 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
 
         /**
-         * Returns the value type of this parsable.
+         * Returns the type of value returned by {@link #getValue()} of
+         * this parsable.
          */
         @NotNull
         public abstract Type getType();
 
         /**
-         * Parses the characters of this instance into a value and returns it.
+         * Returns the value represented by this parsable.
          */
         public abstract T getValue();
 
@@ -793,33 +856,64 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
 
     }
 
+    /**
+     * A parsable that represents a {@code Boolean} value.
+     * <p>
+     * Unlike other parsables, parsable booleans are created using static
+     * factory methods because all possible values ({@code true} or
+     * {@code false}) can be determined before instantiation.
+     *
+     * @see #getFalse(char[], int, int)
+     * @see #getTrue(char[], int, int)
+     */
     protected static class ParsableBoolean extends Parsable<Boolean> {
 
+        /**
+         * Returns a parsable that represents {@code false}.
+         */
+        @Contract(value = "!null, _, _ -> new")
         @NotNull
         public static ParsableBoolean getFalse(final char[] chars, final int start, final int len) {
-            return new ParsableBoolean(chars, start, start + 5, len, Boolean.FALSE);
+            return new ParsableBoolean(chars, start, start + FALSE.length, len, Boolean.FALSE);
         }
 
+        /**
+         * Returns a parsable that represents {@code true}.
+         */
+        @Contract(value = "!null, _, _ -> new")
         @NotNull
         public static ParsableBoolean getTrue(final char[] chars, final int start, final int len) {
-            return new ParsableBoolean(chars, start, start + 4, len, Boolean.TRUE);
+            return new ParsableBoolean(chars, start, start + TRUE.length, len, Boolean.TRUE);
         }
 
+        /**
+         * The value of this parsable.
+         */
         @NotNull
-        protected Boolean value;
+        protected final Boolean value;
 
+        /**
+         * Private constructor, use one of the static factory methods to get an
+         * instance of this parsable type.
+         */
         private ParsableBoolean(final char[] chars, final int start, final int end, final int len,
                 @NotNull final Boolean value) {
             super(chars, start, end, len);
             this.value = value;
         }
 
+        /**
+         * Returns {@code Type.BOOLEAN}.
+         */
         @NotNull
         @Override
         public Type getType() {
             return Type.BOOLEAN;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @NotNull
         @Override
         public Boolean getValue() {
@@ -827,24 +921,38 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
     }
 
+    /**
+     * A parsable that represents a {@code Character} value.
+     */
     protected static class ParsableChar extends Parsable<Character> {
 
+        /**
+         * Constructs a new {@code ParsableChar}.
+         */
         public ParsableChar(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
 
+        /**
+         * Returns {@code Type.CHAR}.
+         */
         @NotNull
         @Override
         public Type getType() {
             return Type.CHAR;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @NotNull
         @Override
         public Character getValue() {
             final int len = end - start;
             return switch (len) {
+                // single character
                 case 3 -> chars[start + 1];
+                // two-character escape sequence
                 case 4 -> switch (chars[start + 2]) {
                     case 't' -> '\t';
                     case 'b' -> '\b';
@@ -855,76 +963,156 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                     // character is escaped but does not require special handling
                     default -> chars[start + 2];
                 };
+                // four-character unicode escape sequence
                 case 8 -> (char) Integer.parseInt(new String(chars, start + 3, 4), 16);
                 default -> throw new RuntimeException("unexpected length {" + len + "}");
             };
         }
     }
 
+    /**
+     * A parsable that represents a {@code Double} value.
+     */
     protected static class ParsableDouble extends Parsable<Double> {
 
+        /**
+         * Constructs a new {@code ParsableDouble}.
+         */
         public ParsableDouble(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
 
+        /**
+         * Returns {@code Type.DOUBLE}.
+         */
         @NotNull
         @Override
         public Type getType() {
             return Type.DOUBLE;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @NotNull
         @Override
         public Double getValue() {
-            // do not include specifier if present, e.g. 1.5d -> 1.5d
+            // do not include specifier if present
             final int count = chars[end - 1] > '9' ? end - start - 1 : end - start;
             return Double.parseDouble(new String(chars, start, count));
         }
     }
 
+
+    /**
+     * A parsable that represents an entry name. The name is trimmed for
+     * whitespace and unescaped when parsed.
+     */
+    protected static class ParsableEntryName extends Parsable<String> {
+
+        /**
+         * Constructs a new {@code ParsableEntryName}.
+         */
+        public ParsableEntryName(final char[] chars, final int start, final int end, final int len) {
+            super(chars, start, end, len);
+        }
+
+        /**
+         * Returns {@code Type.STRING}.
+         */
+        @NotNull
+        @Override
+        public Type getType() {
+            return Type.STRING;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Contract(value = "-> new", pure = true)
+        @NotNull
+        @Override
+        public String getValue() {
+            return new String(unescape(trim(chars, start, end)));
+        }
+    }
+
+    /**
+     * A parsable that represents a {@code Float} value. Parsables for constant
+     * values, such as {@code Float.POSITIVE_INFINITY}, are created using
+     * static factory methods.
+     */
     protected static class ParsableFloat extends Parsable<Float> {
 
+        /**
+         * Returns a parsable that represents {@code Float.POSITIVE_INFINITY}.
+         */
+        @Contract(value = "!null, _, _ -> new")
         @NotNull
         public static ParsableFloat getInfinity(final char[] chars, final int start, final int len) {
-            final ParsableFloat p = new ParsableFloat(chars, start, start + 8, len);
+            final ParsableFloat p = new ParsableFloat(chars, start, start + INFINITY.length, len);
             p.value = Float.POSITIVE_INFINITY;
             return p;
         }
 
+        /**
+         * Returns a parsable that represents {@code Float.NaN}.
+         */
+        @Contract(value = "!null, _, _ -> new")
         @NotNull
         public static ParsableFloat getNan(final char[] chars, final int start, final int len) {
-            final ParsableFloat p = new ParsableFloat(chars, start, start + 3, len);
+            final ParsableFloat p = new ParsableFloat(chars, start, start + NAN.length, len);
             p.value = Float.NaN;
             return p;
         }
 
+        /**
+         * Returns a parsable that represents {@code Float.NEGATIVE_INFINITY}.
+         */
+        @Contract(value = "!null, _, _ -> new")
         @NotNull
         public static ParsableFloat getNegativeInfinity(final char[] chars, final int start, final int len) {
-            final ParsableFloat p = new ParsableFloat(chars, start, start + 9, len);
+            final ParsableFloat p = new ParsableFloat(chars, start, start + INFINITY.length + 1, len);
             p.value = Float.NEGATIVE_INFINITY;
             return p;
         }
 
+        /**
+         * Returns a parsable that represents {@code Float.POSITIVE_INFINITY}.
+         */
+        @Contract(value = "!null, _, _ -> new")
         @NotNull
         public static ParsableFloat getPositiveInfinity(final char[] chars, final int start, final int len) {
-            final ParsableFloat p = new ParsableFloat(chars, start, start + 9, len);
+            final ParsableFloat p = new ParsableFloat(chars, start, start + INFINITY.length + 1, len);
             p.value = Float.POSITIVE_INFINITY;
             return p;
         }
 
+        /**
+         * Cached value of this parsable.
+         */
         @Nullable
         protected Float value = null;
 
+        /**
+         * Constructs a new {@code ParsableFloat}.
+         */
         public ParsableFloat(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
 
+        /**
+         * Returns {@code Type.FLOAT}.
+         */
         @NotNull
         @Override
         public Type getType() {
             return Type.FLOAT;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @NotNull
         @Override
         public Float getValue() {
@@ -938,18 +1126,30 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
     }
 
+    /**
+     * A parsable that represents an {@code Integer} value.
+     */
     protected static class ParsableInt extends Parsable<Integer> {
 
+        /**
+         * Constructs a new {@code ParsableInt}.
+         */
         public ParsableInt(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
 
+        /**
+         * Returns {@code Type.INT}.
+         */
         @NotNull
         @Override
         public Type getType() {
             return Type.INT;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @NotNull
         @Override
         public Integer getValue() {
@@ -957,23 +1157,39 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
     }
 
+    /**
+     * A parsable that represents a {@link KofiArray} value.
+     */
     protected static class ParsableKofiArray extends Parsable<KofiArray> {
 
+        /**
+         * List of parsable values in this array.
+         */
         @NotNull
         private final List<Parsable<?>> values;
 
+        /**
+         * Constructs a new {@code ParsableKofiArray}.
+         */
         public ParsableKofiArray(final char[] chars, final int start, final int end, final int len,
                 @NotNull final ArrayList<Parsable<?>> values) {
             super(chars, start, end, len);
             this.values = values;
         }
 
+        /**
+         * Returns {@code Type.ARRAY}.
+         */
         @NotNull
         @Override
         public Type getType() {
             return Type.ARRAY;
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Contract(value = "-> new", pure = true)
         @NotNull
         @Override
         public KofiArray getValue() {
@@ -984,46 +1200,74 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
     }
 
+    /**
+     * A parsable that represents a {@link KofiObject} value.
+     */
     protected static class ParsableKofiObject extends Parsable<KofiObject> {
 
+        /**
+         * List of name-value pairs (entries) in this object.
+         */
         @NotNull
-        private final ArrayList<Parsable<?>> properties;
+        private final ArrayList<Parsable<?>> entries;
 
+        /**
+         * Constructs a new {@code ParsableKofiObject}.
+         */
         public ParsableKofiObject(final char[] chars, final int start, final int end, final int len,
-                @NotNull final ArrayList<Parsable<?>> properties) {
+                @NotNull final ArrayList<Parsable<?>> entries) {
             super(chars, start, end, len);
-            this.properties = properties;
+            this.entries = entries;
         }
 
+        /**
+         * Returns {@code Type.OBJECT}.
+         */
         @NotNull
         @Override
         public Type getType() {
             return Type.OBJECT;
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Contract(value = "-> new", pure = true)
         @NotNull
         @Override
         public KofiObject getValue() {
             final KofiObject.Builder builder = new KofiObject.Builder();
-            for (int i = 0; i < properties.size(); i += 2)
-                builder.put((String) properties.get(i).getValue(),
-                        properties.get(i + 1).getValue());
+            for (int i = 0; i < entries.size(); i += 2)
+                builder.put((String) entries.get(i).getValue(),
+                        entries.get(i + 1).getValue());
             return builder.build();
         }
     }
 
+    /**
+     * A parsable that represents a {@code Long} value.
+     */
     protected static class ParsableLong extends Parsable<Long> {
 
+        /**
+         * Constructs a new {@code ParsableLong}.
+         */
         public ParsableLong(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
 
+        /**
+         * Returns {@code Type.LONG}.
+         */
         @NotNull
         @Override
         public Type getType() {
             return Type.LONG;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @NotNull
         @Override
         public Long getValue() {
@@ -1033,18 +1277,31 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
     }
 
+    /**
+     * A parsable that represents a {@code null} value.
+     */
     protected static class ParsableNull extends Parsable<Object> {
 
+        /**
+         * Constructs a new {@code ParsableNull}.
+         */
         public ParsableNull(final char[] chars, final int start, final int len) {
-            super(chars, start, start + 4, len);
+            super(chars, start, start + NULL.length, len);
         }
 
+        /**
+         * Returns {@code Type.NULL}.
+         */
         @Override
         @NotNull
         public Type getType() {
             return Type.NULL;
         }
 
+        /**
+         * Returns {@code null}.
+         */
+        @Contract(value = "-> null", pure = true)
         @Override
         @Nullable
         public Object getValue() {
@@ -1052,23 +1309,38 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
     }
 
+    /**
+     * A parsable that represents a {@code String} value. The string is
+     * unescaped when parsed.
+     */
     protected static class ParsableString extends Parsable<String> {
 
+        /**
+         * Constructs a new {@code ParsableString}.
+         */
         public ParsableString(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
 
+        /**
+         * Returns {@code Type.STRING}.
+         */
         @NotNull
         @Override
         public Type getType() {
             return Type.STRING;
         }
 
-        @Contract(value = "-> new", pure = true) // inferred
+        /**
+         * {@inheritDoc}
+         */
+        @Contract(value = "-> new", pure = true)
         @NotNull
         @Override
         public String getValue() {
-            // do not include quotation marks
+            // do NOT include quotation marks here
+            // that is done by StringProperty.getValueString() and
+            // KofiObject.Entry(String, Object) constructor
             return new String(unescape(chars, start + 1, end - 1));
         }
     }

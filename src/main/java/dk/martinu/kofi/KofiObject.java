@@ -349,8 +349,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
      */
     @Contract(pure = true)
     @NotNull
-    public Entry getEntry(@Range(from = 0, to = Integer.MAX_VALUE) final int index) throws
-            ArrayIndexOutOfBoundsException {
+    public Entry getEntry(@Range(from = 0, to = Integer.MAX_VALUE) final int index) {
         return entries[index];
     }
 
@@ -417,11 +416,11 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
         sb.append('{');
         if (entries.length > 0) {
             Entry entry = entries[0];
-            sb.append(" \"").append(entry.name).append("\": ");
+            sb.append(' ').append(entry.name).append(": ");
             getString(entry.value, sb);
             for (int index = 1; index < entries.length; index++) {
                 entry = entries[index];
-                sb.append(", \"").append(entry.name).append("\": ");
+                sb.append(", ").append(entry.name).append(": ");
                 getString(entry.value, sb);
             }
         }
@@ -544,14 +543,14 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
         /**
          * Returns a string representation of this entry, equal to:
          * <pre>
-         *     "\"<i>name</i>\": <i>value</i>"
+         *     "<i>name</i>: <i>value</i>"
          * </pre>
          */
         @Contract(pure = true)
         @NotNull
         @Override
         public String toString() {
-            return '\"' + name + "\": " + value;
+            return name + ": " + value;
         }
     }
 
@@ -574,7 +573,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
          *
          * @see KofiObject#KofiObject(Map)
          */
-        @Contract(pure = true)
+        @Contract(value = "-> new", pure = true)
         @NotNull
         public KofiObject build() {
             return new KofiObject(map);
