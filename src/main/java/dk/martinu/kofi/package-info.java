@@ -18,21 +18,21 @@
 /**
  * Provides the fundamental classes of the KoFi API.
  * <p>
- * The {@code Document}, {@code Element}, {@code Whitespace}, {@code Comment},
- * {@code Section} and {@code Property} classes are primary classes for storing
- * documents and their contents in memory.
+ * The {@link dk.martinu.kofi.Document}, {@link dk.martinu.kofi.Element},
+ * {@link dk.martinu.kofi.Whitespace}, {@link dk.martinu.kofi.Comment},
+ * {@link dk.martinu.kofi.Section} and {@link dk.martinu.kofi.Property} classes
+ * are primary classes for storing documents and their contents.
  * <p>
- * {@code KofiArray} and {@code KofiObject} store and implement the behaviour
- * for the complex array and object values. Both of these classes extend
- * {@code KofiValue}, which can be extended to provide custom complex and
- * non-complex value implementations.
+ * {@link dk.martinu.kofi.KofiArray} and {@link dk.martinu.kofi.KofiObject}
+ * store and implement the behaviour for the complex array and object values.
+ * Both of these classes extend {@link dk.martinu.kofi.KofiValue}, which can be
+ * extended to provide custom complex or non-complex value implementations.
  * <p>
- * The {@code DocumentIO} class gives access to installed service providers for
- * reading and writing documents.
+ * The {@link dk.martinu.kofi.DocumentIO} class gives access to installed
+ * service providers for reading and writing documents.
  * <p>
- * {@code KofiLog} is a lightweight logging utility based on the Java Logging
- * API which is used throughout the API.
- *
+ * {@link dk.martinu.kofi.KofiLog} is a lightweight logging utility, based on
+ * the Java Logging API, which is used internally.
  *
  * @author Adam Martinu
  * @since 1.0
