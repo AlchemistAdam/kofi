@@ -25,6 +25,11 @@ import java.util.logging.*;
 /**
  * Logging utility used by the KoFi API, based on the Java logging API. Contains
  * static convenience methods for logging messages.
+ * <p>
+ * The following snippet shows how to disable {@code KofiLog}:
+ * <pre>
+ *     KofiLog.getLogger().setLevel(Level.OFF);
+ * </pre>
  *
  * @author Adam Martinu
  * @see #getLogger()
@@ -53,10 +58,9 @@ public class KofiLog {
         return exception(source.scn, source.smn, throwable);
     }
 
-    @SuppressWarnings("rawtypes")
     @Contract(value = "_, _ , _-> param3", pure = true)
     @NotNull
-    public static <T extends Throwable> T exception(@NotNull final Class cls, @Nullable final String sourceMethod,
+    public static <T extends Throwable> T exception(@NotNull final Class<?> cls, @Nullable final String sourceMethod,
             @NotNull final T throwable) {
         Objects.requireNonNull(cls, "cls is null");
         return exception(cls.getName(), sourceMethod, throwable);
