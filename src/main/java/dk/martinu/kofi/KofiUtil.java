@@ -232,6 +232,14 @@ public class KofiUtil {
         return c >= '0' && c <= '9';
     }
 
+    // DOC
+    @Contract(pure = true)
+    public static boolean isEscaped(final char[] chars, final int i, final int lim) {
+        int n = 0;
+        for (int k = i - 1; k > lim && chars[k--] == '\\'; n++) ;
+        return (n & 1) == 1;
+    }
+
     /**
      * Returns {@code true} if the specified character {@code c} is a
      * hexadecimal digit, otherwise {@code false} is returned.
