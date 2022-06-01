@@ -420,7 +420,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
             getString(entry.value, sb);
             for (int index = 1; index < entries.length; index++) {
                 entry = entries[index];
-                sb.append(", ").append(entry.name).append(": ");
+                sb.append(", ").append(KofiUtil.escape(entry.name, '{', '}', ':')).append(": ");
                 getString(entry.value, sb);
             }
         }
