@@ -41,11 +41,11 @@ public abstract class KofiValue {
     public abstract String getString();
 
     /**
-     * Converts the specified string, assuming it is a KoFi string, to a plain
-     * Java string and returns it; surrounding quotation marks are removed, and
+     * Converts the specified string, assuming it is a KoFi string, to a Java
+     * string and returns it; surrounding quotation marks are removed, and
      * all two-character and six-character escape sequences are unescaped to
      * their single character equivalent. The result of converting a string
-     * that is not a KoFi string or an invalid KoFi string is undefined.
+     * that is not a KoFi string, or is an invalid KoFi string, is undefined.
      *
      * @param string a KoFi string to convert
      * @return the converted Java string
