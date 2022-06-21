@@ -41,24 +41,6 @@ public abstract class KofiValue {
     public abstract String getString();
 
     /**
-     * Converts the specified string, assuming it is a KoFi string, to a Java
-     * string and returns it; surrounding quotation marks are removed, and
-     * all two-character and six-character escape sequences are unescaped to
-     * their single character equivalent. The result of converting a string
-     * that is not a KoFi string, or is an invalid KoFi string, is undefined.
-     *
-     * @param string a KoFi string to convert
-     * @return the converted Java string
-     * @throws NullPointerException if {@code string} is {@code null}
-     */
-    @Contract(pure = true)
-    @NotNull
-    protected String getJavaString(@NotNull final String string) {
-        Objects.requireNonNull(string, "string is null");
-        return KofiUtil.unescape(string, 1, string.length() - 1);
-    }
-
-    /**
      * Converts the specified value, assuming it is a KoFi value, to a Java
      * value of the specified type and returns it. The result of converting a
      * value that is not a KoFi value or an invalid KoFi value is undefined.
@@ -187,20 +169,6 @@ public abstract class KofiValue {
             else
                 throw KofiLog.exception(src, new IllegalArgumentException(
                         "cannot get boolean from value {" + value + "}"));
-    }
-
-    /**
-     * Surrounds the specified string with quotation marks and escapes any
-     * characters necessary, such that it conforms to the KoFi specification.
-     *
-     * @param string the string to convert
-     * @return a KoFi string
-     * @throws NullPointerException if {@code string} is {@code null}
-     */
-    @Contract(pure = true)
-    @NotNull
-    protected String getKofiString(@NotNull final String string) {
-        return '"' + KofiUtil.escape(string, '\"') + '"';
     }
 
     /**

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.*;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Objects;
 
 import dk.martinu.kofi.codecs.KofiCodec;
 
@@ -59,27 +60,6 @@ public class KofiUtil {
             "\\u001B", "\\u001C", "\\u001D",
             "\\u001E", "\\u001F"
     };
-
-    /**
-     * Returns {@code true} if the start of the specified region matches
-     * {@code comp}, ignoring case, otherwise {@code false} is returned. The
-     * {@code comp} array must only contain uppercase Latin letters (A-Z).
-     *
-     * @param chars the characters to match
-     * @param start the starting index, inclusive
-     * @param end   the ending index, exclusive
-     * @param comp  the charaters to compare to
-     * @return {@code true} if a match was found, otherwise {@code false}
-     */
-    @Contract(pure = true)
-    public static boolean matches(final char[] chars, final int start, final int end, final char[] comp) {
-        if (end - start < comp.length)
-            return false;
-        for (int i = 0; i < comp.length; i++)
-            if (chars[start + i] != comp[i] && chars[start + i] != (comp[i] | 0x20))
-                return false;
-        return true;
-    }
 
     /**
      * Returns an escaped version of {@code string}. Characters in the range
@@ -188,6 +168,38 @@ public class KofiUtil {
     }
 
     /**
+     * Converts the specified string, assuming it is a KoFi string, to a Java
+     * string and returns it; surrounding quotation marks are removed, and
+     * all two-character and six-character escape sequences are unescaped to
+     * their single character equivalent. The result of converting a string
+     * that is not a KoFi string, or is an invalid KoFi string, is undefined.
+     *
+     * @param string a KoFi string to convert
+     * @return the converted Java string
+     * @throws NullPointerException if {@code string} is {@code null}
+     */
+    @Contract(pure = true)
+    @NotNull
+    public static String getJavaString(@NotNull final String string) {
+        Objects.requireNonNull(string, "string is null");
+        return unescape(string, 1, string.length() - 1);
+    }
+
+    /**
+     * Surrounds the specified string with quotation marks and escapes any
+     * characters necessary, such that it conforms to the KoFi specification.
+     *
+     * @param string the string to convert
+     * @return a KoFi string
+     * @throws NullPointerException if {@code string} is {@code null}
+     */
+    @Contract(pure = true)
+    @NotNull
+    public static String getKofiString(@NotNull final String string) {
+        return '"' + escape(string, '\"') + '"';
+    }
+
+    /**
      * Returns the lowest index of {@code c} in {@code chars} in the specified
      * range, or {@code -1} if the character was not found.
      *
@@ -280,6 +292,27 @@ public class KofiUtil {
             return false;
         else
             return c == ' ' || c == '\r' || c == '\t';
+    }
+
+    /**
+     * Returns {@code true} if the start of the specified region matches
+     * {@code comp}, ignoring case, otherwise {@code false} is returned. The
+     * {@code comp} array must only contain uppercase Latin letters (A-Z).
+     *
+     * @param chars the characters to match
+     * @param start the starting index, inclusive
+     * @param end   the ending index, exclusive
+     * @param comp  the charaters to compare to
+     * @return {@code true} if a match was found, otherwise {@code false}
+     */
+    @Contract(pure = true)
+    public static boolean matches(final char[] chars, final int start, final int end, final char[] comp) {
+        if (end - start < comp.length)
+            return false;
+        for (int i = 0; i < comp.length; i++)
+            if (chars[start + i] != comp[i] && chars[start + i] != (comp[i] | 0x20))
+                return false;
+        return true;
     }
 
     /**
