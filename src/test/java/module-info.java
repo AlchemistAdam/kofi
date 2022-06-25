@@ -21,11 +21,12 @@ module dk.martinu.kofi.test {
 
     requires dk.martinu.kofi;
     requires org.junit.jupiter.api;
-    requires org.jetbrains.annotations;
-    requires java.desktop;
+
+    // classes must be exported to be accessible via reflection
+    exports dk.martinu.test.dummy;
 
     uses KofiCodec;
 
-    exports dk.martinu.test;
+    // module must be visible to JUnit framework
     opens dk.martinu.test;
 }
