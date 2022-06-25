@@ -78,17 +78,24 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
                 else
                     KofiLog.finest("field could not be accessed {"
                             + object.getClass().getName() + ", " + field.getName() + "}");
-        return new KofiObject(map);
+
+        final KofiObject rv = new KofiObject(map);
+        rv.objectType = object.getClass();
+        return rv;
     }
 
     /**
      * The entries contained in this object. Each entry value is guaranteed to
      * be defined. The entries are sorted in lexicographical order.
      *
-     * @see KofiValue#getKofiValue(Object)
+     * @see KofiUtil#getKofiValue(Object)
      */
     @NotNull
     protected final Entry[] entries;
+
+    // DOC objectType
+    // TODO set objectType when constructing
+    protected Class<?> objectType;
 
     /**
      * Construct a new, empty {@code KofiObject}.
@@ -103,7 +110,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
      * pairs of the specified map.
      *
      * @param map the map of name-value pairs, or {@code null}
-     * @see KofiValue#getKofiValue(Object)
+     * @see KofiUtil#getKofiValue(Object)
      * @see Entry
      */
     @Contract(pure = true)
@@ -187,47 +194,31 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
             catch (NoSuchFieldException e) {
                 throw KofiLog.exception(src, e);
             }
+
             // skip final fields
-            if (Modifier.isFinal(field.getModifiers()))
+            if (Modifier.isFinal(field.getModifiers())) {
                 continue;
-                // field must be accessible
+            }
+
+            // field must be accessible
             else if (field.canAccess(obj) || field.trySetAccessible()) {
                 final Class<?> fieldType = field.getType();
-                // examine field type and set value if entry matches
                 if (entry.value != null) {
-                    // arrays
-                    if (fieldType.isArray()) {
-                        if (entry.value instanceof KofiArray array)
-                            try {
-                                field.set(obj, array.construct(fieldType));
-                                continue;
-                            }
-                            catch (IllegalArgumentException e) {
-                                throw KofiLog.exception(src, new ConstructionException(
-                                        "could not construct array from entry {" + entry + "}", e));
-                            }
+
+                    // Java objects
+                    if (!fieldType.isPrimitive()) {
+                        try {
+                            field.set(obj, KofiUtil.getJavaValue(entry.value, fieldType));
+                            continue;
+                        }
+                        catch (IllegalArgumentException | ConstructionException e) {
+                            // TODO change message
+                            throw KofiLog.exception(src, new ConstructionException(
+                                    "could not get Java value from entry {" + entry + "}", e));
+                        }
                     }
-                    // strings and wrappers
-                    else if (fieldType.isAssignableFrom(entry.value.getClass())) {
-                        if (fieldType.equals(String.class))
-                            field.set(obj, getJavaString((String) entry.value));
-                        else
-                            field.set(obj, entry.value);
-                        continue;
-                    }
-                    // undefined objects
-                    else if (!fieldType.isPrimitive()) {
-                        if (entry.value instanceof KofiObject object)
-                            try {
-                                field.set(obj, object.construct(fieldType));
-                                continue;
-                            }
-                            catch (IllegalArgumentException e) {
-                                throw KofiLog.exception(src, new ConstructionException(
-                                        "could not construct object from entry {" + entry + "}", e));
-                            }
-                    }
-                    // below are primitive types
+
+                    // primitives
                     else if (fieldType == int.class) {
                         if (entry.value instanceof Number n) {
                             field.setInt(obj, n.intValue());
@@ -281,14 +272,20 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
                     field.set(obj, null);
                     continue;
                 }
-                // throw exception if field value was not set
+                // cannot set primitive fields to null
+                else {
+                    throw KofiLog.exception(src, new IllegalArgumentException(
+                            "cannot set field {" + field + "} to null"));
+                }
+                // field was not set if this statement is reached
                 throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot set field {" + field + "} to value of {" + entry.value + "}"));
+                        "cannot set field {" + field + " to value of {" + entry.value + "}"));
             }
             else
                 KofiLog.finest("field is inaccessible and cannot be assigned {"
                         + type.getName() + ", " + field + "}");
         }
+        // return constructed object after fields are set
         return obj;
     }
 
@@ -428,137 +425,10 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
     }
 
     /**
-     * A name-value pair. The value of an entry is guaranteed to be defined.
-     *
-     * @see KofiValue#getKofiValue(Object)
-     */
-    public class Entry implements Comparable<Entry> {
-
-        /**
-         * The entry name.
-         */
-        @NotNull
-        public final String name;
-        /**
-         * The defined object entry value.
-         *
-         * @see KofiValue#getKofiValue(Object)
-         */
-        @Nullable
-        public final Object value;
-        /**
-         * Cached name hash code.
-         */
-        protected transient int hash = 0;
-        /**
-         * {@code true} if the computed name hash code is {@code 0}.
-         */
-        protected transient boolean hashIsZero = false;
-
-        /**
-         * Creates a new entry with the specified name and defined object of
-         * {@code value}.
-         *
-         * @param name  the entry name
-         * @param value the value to get the defined object from, which will be
-         *              the entry value
-         * @throws NullPointerException if {@code name} is {@code null}
-         * @see KofiValue#getKofiValue(Object)
-         */
-        @Contract(pure = true)
-        public Entry(@NotNull final String name, @Nullable final Object value) {
-            this.name = Objects.requireNonNull(name, "name is null");
-            this.value = getKofiValue(value);
-        }
-
-        /**
-         * Compares this entry to the specified entry.
-         *
-         * @see String#compareTo(String)
-         */
-        @Contract(pure = true)
-        @Override
-        public int compareTo(@NotNull final KofiObject.Entry entry) {
-            return name.compareTo(entry.name);
-        }
-
-        /**
-         * Returns {@code true} if this entry is equal to {@code obj}
-         * ({@code this == obj}), or {@code obj} is also an {@code Entry} and
-         * its name and value is equal to this object's name and value.
-         * Otherwise {@code false} is returned.
-         */
-        @Contract(value = "null -> false", pure = true)
-        @Override
-        public boolean equals(@Nullable final Object obj) {
-            if (this == obj)
-                return true;
-            else if (obj instanceof Entry entry)
-                return name.equalsIgnoreCase(entry.name) && Objects.equals(value, entry.value);
-            else
-                return false;
-        }
-
-        /**
-         * Returns the name of this entry.
-         */
-        @Contract(pure = true)
-        @NotNull
-        public String getName() {
-            return name;
-        }
-
-        /**
-         * Returns the value of this entry.
-         */
-        @Contract(pure = true)
-        @Nullable
-        public Object getValue() {
-            return value;
-        }
-
-        /**
-         * Returns a combined hash code of this entry's key, in upper-case, and
-         * value. The returned value is equal to:
-         * <pre>
-         *     keyHash | valueHash &lt;&lt; 16
-         * </pre>
-         */
-        @Contract(pure = true)
-        @Override
-        public int hashCode() {
-            // name hash is immutable and is cached
-            int h = hash;
-            if (h == 0 && !hashIsZero) {
-                h = name.toUpperCase(Locale.ROOT).hashCode();
-                if (h == 0)
-                    hashIsZero = true;
-                else
-                    hash = h;
-            }
-            // value hash is mutable and must be computed each time
-            return value != null ? h | value.hashCode() << 16 : h;
-        }
-
-        /**
-         * Returns a string representation of this entry, equal to:
-         * <pre>
-         *     "<i>name</i>: <i>value</i>"
-         * </pre>
-         */
-        @Contract(pure = true)
-        @NotNull
-        @Override
-        public String toString() {
-            return name + ": " + value;
-        }
-    }
-
-    /**
      * A {@code KofiObject} builder. The values of name-value pairs in a
      * builder are not guaranteed to be defined.
      *
-     * @see KofiValue#getKofiValue(Object)
+     * @see KofiUtil#getKofiValue(Object)
      */
     @SuppressWarnings("unused")
     public static class Builder {
@@ -654,6 +524,133 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
         @Range(from = 0, to = Integer.MAX_VALUE)
         public int size() {
             return map.size();
+        }
+    }
+
+    /**
+     * A name-value pair. The value of an entry is guaranteed to be defined.
+     *
+     * @see KofiUtil#getKofiValue(Object)
+     */
+    public static class Entry implements Comparable<Entry> {
+
+        /**
+         * The entry name.
+         */
+        @NotNull
+        public final String name;
+        /**
+         * The defined object entry value.
+         *
+         * @see KofiUtil#getKofiValue(Object)
+         */
+        @Nullable
+        public final Object value;
+        /**
+         * Cached name hash code.
+         */
+        protected transient int hash = 0;
+        /**
+         * {@code true} if the computed name hash code is {@code 0}.
+         */
+        protected transient boolean hashIsZero = false;
+
+        /**
+         * Creates a new entry with the specified name and defined object of
+         * {@code value}.
+         *
+         * @param name  the entry name
+         * @param value the value to get the defined object from, which will be
+         *              the entry value
+         * @throws NullPointerException if {@code name} is {@code null}
+         * @see KofiUtil#getKofiValue(Object)
+         */
+        @Contract(pure = true)
+        public Entry(@NotNull final String name, @Nullable final Object value) {
+            this.name = Objects.requireNonNull(name, "name is null");
+            this.value = KofiUtil.getKofiValue(value);
+        }
+
+        /**
+         * Compares this entry to the specified entry.
+         *
+         * @see String#compareTo(String)
+         */
+        @Contract(pure = true)
+        @Override
+        public int compareTo(@NotNull final KofiObject.Entry entry) {
+            return name.compareTo(entry.name);
+        }
+
+        /**
+         * Returns {@code true} if this entry is equal to {@code obj}
+         * ({@code this == obj}), or {@code obj} is also an {@code Entry} and
+         * its name and value is equal to this object's name and value.
+         * Otherwise {@code false} is returned.
+         */
+        @Contract(value = "null -> false", pure = true)
+        @Override
+        public boolean equals(@Nullable final Object obj) {
+            if (this == obj)
+                return true;
+            else if (obj instanceof Entry entry)
+                return name.equalsIgnoreCase(entry.name) && Objects.equals(value, entry.value);
+            else
+                return false;
+        }
+
+        /**
+         * Returns the name of this entry.
+         */
+        @Contract(pure = true)
+        @NotNull
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * Returns the value of this entry.
+         */
+        @Contract(pure = true)
+        @Nullable
+        public Object getValue() {
+            return value;
+        }
+
+        /**
+         * Returns a combined hash code of this entry's key, in upper-case, and
+         * value. The returned value is equal to:
+         * <pre>
+         *     keyHash | valueHash &lt;&lt; 16
+         * </pre>
+         */
+        @Contract(pure = true)
+        @Override
+        public int hashCode() {
+            // name hash is immutable and is cached
+            int h = hash;
+            if (h == 0 && !hashIsZero) {
+                h = name.toUpperCase(Locale.ROOT).hashCode();
+                if (h == 0)
+                    hashIsZero = true;
+                else
+                    hash = h;
+            }
+            // value hash is mutable and must be computed each time
+            return value != null ? h | value.hashCode() << 16 : h;
+        }
+
+        /**
+         * Returns a string representation of this entry, equal to:
+         * <pre>
+         *     "<i>name</i>: <i>value</i>"
+         * </pre>
+         */
+        @Contract(pure = true)
+        @NotNull
+        @Override
+        public String toString() {
+            return name + ": " + value;
         }
     }
 
