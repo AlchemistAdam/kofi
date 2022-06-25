@@ -20,267 +20,132 @@ package dk.martinu.test;
 
 import org.junit.jupiter.api.Test;
 
-import java.awt.Dimension;
-
-import dk.martinu.kofi.Document;
 import dk.martinu.kofi.KofiArray;
-import dk.martinu.kofi.codecs.KofiCodec;
+import dk.martinu.test.dummy.Dummy;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class KofiArrayTest {
 
-    final KofiCodec codec = KofiCodec.provider();
-    final Value<Document> value = new Value<>();
-
+    /**
+     * Test for {@link KofiArray#construct(Class)}.
+     */
     @Test
-    void mixedArray() {
-        final Object[] objects = {
-                1L,
-                "Hello, World!",
-                true,
-                new KofiArray(1L, 2L, 3L)
-        };
-        final KofiArray array = new KofiArray(objects);
-
-        assertEquals(objects.length, array.length());
-        for (int i = 0; i < objects.length; i++) {
-            if (objects[i] instanceof String s)
-                assertEquals('"' + s + '"', array.get(i));
-            else
-                assertEquals(objects[i], array.get(i));
+    void construct() {
+        // int
+        {
+            final int[] i0 = {1, 2, 3, 4};
+            assertArrayEquals(i0, KofiArray.reflect(i0).construct(int[].class));
+            final int[][] i1 = {{1}, {2}, {3}, {4}};
+            assertArrayEquals(i1, KofiArray.reflect(i1).construct(int[][].class));
+            final int[][] i2 = {{1, 2}, {3, 4}};
+            assertArrayEquals(i2, KofiArray.reflect(i2).construct(int[][].class));
         }
 
-        assertDoesNotThrow(
-                () -> value.put(codec.readString("v = " + array.getString())));
-        final KofiArray parsedArray = value.get().getArray("v");
-        assertNotNull(parsedArray);
-        assertEquals(array, parsedArray);
-        assertEquals(objects.length, parsedArray.length());
-        for (int i = 0; i < objects.length; i++)
-            if (objects[i] instanceof String s)
-                assertEquals('"' + s + '"', parsedArray.get(i));
-            else
-                assertEquals(objects[i], parsedArray.get(i));
-    }
-
-    @Test
-    void nestedKofiArray() {
-        final Object[] objects = {
-                new KofiArray(1, 2, 3),
-                new KofiArray(4, 5, 6),
-                new KofiArray(7, 8, 9)
-        };
-        final KofiArray array = new KofiArray(objects);
-
-        assertEquals(objects.length, array.length());
-        for (int i = 0; i < objects.length; i++)
-            assertEquals(objects[i], array.get(i));
-
-        assertDoesNotThrow(
-                () -> value.put(codec.readString("v = " + array.getString())));
-        final KofiArray parsedArray = value.get().getArray("v");
-        assertNotNull(parsedArray);
-        assertEquals(array, parsedArray);
-        assertEquals(objects.length, parsedArray.length());
-        for (int i = 0; i < objects.length; i++)
-            if (objects[i] instanceof String s)
-                assertEquals('"' + s + '"', parsedArray.get(i));
-            else
-                assertEquals(objects[i], parsedArray.get(i));
-    }
-
-    @Test
-    void nestedPrimitiveArray() {
-        final Object[] objects = {
-                new long[] {1, 2, 3},
-                new long[] {4, 5, 6},
-                new long[] {7, 8, 9}
-        };
-        final KofiArray array = new KofiArray(objects);
-
-        assertEquals(objects.length, array.length());
-        for (int i = 0; i < objects.length; i++)
-            assertEquals(KofiArray.reflect(objects[i]), array.get(i));
-
-        assertDoesNotThrow(
-                () -> value.put(codec.readString("v = " + array.getString())));
-        final KofiArray parsedArray = value.get().getArray("v");
-        assertNotNull(parsedArray);
-        assertEquals(array, parsedArray);
-        assertEquals(objects.length, parsedArray.length());
-        for (int i = 0; i < objects.length; i++)
-            if (objects[i] instanceof String s)
-                assertEquals('"' + s + '"', parsedArray.get(i));
-            else
-                assertEquals(KofiArray.reflect(objects[i]), parsedArray.get(i));
-    }
-
-    @Test
-    void primitiveArray() {
-        final long[] fibonacci = {1, 1, 2, 3, 5, 8, 13};
-        final KofiArray array = KofiArray.reflect(fibonacci);
-
-        assertEquals(fibonacci.length, array.length());
-        for (int i = 0; i < fibonacci.length; i++)
-            assertEquals(fibonacci[i], array.get(i));
-
-        assertDoesNotThrow(
-                () -> value.put(codec.readString("v = " + array.getString())));
-        final KofiArray parsedArray = value.get().getArray("v");
-        assertNotNull(parsedArray);
-        assertEquals(array, parsedArray);
-        assertEquals(fibonacci.length, parsedArray.length());
-        for (int i = 0; i < fibonacci.length; i++)
-            assertEquals(fibonacci[i], parsedArray.get(i));
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    @Test
-    void constructNestedPrimitive() {
-        KofiArray array;
-
-        array = KofiArray.reflect(new int[][] {{1}, {2}, {3}});
-        final int[][] ints = array.construct(int[][].class);
-        assertEquals(array.length(), ints.length);
-        for (int i = 0; i < ints.length; i++) {
-            assertArrayEquals(((KofiArray) array.get(i)).construct(int[].class), ints[i]);
+        // long
+        {
+            final long[] l0 = {1L, 2L, 3L, 4L};
+            assertArrayEquals(l0, KofiArray.reflect(l0).construct(long[].class));
+            final long[][] l1 = {{1L}, {2L}, {3L}, {4L}};
+            assertArrayEquals(l1, KofiArray.reflect(l1).construct(long[][].class));
+            final long[][] l2 = {{1L, 2L}, {3L, 4L}};
+            assertArrayEquals(l2, KofiArray.reflect(l2).construct(long[][].class));
         }
 
-        array = KofiArray.reflect(new long[][] {{1L}, {2L}, {3L}, {4L}});
-        final long[][] longs = array.construct(long[][].class);
-        assertEquals(array.length(), longs.length);
-        for (int i = 0; i < ints.length; i++) {
-            assertArrayEquals(((KofiArray) array.get(i)).construct(long[].class), longs[i]);
+        // float
+        {
+            final float[] f0 = {1.1f, 2.2f, 3.3f, 4.4f};
+            assertArrayEquals(f0, KofiArray.reflect(f0).construct(float[].class));
+            final float[][] f1 = {{1.1f}, {2.2f}, {3.3f}, {4.4f}};
+            assertArrayEquals(f1, KofiArray.reflect(f1).construct(float[][].class));
+            final float[][] f2 = {{1.1f, 2.2f}, {3.3f, 4.4f}};
+            assertArrayEquals(f2, KofiArray.reflect(f2).construct(float[][].class));
+        }
+        // double
+        {
+            final double[] d0 = {1.1d, 2.2d, 3.3d, 4.4d};
+            assertArrayEquals(d0, KofiArray.reflect(d0).construct(double[].class));
+            final double[][] d1 = {{1.1d}, {2.2d}, {3.3d}, {4.4d}};
+            assertArrayEquals(d1, KofiArray.reflect(d1).construct(double[][].class));
+            final double[][] d2 = {{1.1d, 2.2d}, {3.3d, 4.4d}};
+            assertArrayEquals(d2, KofiArray.reflect(d2).construct(double[][].class));
         }
 
-        array = KofiArray.reflect(new float[][] {{1.3f}, {2.6f}, {3.9f}});
-        final float[][] floats = array.construct(float[][].class);
-        assertEquals(array.length(), floats.length);
-        for (int i = 0; i < floats.length; i++) {
-            assertArrayEquals(((KofiArray) array.get(i)).construct(float[].class), floats[i]);
+        // byte
+        {
+            final byte[] b0 = {1, 2, 3, 4};
+            assertArrayEquals(b0, KofiArray.reflect(b0).construct(byte[].class));
+            final byte[][] b1 = {{1}, {2}, {3}, {4}};
+            assertArrayEquals(b1, KofiArray.reflect(b1).construct(byte[][].class));
+            final byte[][] b2 = {{1, 2}, {3, 4}};
+            assertArrayEquals(b2, KofiArray.reflect(b2).construct(byte[][].class));
         }
 
-        array = KofiArray.reflect(new double[][] {{1.3d}, {2.6d}, {3.9d}, {4.2d}});
-        final double[][] doubles = array.construct(double[][].class);
-        assertEquals(array.length(), doubles.length);
-        for (int i = 0; i < doubles.length; i++) {
-            assertArrayEquals(((KofiArray) array.get(i)).construct(double[].class), doubles[i]);
+        // short
+        {
+            final short[] s0 = {1, 2, 3, 4};
+            assertArrayEquals(s0, KofiArray.reflect(s0).construct(short[].class));
+            final short[][] s1 = {{1}, {2}, {3}, {4}};
+            assertArrayEquals(s1, KofiArray.reflect(s1).construct(short[][].class));
+            final short[][] s2 = {{1, 2}, {3, 4}};
+            assertArrayEquals(s2, KofiArray.reflect(s2).construct(short[][].class));
         }
 
-        array = KofiArray.reflect(new boolean[][] {{true}, {false}, {true}, {false}});
-        final boolean[][] booleans = array.construct(boolean[][].class);
-        assertEquals(array.length(), booleans.length);
-        for (int i = 0; i < booleans.length; i++) {
-            assertArrayEquals(((KofiArray) array.get(i)).construct(boolean[].class), booleans[i]);
+        // boolean
+        {
+            final boolean[] b0 = {true, false, true, false};
+            assertArrayEquals(b0, KofiArray.reflect(b0).construct(boolean[].class));
+            final boolean[][] b1 = {{true}, {false}, {true}, {false}};
+            assertArrayEquals(b1, KofiArray.reflect(b1).construct(boolean[][].class));
+            final boolean[][] b2 = {{true, false}, {true, false}};
+            assertArrayEquals(b2, KofiArray.reflect(b2).construct(boolean[][].class));
         }
 
-        array = KofiArray.reflect(new byte[][] {{1}, {2}, {3}, {4}});
-        final byte[][] bytes = array.construct(byte[][].class);
-        assertEquals(array.length(), bytes.length);
-        for (int i = 0; i < bytes.length; i++) {
-            assertArrayEquals(((KofiArray) array.get(i)).construct(byte[].class), bytes[i]);
+        // char
+        {
+            final char[] c0 = {'A', 'B', 'C', 'D'};
+            assertArrayEquals(c0, KofiArray.reflect(c0).construct(char[].class));
+            final char[][] c1 = {{'A'}, {'B'}, {'C'}, {'D'}};
+            assertArrayEquals(c1, KofiArray.reflect(c1).construct(char[][].class));
+            final char[][] c2 = {{'A', 'B'}, {'C', 'D'}};
+            assertArrayEquals(c2, KofiArray.reflect(c2).construct(char[][].class));
         }
 
-        array = KofiArray.reflect(new short[][] {{1}, {2}, {3}, {4}, {5}});
-        final short[][] shorts = array.construct(short[][].class);
-        assertEquals(array.length(), shorts.length);
-        for (int i = 0; i < shorts.length; i++) {
-            assertArrayEquals(((KofiArray) array.get(i)).construct(short[].class), shorts[i]);
-        }
-
-        array = KofiArray.reflect(new char[][] {{'A'}, {'B'}, {'C'}});
-        final char[][] chars = array.construct(char[][].class);
-        assertEquals(array.length(), chars.length);
-        for (int i = 0; i < chars.length; i++) {
-            assertArrayEquals(((KofiArray) array.get(i)).construct(char[].class), chars[i]);
+        // mixed objects
+        {
+            final Object[] o0 = {
+                    1,
+                    true,
+                    "Hello",
+                    new Dummy<>(4)
+            };
+            assertArrayEquals(o0, KofiArray.reflect(o0).construct(Object[].class));
+            final Object[][] o1 = {
+                    {1},
+                    {true},
+                    {"Hello"},
+                    {new Dummy<>(4)}
+            };
+            assertArrayEquals(o1, KofiArray.reflect(o1).construct(Object[][].class));
+            final Object[][] o2 = {
+                    {1, true},
+                    {"Hello", new Dummy<>(4)}
+            };
+            assertArrayEquals(o2, KofiArray.reflect(o2).construct(Object[][].class));
         }
     }
 
+    /**
+     * Test for {@link KofiArray#reflect(Object)}.
+     */
     @Test
-    void constructObject() {
-        final Object[] sizes0 = {
-                new Dimension(10, 10),
-                new Dimension(20, 20),
-                new Dimension(30, 30)
-        };
-        final Dimension[] sizes1 = new KofiArray(sizes0).construct(Dimension[].class);
-        assertNotNull(sizes1);
-        assertEquals(sizes0.length, sizes1.length);
-        assertArrayEquals(sizes0, sizes1);
-    }
-
-    @Test
-    void constructPrimitive() {
-        KofiArray array;
-
-        array = new KofiArray(1, 2, 3);
-        final int[] ints = array.construct(int[].class);
-        assertEquals(array.length(), ints.length);
-        for (int i = 0; i < ints.length; i++) {
-            assertEquals(array.get(i), ints[i]);
-        }
-
-        array = new KofiArray(1L, 2L, 3L, 4L);
-        final long[] longs = array.construct(long[].class);
-        assertEquals(array.length(), longs.length);
-        for (int i = 0; i < longs.length; i++) {
-            assertEquals(array.get(i), longs[i]);
-        }
-
-        array = new KofiArray(1.3f, 2.6f, 3.9f);
-        final float[] floats = array.construct(float[].class);
-        assertEquals(array.length(), floats.length);
-        for (int i = 0; i < floats.length; i++) {
-            assertEquals(array.get(i), floats[i]);
-        }
-
-        array = new KofiArray(1.3d, 2.6d, 3.9d, 4.2d);
-        final double[] doubles = array.construct(double[].class);
-        assertEquals(array.length(), doubles.length);
-        for (int i = 0; i < doubles.length; i++) {
-            assertEquals(array.get(i), doubles[i]);
-        }
-
-        array = new KofiArray(true, false, true, false);
-        final boolean[] booleans = array.construct(boolean[].class);
-        assertEquals(array.length(), booleans.length);
-        for (int i = 0; i < booleans.length; i++) {
-            assertEquals(array.get(i), booleans[i]);
-        }
-
-        array = new KofiArray(Byte.valueOf("0"), Byte.valueOf("1"), Byte.valueOf("2"), Byte.valueOf("3"), Byte.valueOf("4"));
-        final byte[] bytes = array.construct(byte[].class);
-        assertEquals(array.length(), bytes.length);
-        for (int i = 0; i < bytes.length; i++) {
-            assertEquals(array.get(i), bytes[i]);
-        }
-
-        array = new KofiArray(Short.valueOf("1"), Short.valueOf("2"), Short.valueOf("3"), Short.valueOf("4"), Short.valueOf("5"));
-        final short[] shorts = array.construct(short[].class);
-        assertEquals(array.length(), shorts.length);
-        for (int i = 0; i < shorts.length; i++) {
-            assertEquals(array.get(i), shorts[i]);
-        }
-
-        array = new KofiArray('A', 'B', 'C');
-        final char[] chars = array.construct(char[].class);
-        assertEquals(array.length(), chars.length);
-        for (int i = 0; i < chars.length; i++) {
-            assertEquals(array.get(i), chars[i]);
-        }
-    }
-
-    static class Value<T> {
-
-        T value = null;
-
-        T get() {
-            return value;
-        }
-
-        void put(T value) {
-            this.value = value;
-        }
+    void reflect() {
+        final Object[] values = {1, true, 'A'};
+        final KofiArray array = KofiArray.reflect(values);
+        assertEquals(Object[].class, array.getArrayType());
+        assertEquals(values.length, array.length());
+        for (int i = 0; i < values.length; i++)
+            assertEquals(values[i], array.get(i));
     }
 }

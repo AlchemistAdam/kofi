@@ -28,11 +28,11 @@ import dk.martinu.kofi.properties.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * <p>Testing {@link Document} methods on an input string that has different
+ * Testing {@link Document} methods on an input string that has different
  * amounts of whitespace, and with elements of all value types. Tests are
- * ordered randomly.</p>
- *
- * <p>This test not only helps verify that documents work as intended, but also
+ * ordered randomly.
+ * <p>
+ * This test not only helps verify that documents work as intended, but also
  * that {@link KofiCodec} parses strings to elements correctly.</p>
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -42,7 +42,7 @@ public class DocumentTest {
     public static final String input = """
             remove = "remove"
             nestedArray = [[1, 2, 3], [2, 2, 3], [3, 3, 3]]
-            nestedObject = {"d0": { "v": 6 }, "d1": { "v": 7 }, "d2": { "v": 9 }}
+            nestedObject = {d0: { v: 6 }, d1: { v: 7 }, d2: { v: 9 }}
              \s
              ;hi
               int2  = 442211  \s
@@ -65,14 +65,14 @@ public class DocumentTest {
                empty=[]
             string  ="Hello, World!"  \s
                 \s
-             object =  { "name":"John",   "age"   : 50    ,"sex" :  "male"} \s
+             object =  { name:"John",   age   : 50    ,sex :  "male"} \s
               int=4422
               null2 = null
              ;last section
             [def] \s
              empty={ }
               char3='A'  \s
-            object2={"animal":"cat","color":"black","age":4,"name":"Gert","friendly":true,"owner":null}
+            object2={animal:"cat",color:"black",age:4,name:"Gert",friendly:true,owner:null}
                         \s
             float  =  0.999f
               long  =  111222333444L \s

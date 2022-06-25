@@ -33,10 +33,13 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class NumbersTest {
 
-    final KofiCodec codec = new KofiCodec();
-
+    /**
+     * Test for different representations of numbers.
+     */
     @Test
     void numbers() {
+        final KofiCodec codec = new KofiCodec();
+
         // plain number
         assertDoesNotThrow(() -> codec.readString("n = 0"));
 
@@ -88,9 +91,14 @@ public class NumbersTest {
         assertDoesNotThrow(() -> codec.readString("n = -INFINITY"));
     }
 
+    /**
+     * Test for errornous representations of numbers
+     */
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     void numbersError() {
+        final KofiCodec codec = new KofiCodec();
+
         // empty numbers
         assertThrows(IOException.class, () -> codec.readString("n = ."));
         assertThrows(IOException.class, () -> codec.readString("n = +"));
@@ -129,8 +137,13 @@ public class NumbersTest {
         assertThrows(IOException.class, () -> codec.readString("n = 0a"));
     }
 
+    /**
+     * Test for number representations nested inside an array.
+     */
     @Test
     void numbersKofi() {
+        final KofiCodec codec = new KofiCodec();
+
         // plain number
         assertDoesNotThrow(() -> codec.readString("n = [ 0 ]"));
         assertDoesNotThrow(() -> codec.readString("n = [ 1000 ]"));
@@ -149,8 +162,14 @@ public class NumbersTest {
         assertDoesNotThrow(() -> codec.readString("n = [ 0e-0 ]"));
     }
 
+    /**
+     * Test for asserting that the value of a number is correct when retrieved
+     * from a document.
+     */
     @Test
     void numbersValue() {
+        final KofiCodec codec = new KofiCodec();
+
         final String input = """
                 int = 18578282
                 long = 623749871478372582L
