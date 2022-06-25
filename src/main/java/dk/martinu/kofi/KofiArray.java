@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 import dk.martinu.kofi.properties.ArrayProperty;
 
@@ -61,22 +62,34 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
         Objects.requireNonNull(array, "array is null");
         if (!array.getClass().isArray())
             throw new IllegalArgumentException("array is not an array type");
+
         final int len = Array.getLength(array);
+
         // list of reflected array values
         final ArrayList<Object> list = new ArrayList<>(len);
         for (int i = 0; i < len; i++)
             list.add(Array.get(array, i));
-        return new KofiArray(list);
+
+        final KofiArray rv = new KofiArray(list);
+        rv.arrayType = array.getClass();
+
+        return rv;
     }
 
     /**
      * The objects contained in this array. Each object is guaranteed to be
      * defined.
      *
-     * @see KofiValue#getKofiValue(Object)
+     * @see KofiUtil#getKofiValue(Object)
      */
-    @NotNull
     protected final Object[] array;
+
+    /**
+     * The runtime type of this array when it was reflected or constructed, or
+     * {@code null} if unknown.
+     */
+    // TODO set arrayType when constructing
+    protected transient Class<?> arrayType = null;
 
     /**
      * Construct a new, empty {@code KofiArray}.
@@ -91,15 +104,14 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      * {@code values}.
      *
      * @param values the array objects, or {@code null}
-     * @see KofiValue#getKofiValue(Object)
+     * @see KofiUtil#getKofiValue(Object)
      */
     @Contract(pure = true)
     public KofiArray(@Nullable final Object... values) {
         if (values != null && values.length != 0) {
-            final ArrayList<Object> list = new ArrayList<>();
-            for (final Object value : values)
-                list.add(getKofiValue(value));
-            array = list.toArray(new Object[list.size()]);
+            array = new Object[values.length];
+            for (int i = 0; i < values.length; i++)
+                array[i] = KofiUtil.getKofiValue(values[i]);
         }
         else
             array = EMPTY;
@@ -110,13 +122,13 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      * values in the specified list.
      *
      * @param list the list of objects, or {@code null}
-     * @see KofiValue#getKofiValue(Object)
+     * @see KofiUtil#getKofiValue(Object)
      */
     @Contract(pure = true)
     public KofiArray(@Nullable final List<Object> list) {
         if (list != null && !list.isEmpty())
             array = list.parallelStream()
-                    .map(this::getKofiValue)
+                    .map(KofiUtil::getKofiValue)
                     .toArray(Object[]::new);
         else
             array = EMPTY;
@@ -135,7 +147,9 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      *                                  cannot be converted to the component
      *                                  type
      */
+    @SuppressWarnings("ConstantConditions")
     @Contract(value = "_ -> new", pure = true)
+    @NotNull
     public <V> V construct(@NotNull final Class<V> type) {
         Objects.requireNonNull(type, "type is null");
         final KofiLog.Source src = new KofiLog.Source(KofiArray.class, "construct(Class)");
@@ -144,85 +158,47 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
             throw KofiLog.exception(src, new IllegalArgumentException("type must represent an array class"));
 
         final Class<?> componentType = type.componentType();
-        //noinspection unchecked
-        final V array = (V) Array.newInstance(componentType, length());
 
-        // Java objects (including nested arrays)
+        final int len = length();
+        //noinspection unchecked
+        final V array = (V) Array.newInstance(componentType, len);
+        // lambda expression to assign values to array
+        final IntConsumer assign;
+
+        // Java objects
         if (!componentType.isPrimitive()) {
-            for (int i = 0; i < length(); i++)
-                try {
-                    Array.set(array, i, getJavaValue(i, componentType));
-                }
-                catch (IllegalArgumentException | ConstructionException e) {
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}", e));
-                }
+            assign = i -> Array.set(array, i, KofiUtil.getJavaValue(this.array[i], componentType));
         }
         // primitives
         else if (componentType == int.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Integer integer)
-                    Array.setInt(array, i, integer);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set int value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
+            assign = i -> Array.setInt(array, i, ((Number) get(i)).intValue());
         else if (componentType == long.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Long l)
-                    Array.setLong(array, i, l);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set long value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
+            assign = i -> Array.setLong(array, i, ((Number) get(i)).longValue());
         else if (componentType == float.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Float f)
-                    Array.setFloat(array, i, f);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set float value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
+            assign = i -> Array.setFloat(array, i, ((Number) get(i)).floatValue());
         else if (componentType == double.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Double d)
-                    Array.setDouble(array, i, d);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set double value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
-        else if (componentType == boolean.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Boolean b)
-                    Array.setBoolean(array, i, b);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set boolean value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
+            assign = i -> Array.setDouble(array, i, ((Number) get(i)).doubleValue());
         else if (componentType == byte.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Byte b)
-                    Array.setByte(array, i, b);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set byte value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
+            assign = i -> Array.setByte(array, i, ((Number) get(i)).byteValue());
         else if (componentType == short.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Short s)
-                    Array.setShort(array, i, s);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set short value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
-            }
+            assign = i -> Array.setShort(array, i, ((Number) get(i)).shortValue());
+        else if (componentType == boolean.class)
+            assign = i -> Array.setBoolean(array, i, (Boolean) get(i));
         else // if (componentType == char.class)
-            for (int i = 0; i < length(); i++) {
-                if (get(i) instanceof Character c)
-                    Array.setChar(array, i, c);
-                else
-                    throw KofiLog.exception(src, new IllegalArgumentException("cannot set char value in "
-                            + array.getClass().getSimpleName() + " array to value of {" + get(i) + "}"));
+            assign = i -> Array.setChar(array, i, (Character) get(i));
+
+        // assign values to array
+        for (int i = 0; i < len; i++) {
+            try {
+                assign.accept(i);
             }
+            catch (IllegalArgumentException | ClassCastException | ConstructionException | NullPointerException e) {
+                throw KofiLog.exception(src, new IllegalArgumentException("cannot set value in "
+                        + array.getClass().componentType().getSimpleName()
+                        + " array to value of " + get(i), e));
+            }
+        }
+
         return array;
     }
 
@@ -274,6 +250,16 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     @Nullable
     public Object get(@Range(from = 0, to = Integer.MAX_VALUE) final int index) {
         return array[index];
+    }
+
+    /**
+     * Returns the runtime type of this array when it was reflected or
+     * constructed, or {@code null} if unknown.
+     */
+    @Contract(pure = true)
+    @Nullable
+    public Class<?> getArrayType() {
+        return arrayType;
     }
 
     /**
@@ -346,27 +332,6 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     @Override
     public Spliterator<Object> spliterator() {
         return Arrays.spliterator(array);
-    }
-
-    /**
-     * Returns the Java value of the element in this array at the specified index.
-     *
-     * @param index the index of the element
-     * @param type  the Java type of the element
-     * @return the Java value of the element at the specified index
-     * @throws NullPointerException           if {@code type} is {@code null}
-     * @throws ArrayIndexOutOfBoundsException if <code>index &lt; 0</code> or
-     *                                        <code>index &ge; length()</code>
-     *                                        is {@code true}
-     * @throws ConstructionException          if an exception ocurred when
-     *                                        constructing an array or object
-     * @see KofiValue#getJavaValue(Object, Class)
-     */
-    @Contract(pure = true)
-    @Nullable
-    protected Object getJavaValue(@Range(from = 0, to = Integer.MAX_VALUE) final int index,
-            @NotNull final Class<?> type) {
-        return getJavaValue(array[index], type);
     }
 
     /**
