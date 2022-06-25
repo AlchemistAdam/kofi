@@ -143,6 +143,7 @@ public class KofiUtil {
         return string.length() == sb.length() ? string : sb.toString();
     }
 
+
     /**
      * Returns an escape sequence for the specified control character as a
      * six-character escape sequence, or a two-character  escape sequence if
@@ -176,13 +177,83 @@ public class KofiUtil {
      *
      * @param string a KoFi string to convert
      * @return the converted Java string
-     * @throws NullPointerException if {@code string} is {@code null}
      */
     @Contract(pure = true)
     @NotNull
     public static String getJavaString(@NotNull final String string) {
-        Objects.requireNonNull(string, "string is null");
         return unescape(string, 1, string.length() - 1);
+    }
+
+    /**
+     * Converts the specified value, assuming it is a KoFi value, to a Java
+     * value of the specified type and returns it. The result of converting a
+     * value that is not a KoFi value or an invalid KoFi value is undefined.
+     *
+     * @param value a KoFi value to convert
+     * @param type  the class of the converted value
+     * @param <T>   the runtime type of the converted value
+     * @return the converted Java value
+     * @throws NullPointerException     if {@code value} or {@code type} is
+     *                                  {@code null}
+     * @throws IllegalArgumentException if a value cannot be converted to the
+     *                                  specified type
+     * @throws ConstructionException    if an exception ocurred when
+     *                                  constructing an array or object from
+     *                                  a value
+     * @see KofiUtil#getKofiValue(Object)
+     */
+    // DOC provide more details on how/what values are converted to
+    @SuppressWarnings("unchecked")
+    @Contract(value = "null, _ -> null", pure = true)
+    @Nullable
+    public static <T> T getJavaValue(@Nullable final Object value, @NotNull final Class<T> type) {
+        final KofiLog.Source src = new KofiLog.Source(KofiValue.class, "getJavaValue(Object, Class)");
+
+        if (value == null) {
+            return null;
+        }
+        // arrays
+        else if (value instanceof KofiArray array) {
+            try {
+                if (type != Object.class) {
+                    // type is a supertype of array type
+                    if (array.arrayType != null && type.isAssignableFrom(array.arrayType))
+                        return (T) array.construct(array.arrayType);
+                    else
+                        return array.construct(type);
+                }
+                // all arrays extend Object, so it is safe to cast
+                else if (array.arrayType != null)
+                    return (T) array.construct(array.arrayType);
+                else
+                    return (T) array.construct(Object[].class);
+            }
+            catch (IllegalArgumentException e) {
+                throw KofiLog.exception(src, new ConstructionException(
+                        "could not construct array from " + type.getSimpleName() + " type with value " + value, e));
+            }
+        }
+        // objects
+        else if (value instanceof KofiObject object) {
+            try {
+                // type is a supertype of object type
+                if (object.objectType != null && type.isAssignableFrom(object.objectType))
+                    return (T) object.construct(object.objectType);
+                else
+                    return object.construct(type);
+            }
+            catch (ReflectiveOperationException e) {
+                throw KofiLog.exception(src, new ConstructionException(
+                        "could not construct object from " + type.getSimpleName() + " type with value " + value, e));
+            }
+        }
+        // strings and wrappers
+        else {
+            if (value instanceof String string)
+                return (T) getJavaString(string);
+            else
+                return (T) value;
+        }
     }
 
     /**
@@ -197,6 +268,55 @@ public class KofiUtil {
     @NotNull
     public static String getKofiString(@NotNull final String string) {
         return '"' + escape(string, '\"') + '"';
+    }
+
+    /**
+     * Returns an object whose type is guaranteed to be
+     * {@link KofiUtil#isDefinedType(Object) defined}. The returned object is
+     * determined in the following way:
+     * <ul>
+     *     <li>
+     *         If {@code o} is already of a defined type, except
+     *         {@code String}, then {@code o} is returned.
+     *     </li>
+     *     <li>
+     *         If {@code o} is a {@code String}, then a
+     *         {@link KofiUtil#getKofiString(String) KoFi string} is returned.
+     *     </li>
+     *     <li>
+     *         If {@code o} is an instance of {@code Object[]} then a
+     *         {@code KofiArray} is
+     *         {@link KofiArray#KofiArray(Object...) constructed} and returned.
+     *     </li>
+     *     <li>
+     *         If {@code o} is an array as determined by
+     *         {@link Class#isArray()}, then a {@code KofiArray} created by
+     *         {@link KofiArray#reflect(Object) reflection} is returned.
+     *     </li>
+     *     <li>
+     *         Otherwise a {@code KofiObject} created by
+     *         {@link KofiObject#reflect(Object) reflection} is returned.
+     *     </li>
+     * </ul>
+     *
+     * @see KofiArray
+     * @see KofiObject
+     */
+    @Contract(value = "null -> null; !null -> !null", pure = true)
+    @Nullable
+    public static Object getKofiValue(@Nullable final Object o) {
+        if (isDefinedType(o)) {
+            if (o instanceof String s)
+                return getKofiString(s);
+            else
+                return o;
+        }
+        else if (o instanceof Object[] array)
+            return new KofiArray(array);
+        else if (o.getClass().isArray())
+            return KofiArray.reflect(o);
+        else
+            return KofiObject.reflect(o);
     }
 
     /**
@@ -226,6 +346,57 @@ public class KofiUtil {
                         return i;
                 }
         return -1;
+    }
+
+    /**
+     * Returns {@code true} if the type of the specified value is defined in
+     * the KoFi specification, otherwise {@code false} is returned. The
+     * following is a list of all types for which this method returns
+     * {@code true}:
+     * <ul>
+     *     <li>
+     *         {@code null} (not specifically a type but {@code null} is a
+     *         defined value)
+     *     </li>
+     *     <li>
+     *         {@code String}
+     *     </li>
+     *     <li>
+     *         {@code Character}
+     *     </li>
+     *     <li>
+     *         {@code Boolean}
+     *     </li>
+     *     <li>
+     *         {@code Number} wrapper of a primitive type, such as {@code Integer}
+     *     </li>
+     *     <li>
+     *         {@code KofiValue}
+     *     </li>
+     * </ul>
+     *
+     * @param value the value to test
+     * @return {@code true} if the type value is defined, otherwise
+     * {@code false}
+     * @see #getKofiValue(Object)
+     */
+    @Contract(value = "null -> true", pure = true)
+    public static boolean isDefinedType(@Nullable final Object value) {
+        if (value == null
+                || value instanceof String
+                || value instanceof Character
+                || value instanceof Boolean
+                || value instanceof KofiValue)
+            return true;
+        else if (value instanceof Number)
+            return value instanceof Integer
+                    || value instanceof Long
+                    || value instanceof Float
+                    || value instanceof Double
+                    || value instanceof Byte
+                    || value instanceof Short;
+        else
+            return false;
     }
 
     /**

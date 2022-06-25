@@ -17,9 +17,8 @@
 
 package dk.martinu.kofi;
 
-import org.jetbrains.annotations.*;
-
-import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * An abstract KoFi value implementation. This class does not restrict what
@@ -31,6 +30,7 @@ import java.util.Objects;
  * @see KofiObject
  * @since 1.0
  */
+// DOC need to rephrase "defined" values, clean up misinformation
 public abstract class KofiValue {
 
     /**
@@ -39,186 +39,6 @@ public abstract class KofiValue {
      */
     @NotNull
     public abstract String getString();
-
-    /**
-     * Converts the specified value, assuming it is a KoFi value, to a Java
-     * value of the specified type and returns it. The result of converting a
-     * value that is not a KoFi value or an invalid KoFi value is undefined.
-     *
-     * @param value a KoFi value to convert
-     * @param type  the class of the converted value
-     * @param <V>   the runtime type of the converted value
-     * @return the converted Java value
-     * @throws NullPointerException     if {@code value} or {@code type} is
-     *                                  {@code null}
-     * @throws IllegalArgumentException if a value cannot be converted to the
-     *                                  specified type
-     * @throws ConstructionException    if an exception ocurred when
-     *                                  constructing an array or object from
-     *                                  a value
-     * @see #getKofiValue(Object)
-     */
-    // DOC provide more details on how/what values are converted to
-    @SuppressWarnings("unchecked")
-    @Contract(pure = true)
-    @NotNull
-    protected <V> V getJavaValue(@NotNull final Object value, @NotNull final Class<V> type) {
-        Objects.requireNonNull(value, "value is null");
-        Objects.requireNonNull(type, "type is null");
-        final KofiLog.Source src = new KofiLog.Source(KofiValue.class, "getJavaValue(Object, Class)");
-
-        // arrays
-        if (type.isArray()) {
-            if (value instanceof KofiArray array)
-                try {
-                    return array.construct(type);
-                }
-                catch (IllegalArgumentException e) {
-                    throw KofiLog.exception(src, new ConstructionException("could not construct "
-                            + type.getSimpleName() + " array from value {" + value + "}", e));
-                }
-            else
-                throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot get " + type.getSimpleName() + " array from value {" + value + "}"));
-        }
-
-        // assignable Object types (defined)
-        else if (type.isAssignableFrom(value.getClass())) {
-            if (type.equals(String.class))
-                return (V) getJavaString((String) value);
-            else
-                return (V) value; // wrapper type
-        }
-
-        // undefined and non-primitive objects
-        else if (!type.isPrimitive()) {
-            if (value instanceof KofiObject object) {
-                try {
-                    return object.construct(type);
-                }
-                catch (ReflectiveOperationException e) {
-                    throw KofiLog.exception(src, new ConstructionException("could not construct "
-                            + type.getSimpleName() + " object from value {" + value + "}", e));
-                }
-            }
-            else
-                throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot get " + type.getSimpleName() + " object from value {" + value + "}"));
-        }
-
-        // int
-        else if (type == int.class) {
-            if (value instanceof Number n)
-                return (V) Integer.valueOf(n.intValue());
-            else
-                throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot get int from value {" + value + "}"));
-        }
-        // long
-        else if (type == long.class) {
-            if (value instanceof Number n)
-                return (V) Long.valueOf(n.longValue());
-            else
-                throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot get long from value {" + value + "}"));
-        }
-        // float
-        else if (type == float.class) {
-            if (value instanceof Number n)
-                return (V) Float.valueOf(n.floatValue());
-            else
-                throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot get float from value {" + value + "}"));
-        }
-        // double
-        else if (type == double.class) {
-            if (value instanceof Number n)
-                return (V) Double.valueOf(n.doubleValue());
-            else
-                throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot get double from value {" + value + "}"));
-        }
-        // byte
-        else if (type == byte.class) {
-            if (value instanceof Number n)
-                return (V) Byte.valueOf(n.byteValue());
-            else
-                throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot get byte from value {" + value + "}"));
-        }
-        // short
-        else if (type == short.class) {
-            if (value instanceof Number n)
-                return (V) Short.valueOf(n.shortValue());
-            else
-                throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot get short from value {" + value + "}"));
-        }
-        // char
-        else if (type == char.class) {
-            if (value instanceof Character c)
-                return (V) c;
-            else
-                throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot get char from value {" + value + "}"));
-        }
-        // boolean
-        else // if (type == boolean.class)
-            if (value instanceof Boolean b)
-                return (V) b;
-            else
-                throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot get boolean from value {" + value + "}"));
-    }
-
-    /**
-     * Returns an object whose type is guaranteed to be
-     * {@link #isDefinedType(Object) defined}. The returned object is
-     * determined in the following way:
-     * <ul>
-     *     <li>
-     *         If {@code o} is already of a defined type, except
-     *         {@code String}, then {@code o} is returned.
-     *     </li>
-     *     <li>
-     *         If {@code o} is a {@code String}, then a
-     *         {@link #getKofiString(String) KoFi string} is returned.
-     *     </li>
-     *     <li>
-     *         If {@code o} is an instance of {@code Object[]} then a
-     *         {@code KofiArray} is
-     *         {@link KofiArray#KofiArray(Object...) constructed} and returned.
-     *     </li>
-     *     <li>
-     *         If {@code o} is an array as determined by
-     *         {@link Class#isArray()}, then a {@code KofiArray} created by
-     *         {@link KofiArray#reflect(Object) reflection} is returned.
-     *     </li>
-     *     <li>
-     *         Otherwise a {@code KofiObject} created by
-     *         {@link KofiObject#reflect(Object) reflection} is returned.
-     *     </li>
-     * </ul>
-     *
-     * @see KofiArray
-     * @see KofiObject
-     */
-    @Contract(value = "null -> null; !null -> !null", pure = true)
-    @Nullable
-    protected Object getKofiValue(@Nullable final Object o) {
-        if (isDefinedType(o)) {
-            if (o instanceof String s)
-                return getKofiString(s);
-            else
-                return o;
-        }
-        else if (o instanceof Object[] array)
-            return new KofiArray(array);
-        else if (o.getClass().isArray())
-            return KofiArray.reflect(o);
-        else
-            return KofiObject.reflect(o);
-    }
 
     /**
      * Creates a string representation of this object that conforms with the
@@ -233,12 +53,12 @@ public abstract class KofiValue {
      * its own {@link #getString(StringBuilder)} will be called.
      *
      * @throws IllegalArgumentException if {@code value} is not
-     *                                  {@link #isDefinedType(Object) defined}
+     *                                  {@link KofiUtil#isDefinedType(Object) defined}
      * @throws NullPointerException     if {@code sb} is {@code null}
-     * @see #getKofiValue(Object)
+     * @see KofiUtil#getKofiValue(Object)
      */
     protected void getString(@Nullable Object value, @NotNull final StringBuilder sb) {
-        if (isDefinedType(value)) {
+        if (KofiUtil.isDefinedType(value)) {
             if (value == null)
                 sb.append("null");
             else if (value instanceof String s)
@@ -273,54 +93,4 @@ public abstract class KofiValue {
                     new IllegalArgumentException("value is not defined {" + value + "}"));
     }
 
-    /**
-     * Returns {@code true} if the type of the specified value is defined in
-     * the KoFi specification, otherwise {@code false} is returned. The
-     * following is a list of all types for which this method returns
-     * {@code true}:
-     * <ul>
-     *     <li>
-     *         {@code null} (not specifically a type but {@code null} is a
-     *         defined value)
-     *     </li>
-     *     <li>
-     *         {@code String}
-     *     </li>
-     *     <li>
-     *         {@code Character}
-     *     </li>
-     *     <li>
-     *         {@code Boolean}
-     *     </li>
-     *     <li>
-     *         {@code Number} wrapper of a primitive type, such as {@code Integer}
-     *     </li>
-     *     <li>
-     *         {@code KofiValue}
-     *     </li>
-     * </ul>
-     *
-     * @param value the value to test
-     * @return {@code true} if the type value is defined, otherwise
-     * {@code false}
-     * @see #getKofiValue(Object)
-     */
-    @Contract(value = "null -> true", pure = true)
-    protected boolean isDefinedType(@Nullable final Object value) {
-        if (value == null
-                || value instanceof String
-                || value instanceof Character
-                || value instanceof Boolean
-                || value instanceof KofiValue)
-            return true;
-        else if (value instanceof Number)
-            return value instanceof Integer
-                    || value instanceof Long
-                    || value instanceof Float
-                    || value instanceof Double
-                    || value instanceof Byte
-                    || value instanceof Short;
-        else
-            return false;
-    }
 }
