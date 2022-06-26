@@ -266,22 +266,22 @@ public class KofiUtilTest {
      */
     @Test
     void trim() {
-        // assert content is equal -- trim whole string
-        {
-            final String[][] content = {
-                    /* 0 */ {"", ""},
-                    /* 1 */ {"", "   "},
-                    /* 3 */ {"trim", "trim"},
-                    /* 4 */ {"trim", "trim   "},
-                    /* 5 */ {"trim", "   trim"},
-                    /* 6 */ {"trim", "   trim   "}
-            };
-            for (int i = 0; i < content.length; i++)
-                assertArrayEquals(
-                        content[i][0].toCharArray(),
-                        KofiUtil.trim(content[i][1].toCharArray()),
-                        i + ":");
-        }
+//        // assert content is equal -- trim whole string
+//        {
+//            final String[][] content = {
+//                    /* 0 */ {"", ""},
+//                    /* 1 */ {"", "   "},
+//                    /* 3 */ {"trim", "trim"},
+//                    /* 4 */ {"trim", "trim   "},
+//                    /* 5 */ {"trim", "   trim"},
+//                    /* 6 */ {"trim", "   trim   "}
+//            };
+//            for (int i = 0; i < content.length; i++)
+//                assertArrayEquals(
+//                        content[i][0].toCharArray(),
+//                        KofiUtil.trim(content[i][1].toCharArray()),
+//                        i + ":");
+//        }
 
         // assert content is equal -- trim between x and y
         {

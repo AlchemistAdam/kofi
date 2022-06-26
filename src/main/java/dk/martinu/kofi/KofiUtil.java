@@ -503,20 +503,20 @@ public class KofiUtil {
         }
     }
 
-    /**
-     * Returns a subarray of the specified char array with all leading and
-     * trailing whitespace characters removed. If no characters were removed,
-     * then {@code chars} is returned.
-     *
-     * @param chars the array to trim
-     * @return a subarray of {@code chars} with no leading and trailing
-     * whitespace, or {@code chars} if no characters were removed
-     * @see #isWhitespace(char)
-     */
-    @Contract(value = "null -> fail", pure = true)
-    public static char[] trim(final char[] chars) {
-        return trim(chars, 0, chars.length);
-    }
+//    /**
+//     * Returns a subarray of the specified char array with all leading and
+//     * trailing whitespace characters removed. If no characters were removed,
+//     * then {@code chars} is returned.
+//     *
+//     * @param chars the array to trim
+//     * @return a subarray of {@code chars} with no leading and trailing
+//     * whitespace, or {@code chars} if no characters were removed
+//     * @see #isWhitespace(char)
+//     */
+//    @Contract(value = "null -> fail", pure = true)
+//    public static char[] trim(final char[] chars) {
+//        return trim(chars, 0, chars.length);
+//    }
 
     // DOC
     @Contract(value = "null, _, _ -> fail", pure = true)
