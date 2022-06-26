@@ -93,9 +93,12 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
     @NotNull
     protected final Entry[] entries;
 
-    // DOC objectType
-    // TODO set objectType when constructing
-    protected Class<?> objectType;
+    /**
+     * The runtime type of this object when it was reflected, or {@code null}
+     * if unknown.
+     */
+    // TODO set objectType when constructing -- requires object type to be serialized
+    protected transient Class<?> objectType;
 
     /**
      * Construct a new, empty {@code KofiObject}.

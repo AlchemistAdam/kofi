@@ -85,10 +85,10 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     protected final Object[] array;
 
     /**
-     * The runtime type of this array when it was reflected or constructed, or
-     * {@code null} if unknown.
+     * The runtime type of this array when it was reflected, or {@code null} if
+     * unknown.
      */
-    // TODO set arrayType when constructing
+    // TODO set arrayType when constructing -- requires arrayType to be serialized
     protected transient Class<?> arrayType = null;
 
     /**

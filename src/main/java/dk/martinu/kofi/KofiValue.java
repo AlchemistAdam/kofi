@@ -50,7 +50,7 @@ public abstract class KofiValue {
      * Appends a string representation of {@code value} to the specified
      * {@code StringBuilder}. This method assumes {@code value} is a defined
      * KoFi value. If {@code value} is an instance of {@code KofiValue}, then
-     * its own {@link #getString(StringBuilder)} will be called.
+     * its own {@link #getString(StringBuilder)} method will be called.
      *
      * @throws IllegalArgumentException if {@code value} is not
      *                                  {@link KofiUtil#isDefinedType(Object) defined}
