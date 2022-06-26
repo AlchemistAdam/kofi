@@ -174,37 +174,48 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
      * @return a new {@code Element}
      * @throws ParseException if an error occurs while parsing
      */
+    @SuppressWarnings("Contract")
     @Contract(value = "!null, _ -> new; null, _ -> fail", pure = true)
     @NotNull
     protected Element parseLine(char[] chars, final int line) throws ParseException {
         assert chars != null : "chars is null";
         final KofiLog.Source src = new KofiLog.Source(KofiCodec.class, "parseLine(char[], int)");
-        // TODO instead of trim, simply get start and end index of ws and use source array
-        chars = trim(chars);
+
+        // ignore leading and trailing whitespace in chars
+        int start = 0, end = chars.length;
+        for (; start < end; start++) {
+            if (!isWhitespace(chars[start]))
+                break;
+        }
+        for (; end > start; end--) {
+            if (!isWhitespace(chars[end - 1]))
+                break;
+        }
+        final int len = end - start;
 
         // line is whitespace
-        if (chars.length == 0)
+        if (len == 0)
             return new Whitespace();
 
-        switch (chars[0]) {
+        switch (chars[start]) {
 
             // comment
             case ';' -> {
-                return new Comment(new String(chars, 1, chars.length - 1));
+                return new Comment(new String(chars, start + 1, len - 1));
             }
 
             // section
             case '[' -> {
-                if (chars[chars.length - 1] == ']')
-                    return new Section(new String(chars, 1, chars.length - 2));
+                if (chars[end - 1] == ']')
+                    return new Section(new String(chars, start + 1, len - 2));
                 else
-                    throw KofiLog.exception(src, new ParseException(line, chars.length - 1,
+                    throw KofiLog.exception(src, new ParseException(line, len - 1,
                             "section closing bracket ']' expected"));
             }
 
             // property
             default -> {
-                final Property<?> property = parseProperty(chars, line);
+                final Property<?> property = parseProperty(chars, start, end, line);
                 if (property != null)
                     return property;
                 else
@@ -217,29 +228,31 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
      * Parses a {@link Property} from the specified character array and returns
      * it, or {@code null} if it does not represent a property (no '=' delimiter).
      *
-     * @param chars the characters to parse
-     * @param line  the line number that is being parsed
+     * @param chars  the characters to parse
+     * @param offset start index in {@code chars}, inclusive
+     * @param end    end index in {@code chars}, exclusive
+     * @param line   the line number that is being parsed
      * @return a new property, or {@code null}
      * @throws ParseException if an error occurs while parsing
      * @see dk.martinu.kofi.properties
      */
-    @Contract(value = "null, _ -> fail", pure = true)
+    @Contract(value = "null, _, _, _ -> fail", pure = true)
     @Nullable
-    protected Property<?> parseProperty(final char[] chars, final int line) throws ParseException {
+    protected Property<?> parseProperty(final char[] chars, final int offset, final int end, final int line) throws ParseException {
         assert chars != null : "chars is null";
         final KofiLog.Source src = new KofiLog.Source(KofiCodec.class, "parseProperty(char[], int)");
 
         // get index of delimiter
-        final int delimiter = indexOf('=', chars, 0, chars.length);
+        final int delimiter = indexOf('=', chars, offset, end);
         if (delimiter == -1)
             return null;
 
         // get parsable value
-        final Parsable<?> parsable = parseValue(chars, delimiter + 1, chars.length, line);
+        final Parsable<?> parsable = parseValue(chars, delimiter + 1, end, line);
 
         // return property
         if (parsable != null) {
-            if (parsable.length == chars.length) {
+            if (parsable.length == end) {
                 final String key = new String(unescape(trim(chars, 0, delimiter)));
                 final Object value = parsable.getValue();
                 return switch (parsable.getType()) {
