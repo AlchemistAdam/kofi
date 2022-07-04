@@ -38,7 +38,7 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
     private static final long serialVersionUID = 0L;
 
     /**
-     * Cached escaped version of {@link #value}.
+     * Cached escaped value.
      */
     @Nullable
     protected transient String escapedValue = null;

@@ -21,7 +21,6 @@ import org.jetbrains.annotations.*;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Objects;
 
 import dk.martinu.kofi.codecs.KofiCodec;
 
@@ -185,26 +184,44 @@ public class KofiUtil {
     }
 
     /**
-     * Converts the specified value, assuming it is a KoFi value, to a Java
+     * Converts the specified value, assuming it is a
+     * {@link KofiUtil#isDefinedType(Object) defined} KoFi value, to a Java
      * value of the specified type and returns it. The result of converting a
      * value that is not a KoFi value or an invalid KoFi value is undefined.
+     * <p>
+     * Values are converted in the following way:
+     * <ul>
+     *     <li>
+     *         {@code KofiArray}s and {@code KofiObject}s are constructed.
+     *     </li>
+     *     <li>
+     *         Strings are converted to Java strings.
+     *     </li>
+     *     <li>
+     *         All other values do not change.
+     *     </li>
+     * </ul>
      *
      * @param value a KoFi value to convert
      * @param type  the class of the converted value
      * @param <T>   the runtime type of the converted value
      * @return the converted Java value
-     * @throws NullPointerException     if {@code value} or {@code type} is
-     *                                  {@code null}
+     * @throws NullPointerException     if {@code type} is {@code null}
      * @throws IllegalArgumentException if a value cannot be converted to the
      *                                  specified type
      * @throws ConstructionException    if an exception ocurred when
      *                                  constructing an array or object from
      *                                  a value
+     * @throws ClassCastException       if {@code value} is cast to
+     *                                  {@code type} but is not an instance of
+     *                                  that class.
+     * @see #getJavaString(String)
      * @see KofiUtil#getKofiValue(Object)
+     * @see KofiArray#construct(Class)
+     * @see KofiObject#construct(Class)
      */
-    // DOC provide more details on how/what values are converted to
     @SuppressWarnings("unchecked")
-    @Contract(value = "null, _ -> null", pure = true)
+    @Contract(value = "null, _ -> null; !null, _ -> !null", pure = true)
     @Nullable
     public static <T> T getJavaValue(@Nullable final Object value, @NotNull final Class<T> type) {
         final KofiLog.Source src = new KofiLog.Source(KofiValue.class, "getJavaValue(Object, Class)");
@@ -272,8 +289,8 @@ public class KofiUtil {
 
     /**
      * Returns an object whose type is guaranteed to be
-     * {@link KofiUtil#isDefinedType(Object) defined}. The returned object is
-     * determined in the following way:
+     * {@link KofiUtil#isDefinedType(Object) defined} based on the specified
+     * object. The returned object is determined in the following way:
      * <ul>
      *     <li>
      *         If {@code o} is already of a defined type, except
@@ -421,11 +438,24 @@ public class KofiUtil {
         return c >= '0' && c <= '9';
     }
 
-    // DOC
+    /**
+     * Returns {@code true} if the character at the specified index is escaped,
+     * otherwise {@code false}. A character is considered to be escaped if the
+     * character that comes before it is an unescaped Reverse Solidus '\'
+     * character. Character indices equal to or lower than
+     * {@code lim} are not considered when detemerning if the character is
+     * escaped.
+     *
+     * @param chars the characters
+     * @param index the index of the character
+     * @param lim   the lowest index to iterate, exclusive.
+     * @return {@code true} if the character is escaped, otherwise
+     * {@code false}
+     */
     @Contract(pure = true)
-    public static boolean isEscaped(final char[] chars, final int i, final int lim) {
+    public static boolean isEscaped(final char[] chars, final int index, final int lim) {
         int n = 0;
-        for (int k = i - 1; k > lim && chars[k--] == '\\'; n++) ;
+        for (int k = index - 1; k > lim && chars[k--] == '\\'; n++) ;
         return (n & 1) == 1;
     }
 
@@ -509,22 +539,17 @@ public class KofiUtil {
         }
     }
 
-//    /**
-//     * Returns a subarray of the specified char array with all leading and
-//     * trailing whitespace characters removed. If no characters were removed,
-//     * then {@code chars} is returned.
-//     *
-//     * @param chars the array to trim
-//     * @return a subarray of {@code chars} with no leading and trailing
-//     * whitespace, or {@code chars} if no characters were removed
-//     * @see #isWhitespace(char)
-//     */
-//    @Contract(value = "null -> fail", pure = true)
-//    public static char[] trim(final char[] chars) {
-//        return trim(chars, 0, chars.length);
-//    }
-
-    // DOC
+    /**
+     * Returns a trimmed subarray of {@code chars} in the specified range. If
+     * the trimmed subarray is equal to {@code chars} then {@code chars} is
+     * returned.
+     *
+     * @param chars  the characters to trim
+     * @param offset the start index, inclusive
+     * @param length the end index, exclusive
+     * @return a trimmed subarray
+     * @see #isWhitespace(char)
+     */
     @Contract(value = "null, _, _ -> fail", pure = true)
     public static char[] trim(final char[] chars, final int offset, final int length) {
         int start = offset, end = length;
@@ -583,7 +608,16 @@ public class KofiUtil {
             return string;
     }
 
-    // DOC
+
+    /**
+     * Returns an unescaped array of {@code chars}. If the unescaped array is
+     * equal to {@code chars} then {@code chars}
+     * is returned.
+     *
+     * @param chars the characters to unescape
+     * @return an unescaped array
+     * @see #escape(String)
+     */
     @Contract(value = "null -> fail", pure = true)
     public static char[] unescape(final char[] chars) {
         return unescape(chars, 0, chars.length);
@@ -648,30 +682,59 @@ public class KofiUtil {
             else
                 cb.append(chars[i++]);
         }
-        if (cb.length() != chars.length)
+        if (cb.cursor() != chars.length)
             return cb.toCharArray();
         else
             return chars;
     }
 
-    // DOC
+    /**
+     * A fixed-size, unsafe buffer of {@code char} values. Values can be
+     * appended to the buffer, but not removed.
+     */
     private static class CharBuffer {
 
+        /**
+         * The buffer array.
+         */
         final char[] chars;
+        /**
+         * Current cursor location for appending values.
+         */
         int cursor = 0;
 
+        /**
+         * Creates a new buffer with the specified size.
+         *
+         * @throws NegativeArraySizeException if {@code size} is negative
+         */
         CharBuffer(final int size) {
             chars = new char[size];
         }
 
+        /**
+         * Appends the specified character to this buffer.
+         *
+         * @throws ArrayIndexOutOfBoundsException if this buffer is full
+         */
         void append(final char c) {
             chars[cursor++] = c;
         }
 
-        int length() {
+        /**
+         * Returns the current cursor location in this buffer.
+         */
+        int cursor() {
             return cursor;
         }
 
+        /**
+         * Returns an array of the character values in this buffer. If this
+         * buffer is full, then its own internal array is returned. Otherwise,
+         * a new array with a length equal to the number of values is allocated
+         * and returned.
+         */
+        @Contract(pure = true)
         char[] toCharArray() {
             if (cursor != chars.length) {
                 final char[] rv = new char[cursor];

@@ -77,8 +77,8 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * The objects contained in this array. Each object is guaranteed to be
-     * defined.
+     * The objects contained in this array. Each object is guaranteed to be a
+     * {@link KofiUtil#isDefinedType(Object) defined} KoFi value.
      *
      * @see KofiUtil#getKofiValue(Object)
      */
@@ -100,7 +100,8 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * Constructs a new {@code KofiArray} containing the defined objects of
+     * Constructs a new {@code KofiArray} containing the
+     * {@link KofiUtil#isDefinedType(Object) defined} object values of
      * {@code values}.
      *
      * @param values the array objects, or {@code null}
@@ -118,7 +119,8 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * Constructs a new {@code KofiArray} containing the defined objects of the
+     * Constructs a new {@code KofiArray} containing the
+     * {@link KofiUtil#isDefinedType(Object) defined} object values of the
      * values in the specified list.
      *
      * @param list the list of objects, or {@code null}

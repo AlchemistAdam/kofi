@@ -20,6 +20,8 @@ package dk.martinu.kofi;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 /**
  * An abstract KoFi value implementation. This class does not restrict what
  * value types can be represented, but is intended for complex value types,
@@ -30,7 +32,6 @@ import org.jetbrains.annotations.Nullable;
  * @see KofiObject
  * @since 1.0
  */
-// DOC need to rephrase "defined" values, clean up misinformation
 public abstract class KofiValue {
 
     /**
@@ -48,16 +49,17 @@ public abstract class KofiValue {
 
     /**
      * Appends a string representation of {@code value} to the specified
-     * {@code StringBuilder}. This method assumes {@code value} is a defined
-     * KoFi value. If {@code value} is an instance of {@code KofiValue}, then
-     * its own {@link #getString(StringBuilder)} method will be called.
+     * {@code StringBuilder}. This method assumes {@code value} is a
+     * {@link KofiUtil#isDefinedType(Object) defined} KoFi value. If
+     * {@code value} is an instance of {@code KofiValue}, then its own
+     * {@link #getString(StringBuilder)} method will be called.
      *
-     * @throws IllegalArgumentException if {@code value} is not
-     *                                  {@link KofiUtil#isDefinedType(Object) defined}
      * @throws NullPointerException     if {@code sb} is {@code null}
+     * @throws IllegalArgumentException if {@code value} is not defined
      * @see KofiUtil#getKofiValue(Object)
      */
     protected void getString(@Nullable Object value, @NotNull final StringBuilder sb) {
+        Objects.requireNonNull(sb, "sb is null");
         if (KofiUtil.isDefinedType(value)) {
             if (value == null)
                 sb.append("null");
