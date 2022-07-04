@@ -320,29 +320,35 @@ public class KofiUtil {
     }
 
     /**
-     * Returns the lowest index of {@code c} in {@code chars} in the specified
-     * range, or {@code -1} if the character was not found.
+     * Returns the lowest index of the unescaped character {@code c} in
+     * {@code chars} in the specified range, or {@code -1} if the character was
+     * not found.
      *
      * @param c     the character to search for
      * @param chars the array of characters
      * @param start the starting index, inclusive
      * @param end   the ending index, exclusive
-     * @return the lowest index of {@code c}, or {@code -1}
+     * @return the lowest index of the unescaped character {@code c}, or
+     * {@code -1}
      */
-    // DOC escapable characters
-    // TODO does not work correctly for reverse solidus \
     @Contract(pure = true)
     @Range(from = -1, to = Integer.MAX_VALUE)
     public static int indexOf(final char c, final char[] chars, final int start, final int end) {
         for (int i = start; i < end; i++)
             if (chars[i] == c)
-                // TODO logic could be refactored into separate method - check for uses in other places (entry key fx)
-                if (i == 0 || chars[i - 1] != '\\')
-                    return i;
+                if (c != '\\')
+                    if (i == 0 || chars[i - 1] != '\\')
+                        return i;
+                    else {
+                        int count = 1;
+                        for (int k = i - 2; k >= 0 && chars[k--] == '\\'; count++) ;
+                        if ((count & 1) == 0)
+                            return i;
+                    }
                 else {
-                    int count = 1;
-                    for (int k = i - 2; k > 0 && chars[k--] == '\\'; count++) ;
-                    if ((count & 1) == 0)
+                    int count = 0;
+                    for (int k = i - 1; k >= 0 && chars[k--] == '\\'; count++) ;
+                    if ((count & 1) == 1)
                         return i;
                 }
         return -1;
