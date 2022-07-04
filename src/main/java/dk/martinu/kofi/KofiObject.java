@@ -86,7 +86,8 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
 
     /**
      * The entries contained in this object. Each entry value is guaranteed to
-     * be defined. The entries are sorted in lexicographical order.
+     * be {@link KofiUtil#isDefinedType(Object) defined}. The entries are
+     * sorted in lexicographical order.
      *
      * @see KofiUtil#getKofiValue(Object)
      */
@@ -109,8 +110,8 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
     }
 
     /**
-     * Constructs a new {@code KofiObject} containing the defined name-value
-     * pairs of the specified map.
+     * Constructs a new {@code KofiObject} with name-value entries created from
+     * the specified map.
      *
      * @param map the map of name-value pairs, or {@code null}
      * @see KofiUtil#getKofiValue(Object)
@@ -215,9 +216,9 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
                             continue;
                         }
                         catch (IllegalArgumentException | ConstructionException e) {
-                            // TODO change message
                             throw KofiLog.exception(src, new ConstructionException(
-                                    "could not get Java value from entry {" + entry + "}", e));
+                                    "could not construct value for field {" + field
+                                            + "} from entry {" + entry + "}", e));
                         }
                     }
 
@@ -282,7 +283,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
                 }
                 // field was not set if this statement is reached
                 throw KofiLog.exception(src, new IllegalArgumentException(
-                        "cannot set field {" + field + " to value of {" + entry.value + "}"));
+                        "cannot set field {" + field + "} to value of entry {" + entry.value + "}"));
             }
             else
                 KofiLog.finest("field is inaccessible and cannot be assigned {"
@@ -428,10 +429,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
     }
 
     /**
-     * A {@code KofiObject} builder. The values of name-value pairs in a
-     * builder are not guaranteed to be defined.
-     *
-     * @see KofiUtil#getKofiValue(Object)
+     * A {@code KofiObject} builder.
      */
     @SuppressWarnings("unused")
     public static class Builder {
@@ -531,9 +529,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
     }
 
     /**
-     * A name-value pair. The value of an entry is guaranteed to be defined.
-     *
-     * @see KofiUtil#getKofiValue(Object)
+     * A name-value pair.
      */
     public static class Entry implements Comparable<Entry>, Serializable {
 
@@ -546,7 +542,8 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
         @NotNull
         public final String name;
         /**
-         * The defined object entry value.
+         * The {@link KofiUtil#isDefinedType(Object) defined} object entry
+         * KoFi value.
          *
          * @see KofiUtil#getKofiValue(Object)
          */
@@ -566,12 +563,11 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
         protected transient boolean hashIsZero = false;
 
         /**
-         * Creates a new entry with the specified name and defined object of
-         * {@code value}.
+         * Creates a new entry with the specified name and a KoFi value based
+         * on the specified value.
          *
          * @param name  the entry name
-         * @param value the value to get the defined object from, which will be
-         *              the entry value
+         * @param value the value to base the entry value on
          * @throws NullPointerException if {@code name} is {@code null}
          * @see KofiUtil#getKofiValue(Object)
          */
