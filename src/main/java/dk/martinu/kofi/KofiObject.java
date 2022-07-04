@@ -535,7 +535,10 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
      *
      * @see KofiUtil#getKofiValue(Object)
      */
-    public static class Entry implements Comparable<Entry> {
+    public static class Entry implements Comparable<Entry>, Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 0L;
 
         /**
          * The entry name.
