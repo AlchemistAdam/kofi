@@ -553,6 +553,10 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
         @Nullable
         public final Object value;
         /**
+         * Cached escaped name.
+         */
+        protected transient String escapedName = null;
+        /**
          * Cached name hash code.
          */
         protected transient int hash = 0;
@@ -649,14 +653,19 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
         /**
          * Returns a string representation of this entry, equal to:
          * <pre>
-         *     "<i>name</i>: <i>value</i>"
+         *     "<i>escapedName</i>: <i>value</i>"
          * </pre>
+         * where <i>escapedName</i> is the escaped version of this entry's
+         * name. Note that all {@code : U+003A} Colon characters are also
+         * escaped.
          */
         @Contract(pure = true)
         @NotNull
         @Override
         public String toString() {
-            return name + ": " + value;
+            if (escapedName == null)
+                escapedName = KofiUtil.escape(name, ':');
+            return escapedName + ": " + value;
         }
     }
 
