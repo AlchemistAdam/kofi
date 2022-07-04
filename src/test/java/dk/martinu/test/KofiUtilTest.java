@@ -91,7 +91,8 @@ public class KofiUtilTest {
         // assert converted primitive array is equal
         assertArrayEquals(
                 new int[] {1},
-                KofiUtil.getJavaValue(new KofiArray(1), int[].class));
+                KofiUtil.getJavaValue(new KofiArray(1), int[].class)
+        );
 
         // dummy objects used for undefined values below (arrays and objects)
         final Dummy<Integer> dummy = new Dummy<>(1);
@@ -182,6 +183,34 @@ public class KofiUtilTest {
     }
 
     /**
+     * Test for {@link KofiUtil#indexOf(char, char[], int, int)}
+     */
+    @Test
+    void indexOf() {
+        assertEquals(0, KofiUtil.indexOf('a', "a".toCharArray(), 0, 1));
+        assertEquals(0, KofiUtil.indexOf('a', "a   ".toCharArray(), 0, 4));
+        assertEquals(1, KofiUtil.indexOf('a', " a  ".toCharArray(), 0, 4));
+        assertEquals(3, KofiUtil.indexOf('a', "   a".toCharArray(), 0, 4));
+
+        assertEquals(-1, KofiUtil.indexOf('a', "".toCharArray(), 0, 0));
+        assertEquals(-1, KofiUtil.indexOf('a', " ".toCharArray(), 0, 1));
+        assertEquals(-1, KofiUtil.indexOf('a', "    ".toCharArray(), 0, 4));
+        assertEquals(-1, KofiUtil.indexOf('a', "aaaa".toCharArray(), 0, 0));
+
+        assertEquals(0, KofiUtil.indexOf('a', "a  a".toCharArray(), 0, 4));
+        assertEquals(0, KofiUtil.indexOf('a', "a  a".toCharArray(), 0, 3));
+        assertEquals(3, KofiUtil.indexOf('a', "a  a".toCharArray(), 1, 4));
+        assertEquals(1, KofiUtil.indexOf('a', "aa a".toCharArray(), 1, 4));
+
+        assertEquals(3, KofiUtil.indexOf('a', "\\a a".toCharArray(), 0, 4));
+        assertEquals(2, KofiUtil.indexOf('a', "\\\\aa".toCharArray(), 0, 4));
+        assertEquals(1, KofiUtil.indexOf('\\', "\\\\  ".toCharArray(), 0, 4));
+        assertEquals(-1, KofiUtil.indexOf('\\', "\\   ".toCharArray(), 0, 4));
+        assertEquals(3, KofiUtil.indexOf('\\', "\\ \\\\".toCharArray(), 0, 4));
+        assertEquals(-1, KofiUtil.indexOf('a', "\\a  ".toCharArray(), 0, 4));
+    }
+
+    /**
      * Test for {@link KofiUtil#isDefinedType(Object)}.
      */
     @Test
@@ -226,6 +255,21 @@ public class KofiUtilTest {
         };
         for (char c : hexDigits)
             assertTrue(KofiUtil.isHexDigit(c), "isHexDigit(" + c + ")");
+    }
+
+    /**
+     * Test for {@link KofiUtil#isWhitespace(char)}.
+     */
+    @Test
+    void isWhitespace() {
+        for (int i = 0; i < 256; i++) {
+            if (i == ' ' || i == '\r' || i == '\t')
+                assertTrue(KofiUtil.isWhitespace((char) i),
+                        "(U+" + Integer.toHexString(i) + ") '" + ((char) i) + "'");
+            else
+                assertFalse(KofiUtil.isWhitespace((char) i),
+                        "(U+" + Integer.toHexString(i) + ") '" + ((char) i) + "'");
+        }
     }
 
     /**
