@@ -48,13 +48,11 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
     // list returned by getExtensions
     private static final List<String> EXTENSIONS = List.of("kofi");
     // array constants used for KofiUtil.equalsIgnoreCase
-    // @formatter:off
     private static final char[] NULL = {'N', 'U', 'L', 'L'};
     private static final char[] TRUE = {'T', 'R', 'U', 'E'};
     private static final char[] FALSE = {'F', 'A', 'L', 'S', 'E'};
     private static final char[] NAN = {'N', 'A', 'N'};
     private static final char[] INFINITY = {'I', 'N', 'F', 'I', 'N', 'I', 'T', 'Y'};
-    // @formatter:on
 
     /**
      * Returns a new instance of this service provider.
@@ -207,7 +205,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             // section
             case '[' -> {
                 if (chars[end - 1] == ']')
-                    return new Section(new String(chars, start + 1, len - 2));
+                    return new Section(new String(KofiUtil.unescape(chars, start + 1, end - 1)));
                 else
                     throw KofiLog.exception(src, new ParseException(line, len - 1,
                             "section closing bracket ']' expected"));
