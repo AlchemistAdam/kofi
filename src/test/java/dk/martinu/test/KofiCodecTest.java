@@ -78,6 +78,7 @@ public class KofiCodecTest {
                 \\= = null
                 \\  = null
                 \\t = null
+                \\\\ = null
                 """;
         final Document document = assertDoesNotThrow(() -> KofiCodec.provider().readString(input));
 
@@ -110,6 +111,11 @@ public class KofiCodecTest {
         assertTrue(document.contains("\t", Object.class));
         assertNull(document.getValue("\t", Object.class, new Object()));
         assertTrue(document.isNull("\t"));
+
+        assertTrue(document.contains("\\"));
+        assertTrue(document.contains("\\", Object.class));
+        assertNull(document.getValue("\\", Object.class, new Object()));
+        assertTrue(document.isNull("\\"));
     }
 
     /**
@@ -122,6 +128,7 @@ public class KofiCodecTest {
                 [[]]
                 [ ]
                 [\\n]
+                [\\\\]
                 """;
         final Document document = assertDoesNotThrow(() -> KofiCodec.provider().readString(input));
 
@@ -132,6 +139,8 @@ public class KofiCodecTest {
         assertNotNull(document.getSection(" "));
 
         assertNotNull(document.getSection("\n"));
+
+        assertNotNull(document.getSection("\\"));
     }
 
     @DisplayName("B ReadFile")
