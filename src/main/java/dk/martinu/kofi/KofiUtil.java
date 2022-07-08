@@ -564,7 +564,6 @@ public class KofiUtil {
             if (!isWhitespace(chars[end - 1])) {
                 break;
             }
-            // TEST
             // prevent escaped space characters from being trimmed
             else if (chars[end - 1] == ' ' && isEscaped(chars, end - 1, -1))
                 break;
