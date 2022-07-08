@@ -44,17 +44,94 @@ public class KofiCodecTest {
         assertDoesNotThrow(() -> Files.deleteIfExists(path));
     }
 
+    /**
+     * Test for reading object entries with troublesome names.
+     */
     @Test
-    void readString() {
-        final Document document =
-                assertDoesNotThrow(() -> KofiCodec.provider().readString("\\;key = null"));
+    void readEntries() {
+        final String input = """
+                o = {: null, \\ : null, \\:: null, \\\\: null, \\{: null, \\}: null}
+                """;
+        final Document document = assertDoesNotThrow(() -> KofiCodec.provider().readString(input));
 
-        KofiUtil.printDocument(document, System.out);
+        final KofiObject o = document.getObject("o");
+        assertNotNull(o);
 
-        assertTrue(document.contains(";key"));
-        assertTrue(document.contains(";key", Object.class));
-        assertNull(document.getValue(";key", Object.class, new Object()));
-        assertTrue(document.isNull(";key"));
+        // do not change entry ordering - entries are sorted when object is constructed
+        assertEquals("", o.getEntry(0).getName());
+        assertEquals(" ", o.getEntry(1).getName());
+        assertEquals(":", o.getEntry(2).getName());
+        assertEquals("\\", o.getEntry(3).getName());
+        assertEquals("{", o.getEntry(4).getName());
+        assertEquals("}", o.getEntry(5).getName());
+    }
+
+    /**
+     * Test for reading properties with troublesome names.
+     */
+    @Test
+    void readProperties() {
+        final String input = """
+                 = null
+                \\; = null
+                \\[ = null
+                \\= = null
+                \\  = null
+                \\t = null
+                """;
+        final Document document = assertDoesNotThrow(() -> KofiCodec.provider().readString(input));
+
+        assertTrue(document.contains(""));
+        assertTrue(document.contains("", Object.class));
+        assertNull(document.getValue("", Object.class, new Object()));
+        assertTrue(document.isNull(""));
+
+        assertTrue(document.contains(";"));
+        assertTrue(document.contains(";", Object.class));
+        assertNull(document.getValue(";", Object.class, new Object()));
+        assertTrue(document.isNull(";"));
+
+        assertTrue(document.contains("["));
+        assertTrue(document.contains("[", Object.class));
+        assertNull(document.getValue("[", Object.class, new Object()));
+        assertTrue(document.isNull("["));
+
+        assertTrue(document.contains("="));
+        assertTrue(document.contains("=", Object.class));
+        assertNull(document.getValue("=", Object.class, new Object()));
+        assertTrue(document.isNull("="));
+
+        assertTrue(document.contains(" "));
+        assertTrue(document.contains(" ", Object.class));
+        assertNull(document.getValue(" ", Object.class, new Object()));
+        assertTrue(document.isNull(" "));
+
+        assertTrue(document.contains("\t"));
+        assertTrue(document.contains("\t", Object.class));
+        assertNull(document.getValue("\t", Object.class, new Object()));
+        assertTrue(document.isNull("\t"));
+    }
+
+    /**
+     * Test for reading sections with troublesome names.
+     */
+    @Test
+    void readSections() {
+        final String input = """
+                []
+                [[]]
+                [ ]
+                [\\n]
+                """;
+        final Document document = assertDoesNotThrow(() -> KofiCodec.provider().readString(input));
+
+        assertNotNull(document.getSection(""));
+
+        assertNotNull(document.getSection("[]"));
+
+        assertNotNull(document.getSection(" "));
+
+        assertNotNull(document.getSection("\n"));
     }
 
     @DisplayName("B ReadFile")
