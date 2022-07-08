@@ -542,12 +542,13 @@ public class KofiUtil {
     /**
      * Returns a trimmed subarray of {@code chars} in the specified range. If
      * the trimmed subarray is equal to {@code chars} then {@code chars} is
-     * returned.
+     * returned. Trailing Space characters are not trimmed if escaped.
      *
      * @param chars  the characters to trim
      * @param offset the start index, inclusive
      * @param length the end index, exclusive
      * @return a trimmed subarray
+     * @see #isEscaped(char[], int, int)
      * @see #isWhitespace(char)
      */
     @Contract(value = "null, _, _ -> fail", pure = true)
@@ -560,7 +561,12 @@ public class KofiUtil {
         }
         // trim trailing whitespace
         for (; end > start; end--) {
-            if (!isWhitespace(chars[end - 1]))
+            if (!isWhitespace(chars[end - 1])) {
+                break;
+            }
+            // TEST
+            // prevent escaped space characters from being trimmed
+            else if (chars[end - 1] == ' ' && isEscaped(chars, end - 1, -1))
                 break;
         }
         // no characters are whitespace
