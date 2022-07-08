@@ -660,7 +660,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
         @Override
         public String toString() {
             if (escapedName == null)
-                escapedName = KofiUtil.escape(name, ':');
+                escapedName = KofiUtil.escape(name, ':', '{', '}', ' ');
             return escapedName + ": " + value;
         }
     }

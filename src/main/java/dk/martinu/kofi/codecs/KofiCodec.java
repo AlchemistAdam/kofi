@@ -151,12 +151,12 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         // stops when exhausted or separator ':' is found
         for (int i = start; i < length; i++) {
             if (chars[i] == ':') {
-                if (isEscaped(chars, i, start))
+                if (isEscaped(chars, i, start - 1))
                     end = i + 1;
                 else
                     break;
             }
-            else if (!isWhitespace(chars[i]))
+            else if (!isWhitespace(chars[i]) || (i > start && isEscaped(chars, i, start - 1)))
                 end = i + 1;
         }
 
