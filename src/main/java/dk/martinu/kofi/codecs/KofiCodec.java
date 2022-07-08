@@ -1044,7 +1044,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         @NotNull
         @Override
         public String getValue() {
-            return new String(unescape(trim(chars, start, end)));
+            return new String(unescape(chars, start, end));
         }
     }
 
