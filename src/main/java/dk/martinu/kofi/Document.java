@@ -94,65 +94,207 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
             list.add(Objects.requireNonNull(element, "element is null"));
     }
 
-    // DOC
-    public void acceptArray(@Nullable final String section, @NotNull final String key,
+    /**
+     * Searches for an {@link ArrayProperty} in the specified section that
+     * matches {@code key}. If a property is found, then its value is accepted
+     * by the specified consumer and {@code true} is returned. Otherwise
+     * {@code false} is returned.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if an array value was accepted, otherwise
+     * {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see #acceptValue(String, String, Class, Consumer)
+     * @see Property#matches(String)
+     */
+    public boolean acceptArray(@Nullable final String section, @NotNull final String key,
             final Consumer<KofiArray> consumer) {
-        acceptValue(section, key, KofiArray.class, consumer);
+        return acceptValue(section, key, KofiArray.class, consumer);
     }
 
-    // DOC
-    public void acceptBoolean(@Nullable final String section, @NotNull final String key,
+    /**
+     * Searches for a {@link BooleanProperty} in the specified section that
+     * matches {@code key}. If a property is found, then its value is accepted
+     * by the specified consumer and {@code true} is returned. Otherwise
+     * {@code false} is returned.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if a {@code boolean} value was accepted, otherwise
+     * {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see #acceptValue(String, String, Class, Consumer)
+     * @see Property#matches(String)
+     */
+    public boolean acceptBoolean(@Nullable final String section, @NotNull final String key,
             final Consumer<Boolean> consumer) {
-        acceptValue(section, key, Boolean.class, consumer);
+        return acceptValue(section, key, Boolean.class, consumer);
     }
 
-    // DOC
-    public void acceptChar(@Nullable final String section, @NotNull final String key,
+    /**
+     * Searches for a {@link CharProperty} in the specified section that
+     * matches {@code key}. If a property is found, then its value is accepted
+     * by the specified consumer and {@code true} is returned. Otherwise
+     * {@code false} is returned.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if a {@code char} value was accepted, otherwise
+     * {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see #acceptValue(String, String, Class, Consumer)
+     * @see Property#matches(String)
+     */
+    public boolean acceptChar(@Nullable final String section, @NotNull final String key,
             final Consumer<Character> consumer) {
-        acceptValue(section, key, Character.class, consumer);
+        return acceptValue(section, key, Character.class, consumer);
     }
 
-    // DOC
-    public void acceptDouble(@Nullable final String section, @NotNull final String key,
+    /**
+     * Searches for a {@link DoubleProperty} in the specified section that
+     * matches {@code key}. If a property is found, then its value is accepted
+     * by the specified consumer and {@code true} is returned. Otherwise
+     * {@code false} is returned.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if a {@code double} value was accepted, otherwise
+     * {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see #acceptValue(String, String, Class, Consumer)
+     * @see Property#matches(String)
+     */
+    public boolean acceptDouble(@Nullable final String section, @NotNull final String key,
             final Consumer<Double> consumer) {
-        acceptValue(section, key, Double.class, consumer);
+        return acceptValue(section, key, Double.class, consumer);
     }
 
-    // DOC
-    public void acceptFloat(@Nullable final String section, @NotNull final String key,
+    /**
+     * Searches for a {@link FloatProperty} in the specified section that
+     * matches {@code key}. If a property is found, then its value is accepted
+     * by the specified consumer and {@code true} is returned. Otherwise
+     * {@code false} is returned.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if a {@code float} value was accepted, otherwise
+     * {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see #acceptValue(String, String, Class, Consumer)
+     * @see Property#matches(String)
+     */
+    public boolean acceptFloat(@Nullable final String section, @NotNull final String key,
             final Consumer<Float> consumer) {
-        acceptValue(section, key, Float.class, consumer);
+        return acceptValue(section, key, Float.class, consumer);
     }
 
-    // DOC
-    public void acceptInt(@Nullable final String section, @NotNull final String key,
+    /**
+     * Searches for an {@link IntProperty} in the specified section that
+     * matches {@code key}. If a property is found, then its value is accepted
+     * by the specified consumer and {@code true} is returned. Otherwise
+     * {@code false} is returned.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if an {@code int} value was accepted, otherwise
+     * {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see #acceptValue(String, String, Class, Consumer)
+     * @see Property#matches(String)
+     */
+    public boolean acceptInt(@Nullable final String section, @NotNull final String key,
             final Consumer<Integer> consumer) {
-        acceptValue(section, key, Integer.class, consumer);
+        return acceptValue(section, key, Integer.class, consumer);
     }
 
-    // DOC
-    public void acceptLong(@Nullable final String section, @NotNull final String key, final Consumer<Long> consumer) {
-        acceptValue(section, key, Long.class, consumer);
+    /**
+     * Searches for a {@link LongProperty} in the specified section that
+     * matches {@code key}. If a property is found, then its value is accepted
+     * by the specified consumer and {@code true} is returned. Otherwise
+     * {@code false} is returned.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if a {@code long} value was accepted, otherwise
+     * {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see #acceptValue(String, String, Class, Consumer)
+     * @see Property#matches(String)
+     */
+    public boolean acceptLong(@Nullable final String section, @NotNull final String key, final Consumer<Long> consumer) {
+        return acceptValue(section, key, Long.class, consumer);
     }
 
-    // DOC
-    public void acceptObject(@Nullable final String section, @NotNull final String key,
+    /**
+     * Searches for a {@link ObjectProperty} in the specified section that
+     * matches {@code key}. If a property is found, then its value is accepted
+     * by the specified consumer and {@code true} is returned. Otherwise
+     * {@code false} is returned.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if an object value was accepted, otherwise
+     * {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see #acceptValue(String, String, Class, Consumer)
+     * @see Property#matches(String)
+     */
+    public boolean acceptObject(@Nullable final String section, @NotNull final String key,
             final Consumer<KofiObject> consumer) {
-        acceptValue(section, key, KofiObject.class, consumer);
+        return acceptValue(section, key, KofiObject.class, consumer);
     }
 
-    // DOC
-    public void acceptString(@Nullable final String section, @NotNull final String key,
+    /**
+     * Searches for a {@link StringProperty} in the specified section that
+     * matches {@code key}. If a property is found, then its value is accepted
+     * by the specified consumer and {@code true} is returned. Otherwise
+     * {@code false} is returned.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if a string value was accepted, otherwise
+     * {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see #acceptValue(String, String, Class, Consumer)
+     * @see Property#matches(String)
+     */
+    public boolean acceptString(@Nullable final String section, @NotNull final String key,
             final Consumer<String> consumer) {
-        acceptValue(section, key, String.class, consumer);
+        return acceptValue(section, key, String.class, consumer);
     }
 
-    // DOC
-    public <V> void acceptValue(@Nullable final String section, @NotNull final String key, Class<V> valueType,
+    /**
+     * Searches for a {@link Property} in the specified section that
+     * matches {@code key} and {@code valueType}. If a property is found, then
+     * its value is accepted by the specified consumer and {@code true} is
+     * returned. Otherwise {@code false} is returned.
+     *
+     * @param section the name of the section to search in, can be
+     *                {@code null}
+     * @param key     the property key to match against
+     * @return {@code true} if a value was accepted, otherwise {@code false}
+     * @throws NullPointerException if {@code key} is {@code null}
+     * @see Property#matches(String, Class)
+     */
+    public <V> boolean acceptValue(@Nullable final String section, @NotNull final String key, Class<V> valueType,
             final Consumer<V> consumer) {
         final V value = getValue(section, key, valueType, null);
-        if (value != null)
+        if (value != null) {
             consumer.accept(value);
+            return true;
+        }
+        else
+            return false;
     }
 
     /**
@@ -447,7 +589,8 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
     public void addProperties(@Nullable final String section, @NotNull final Property<?>... properties) {
         Objects.requireNonNull(properties, "properties array is null");
         final Property<?>[] a = Arrays.copyOf(properties, properties.length);
-        // TODO add properties in bulk for better performance if/when possible
+        // TODO add properties in parallel for better performance if/when possible
+        //  this would require the collection of properties to use gap content
         for (Property<?> property : a)
             addProperty(section, property);
     }
