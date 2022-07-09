@@ -145,7 +145,6 @@ lf = %A ;
 <div><pre>
 symbol = expression ;
 </pre></div>
-<p>Expressions are evaluated left-to-right.</p>
 <br>
 <p>Hexadecimal values corresponding to Unicode codepoints are used for
     characters that cannot be represented as a single visible character,
@@ -180,7 +179,7 @@ A = "A" ;
 <section>
 <p>Expressions can be either a single terminal value, or a group of terminal
     values and other symbols. Values and symbols can be combined with group
-    operators, and are listed from highest to lowest precedence:</p>
+    operators, which are listed from highest to lowest precedence:</p>
 <ul>
 
 <li><p>Concatenation &mdash; X and Y.</p><div><pre>
@@ -207,12 +206,13 @@ X | Y
 [X]
 </pre></div></li>
 
-<li><p>Optional Repetition &mdash; X one or more times, or
-    nothing.</p><div><pre>
+<li><p>Optional Repetition &mdash; X one or more times, or nothing. X is
+    reevaluated for each iteration.</p><div><pre>
 {X}
 </pre></div></li>
 
-<li><p>Repetition &mdash; X one or more times.</p><div><pre>
+<li><p>Repetition &mdash; X one or more times. X is reevaluated for each
+    iteration.</p><div><pre>
 {X}+
 </pre></div></li>
 
@@ -221,9 +221,10 @@ X | Y
 
 <h3>Precedence</h3>
 <section>
-<p>The evaluation order of values and groups is changed by surrounding them with
-    parentheses. Parenthesized values and groups have higher precedence and are
-    evaluated first, starting at the deepest level.</p>
+<p>Bracket operators are evaluated before group operators. The evaluation order
+    of values and groups is changed by surrounding them with parentheses.
+    Parenthesized values and groups have the highest precedence and are
+    evaluated first.</p>
 </section>
 </section>
 <br>
@@ -232,17 +233,24 @@ X | Y
 <section>
 <p>Text that conforms to the KoFi text syntax is referred to as a document; a
     sequence of zero or more elements, each separated with a <span>Line
-    Feed</span> character. Elements can have both prefixed and suffixed
-    whitespace. A document is defined as:</p>
+    Feed</span>. Elements can have both prefixed and suffixed whitespace. A
+    document is defined as:</p>
 <div><pre>
 document   = [docElement , {lf , docElement}] ;
 docElement = [ws] , element , [ws] ;
 lf         = %A ;
 ws         = {%9 | %D | %20}+ ;
 </pre></div>
+<p>The "ws" symbol is one or more whitespace characters joined together, each
+    one being either <span>Horizontal Tab</span>, <span>Carriage
+    Return</span> or <span>Space</span>. <span>Line Feed</span> is not
+    considered as whitespace since it is used to separate document elements and
+    therefore cannot be a part of them.</p>
 <br>
-<p>The "nc" symbol defines a valid character and is used by other symbols. It
-    allows for a character to be escaped, and is defined as:</p>
+<p>The following "nc" symbol defines an arbitrary character and is used by
+    other symbols. It allows any character except <span>Line Feed</span> to be
+    escaped by preceeding it with a <span>\ Reverse Solidus</span>, and is
+    defined as:</p>
 <div><pre>
 nc = . - (lf | "\") | "\" , (. - lf) ;
 </pre></div>
@@ -279,10 +287,10 @@ section = "[" , {nc} , "]" ;
 <br>
 <p>Property elements store data as a name-value pair. The value of a property
     is complex and can be many things; it is covered in its own section. A
-    property begins with a possibly empty property name, followed by <span>=
+    property begins with a possibly empty property name, followed by an <span>=
     Equals Sign</span>, and ends with a property value:</p>
 <div><pre>
-property     = [ws] , [propertyName] , [ws] , "=" , [ws] , value ;
+property     = [ws] , [propertyName] , [ws] , "=" , [ws] , value, [ws] ;
 propertyName = pns , [{pnc} , pne] ;
 pns          = pne - (";" | "[") ;
 pne          = pnc - ws ;
@@ -292,7 +300,8 @@ pnc          = nc - "=" ;
     used as the first character of a property name, unless escaped, as these are
     used to begin comment and section elements. Nor can the name contain
     <span>= Equals Sign</span>, unless escaped, as it is used to separate the
-    name from the value.</p>
+    name from the value. Prefixed and suffixed whitespace in the name must also
+    be escaped.</p>
 </section>
 <br>
 
@@ -317,8 +326,8 @@ string = '"' , {nc - '"'} , '"' ;
 </pre></div>
 <br>
 <p>Character values are surrounded with <span>' Apostrophe</span> characters.
-    <span>' Apostrophe</span> and <span>\ Reverse Solidus</span> characters must
-    be escaped. They can be a single character, a two-character escape sequence
+    <span>' Apostrophe</span> and <span>\ Reverse Solidus</span> must be
+    escaped. They can be a single character, a two-character escape sequence
     or a six-character escape sequence:</p>
 <div><pre>
 char     = "'" , (. - (lf | "\" | "'") | 2esc | 6esc) , "'" ;
@@ -329,7 +338,7 @@ hexDigit = '0'_'9' | 'A'_'F' | 'a'_'f' ;
 <br>
 <p>Number values include all primitive number types in Java. Numbers can be a
     sequence of digits, or an infinity or <abbr title="Not a Number">NaN</abbr>
-    constant. Type specifiers can be appended to denote value types of long,
+    string. Type specifiers can be appended to denote value types of long,
     float and double, and floating-point numbers can have an exponent:</p>
 <div><pre>
 number    = [sign] , (integer | float | "infinity") | "nan" ;
@@ -355,16 +364,15 @@ entity  = [ws] , value , [ws] ;
 <div><pre>
 object    = "{" , [entry , {"," , entry}] , "}" ;
 entry     = [ws] , entryName , [ws] , ":" , value , [ws] ;
-entryName = ens , [{enc} , ene] ;
-ens       = ene - ("{" | "}") ;
-ene       = enc - ws ;
-enc       = nc - ":" ;
+entryName = enp , [{enc} , enp] ;
+enp       = enc - ws ;
+enc       = nc - ("{" | "}" | ":") ;
 </pre></div>
-<p>Entries are very similar to properties; they both have a name, a value and a
-    separator. <span>{ Left Curly Bracket</span> and <span>} Right Curly
-    Bracket</span> cannot be used as the first character of an entry name,
-    unless escaped. Nor can the name contain <span>: Colon</span>, unless
-    escaped, as it is used to separate the name from the value.</p>
+<p>The entry name cannot contain <span>{ Left Curly Bracket</span> or <span>}
+    Right Curly Bracket</span>, unless escaped. Nor can the name contain
+    <span>: Colon</span>, unless escaped, as it is used to separate the name
+    from the value. Prefixed and suffixed whitespace in the name must also be
+    escaped.</p>
 </section>
 <br>
 
@@ -383,7 +391,7 @@ whitespace   = [ws] ;
 comment      = ";" , {. - lf} ;
 section      = "[" , {nc} , "]" ;
 
-property     = [ws] , [propertyName] , [ws] , "=" , [ws] , value ;
+property     = [ws] , [propertyName] , [ws] , "=" , [ws] , value, [ws] ;
 propertyName = pns , [{pnc} , pne] ;
 pns          = pne - (";" | "[")  ;
 pne          = pnc - ws ;
@@ -414,10 +422,9 @@ element      = [ws] , value , [ws] ;
 
 object       = "{" , [entry , {"," , entry}] , "}" ;
 entry        = [ws] , entryName , [ws] , ":" , value , [ws] ;
-entryName    = ens , [{enc} , ene] ;
-ens          = ene - ("{" | "}") ;
-ene          = enc - ws ;
-enc          = nc - ":" ;
+entryName    = enp , [{enc} , enp] ;
+enp          = enc - ws ;
+enc          = nc - ("{" | "}" | ":") ;
 </pre>
 </section>
 <br>
