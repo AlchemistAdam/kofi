@@ -32,11 +32,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * amounts of whitespace, and with elements of all value types. Tests are
  * ordered randomly.
  * <p>
- * This test not only helps verify that documents work as intended, but also
+ * This test not only helps assert that documents work as intended, but also
  * that {@link KofiCodec} parses strings to elements correctly.</p>
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.Random.class)
+// TODO implement tests for 3 whitespace policies when implemented; minimum, default and random
 public class DocumentTest {
 
     public static final String input = """
@@ -82,6 +83,96 @@ public class DocumentTest {
             """;
 
     Document document;
+
+    @Test
+    void acceptArray() {
+        assertTrue(document.acceptArray(null, "nestedArray", Assertions::assertNotNull));
+        assertTrue(document.acceptValue(null, "nestedArray", KofiArray.class, Assertions::assertNotNull));
+
+        assertTrue(document.acceptArray(null, "empty", Assertions::assertNotNull));
+        assertTrue(document.acceptValue(null, "empty", KofiArray.class, Assertions::assertNotNull));
+
+        assertTrue(document.acceptArray(null, "mix", Assertions::assertNotNull));
+        assertTrue(document.acceptValue(null, "mix", KofiArray.class, Assertions::assertNotNull));
+
+        assertTrue(document.acceptArray("abc", "empty", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("abc", "empty", KofiArray.class, Assertions::assertNotNull));
+
+        assertTrue(document.acceptArray("def", "numbers", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("def", "numbers", KofiArray.class, Assertions::assertNotNull));
+    }
+
+    @Test
+    void acceptBoolean() {
+        assertTrue(document.acceptBoolean(null, "bool", Assertions::assertNotNull));
+        assertTrue(document.acceptValue(null, "bool", Boolean.class, Assertions::assertNotNull));
+
+        assertTrue(document.acceptBoolean("def", "remove", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("def", "remove", Boolean.class, Assertions::assertNotNull));
+    }
+
+    @Test
+    void acceptChar() {
+        assertTrue(document.acceptChar(null, "char", Assertions::assertNotNull));
+        assertTrue(document.acceptValue(null, "char", Character.class, Assertions::assertNotNull));
+
+        assertTrue(document.acceptChar("abc", "char2", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("abc", "char2", Character.class, Assertions::assertNotNull));
+
+        assertTrue(document.acceptChar("def", "char3", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("def", "char3", Character.class, Assertions::assertNotNull));
+    }
+
+    @Test
+    void acceptDouble() {
+        assertTrue(document.acceptDouble("abc", "double", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("abc", "double", Double.class, Assertions::assertNotNull));
+    }
+
+    @Test
+    void acceptFloat() {
+        assertTrue(document.acceptFloat("def", "float", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("def", "float", Float.class, Assertions::assertNotNull));
+    }
+
+    @Test
+    void acceptInt() {
+        assertTrue(document.acceptInt(null, "int2", Assertions::assertNotNull));
+        assertTrue(document.acceptValue(null, "int2", Integer.class, Assertions::assertNotNull));
+
+        assertTrue(document.acceptInt("abc", "int", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("abc", "int", Integer.class, Assertions::assertNotNull));
+
+        assertTrue(document.acceptInt("abc", "remove", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("abc", "remove", Integer.class, Assertions::assertNotNull));
+    }
+
+    @Test
+    void acceptLong() {
+        assertTrue(document.acceptLong("def", "long", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("def", "long", Long.class, Assertions::assertNotNull));
+    }
+
+    @Test
+    void acceptObject() {
+        assertTrue(document.acceptObject(null, "nestedObject", Assertions::assertNotNull));
+        assertTrue(document.acceptValue(null, "nestedObject", KofiObject.class, Assertions::assertNotNull));
+
+        assertTrue(document.acceptObject("abc", "object", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("abc", "object", KofiObject.class, Assertions::assertNotNull));
+
+        assertTrue(document.acceptObject("def", "empty", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("def", "empty", KofiObject.class, Assertions::assertNotNull));
+
+        assertTrue(document.acceptObject("def", "object2", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("def", "object2", KofiObject.class, Assertions::assertNotNull));
+    }
+
+    @Test
+    void acceptString() {
+        assertTrue(document.acceptString("abc", "string", Assertions::assertNotNull));
+        assertTrue(document.acceptValue("abc", "string", String.class, Assertions::assertNotNull));
+    }
 
     @Test
     void containsArray() {
@@ -141,6 +232,7 @@ public class DocumentTest {
 
         assertTrue(document.contains("abc", "int"));
         assertTrue(document.contains("abc", "int", Integer.class));
+
         assertTrue(document.contains("abc", "remove"));
         assertTrue(document.contains("abc", "remove", Integer.class));
     }
@@ -384,7 +476,7 @@ public class DocumentTest {
         assertEquals(442211, document.getValue("int2", Number.class, 0));
         assertEquals(123.567d, document.getValue("abc", "double", Number.class, 0.0d));
         assertEquals("Hello, World!", document.getValue("abc", "string", CharSequence.class, ""));
-        assertNotNull(document.getValue("empty", KofiValue.class, null));
+        assertEquals(new KofiArray(), document.getValue("empty", KofiValue.class, null));
     }
 
     @AfterAll
