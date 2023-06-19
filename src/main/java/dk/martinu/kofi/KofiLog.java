@@ -157,7 +157,7 @@ public class KofiLog {
      * @param scn the source class name
      * @param smn the source method name
      */
-    public static record Source(String scn, String smn) {
+    public record Source(String scn, String smn) {
 
         @Contract(pure = true)
         public Source(@Nullable final Class<?> sourceClass, @Nullable final String sourceMethod) {
