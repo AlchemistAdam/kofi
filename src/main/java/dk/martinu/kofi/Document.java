@@ -1509,8 +1509,20 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      */
     @Contract(value = "_ -> new", pure = true)
     @Nullable
-    public List<Property<Object>> getProperties(@Nullable final String section) {
-        return getProperties(section, null);
+    public List<Property<?>> getProperties(@Nullable final String section) {
+        final int index = getElementsIndex(section);
+        if (index == -1)
+            return null;
+        final ArrayList<Property<?>> subList = new ArrayList<>(elements().size() - index);
+        Element e;
+        for (int i = index; i < elements().size(); i++) {
+            e = list.get(i);
+            if (e instanceof Section)
+                break;
+            else if (e instanceof Property<?> p)
+                subList.add(p);
+        }
+        return subList;
     }
 
     /**
