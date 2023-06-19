@@ -81,7 +81,7 @@ public class BooleanProperty extends Property<Boolean> implements Cloneable, Ser
     @NotNull
     @Override
     public String getValueString() {
-        //noinspection ConstantConditions
+        //noinspection DataFlowIssue
         return Boolean.toString(value);
     }
 }

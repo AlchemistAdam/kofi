@@ -73,7 +73,7 @@ public class ArrayProperty extends Property<KofiArray> implements Cloneable, Ser
     @Override
     public void forEach(@NotNull final Consumer<? super Object> action) {
         Objects.requireNonNull(action, "action is null");
-        //noinspection ConstantConditions
+        //noinspection DataFlowIssue
         for (Object o : value)
             action.accept(o);
     }
@@ -97,7 +97,7 @@ public class ArrayProperty extends Property<KofiArray> implements Cloneable, Ser
     @NotNull
     @Override
     public String getValueString() {
-        //noinspection ConstantConditions
+        //noinspection DataFlowIssue
         return value.getString();
     }
 
@@ -121,7 +121,7 @@ public class ArrayProperty extends Property<KofiArray> implements Cloneable, Ser
                 hash = h;
         }
         // value hash is mutable and must be computed each time
-        //noinspection ConstantConditions
+        //noinspection DataFlowIssue
         return h | value.hashCode() << 16;
     }
 
@@ -135,7 +135,7 @@ public class ArrayProperty extends Property<KofiArray> implements Cloneable, Ser
     @NotNull
     @Override
     public Iterator<Object> iterator() {
-        //noinspection ConstantConditions
+        //noinspection DataFlowIssue
         return value.iterator();
     }
 
@@ -149,7 +149,7 @@ public class ArrayProperty extends Property<KofiArray> implements Cloneable, Ser
     @NotNull
     @Override
     public Spliterator<Object> spliterator() {
-        //noinspection ConstantConditions
+        //noinspection DataFlowIssue
         return value.spliterator();
     }
 }

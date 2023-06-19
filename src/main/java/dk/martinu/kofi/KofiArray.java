@@ -149,7 +149,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      *                                  cannot be converted to the component
      *                                  type
      */
-    @SuppressWarnings("ConstantConditions")
+    @SuppressWarnings("DataFlowIssue")
     @Contract(value = "_ -> new", pure = true)
     @NotNull
     public <V> V construct(@NotNull final Class<V> type) {

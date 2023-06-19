@@ -94,7 +94,7 @@ public class StringProperty extends Property<String> implements Cloneable, Seria
     @Override
     public String getValueString() {
         if (escapedValue == null)
-            //noinspection ConstantConditions
+            //noinspection DataFlowIssue
             escapedValue = '"' + KofiUtil.escape(value, '\"') + '"';
         return escapedValue;
     }

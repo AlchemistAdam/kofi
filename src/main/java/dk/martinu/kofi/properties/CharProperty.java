@@ -88,7 +88,7 @@ public class CharProperty extends Property<Character> implements Cloneable, Seri
     @NotNull
     @Override
     public String getValueString() {
-        //noinspection ConstantConditions
+        //noinspection DataFlowIssue
         if (value < 0x20)
             return '\'' + KofiUtil.escape_00_1F(value) + '\'';
         else

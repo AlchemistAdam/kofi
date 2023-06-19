@@ -81,7 +81,7 @@ public class FloatProperty extends Property<Float> implements Cloneable, Seriali
     @NotNull
     @Override
     public String getValueString() {
-        //noinspection ConstantConditions
+        //noinspection DataFlowIssue
         return Float.toString(value) + 'f';
     }
 }
