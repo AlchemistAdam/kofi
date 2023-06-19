@@ -1539,7 +1539,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
             e = list.get(i);
             if (e instanceof Section)
                 break;
-            else if (e instanceof Property p && p.matches(valueType))
+            else if (e instanceof Property<?> p && p.matches(valueType))
                 subList.add((Property<V>) p);
         }
         return subList;
