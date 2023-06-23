@@ -81,7 +81,6 @@ public class LongProperty extends Property<Long> implements Cloneable, Serializa
     @NotNull
     @Override
     public String getValueString() {
-        //noinspection DataFlowIssue
         return Long.toString(value) + 'L';
     }
 }

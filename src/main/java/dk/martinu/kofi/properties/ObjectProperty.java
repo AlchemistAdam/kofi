@@ -74,7 +74,6 @@ public class ObjectProperty extends Property<KofiObject> implements Cloneable, S
     @Override
     public void forEach(@NotNull final Consumer<? super KofiObject.Entry> action) {
         Objects.requireNonNull(action, "action is null");
-        //noinspection DataFlowIssue
         for (KofiObject.Entry o : value)
             action.accept(o);
     }
@@ -98,7 +97,6 @@ public class ObjectProperty extends Property<KofiObject> implements Cloneable, S
     @NotNull
     @Override
     public String getValueString() {
-        //noinspection DataFlowIssue
         return value.getString();
     }
 
@@ -122,7 +120,6 @@ public class ObjectProperty extends Property<KofiObject> implements Cloneable, S
                 hash = h;
         }
         // value hash is mutable and must be computed each time
-        //noinspection DataFlowIssue
         return h | value.hashCode() << 16;
     }
 
@@ -136,7 +133,6 @@ public class ObjectProperty extends Property<KofiObject> implements Cloneable, S
     @NotNull
     @Override
     public Iterator<KofiObject.Entry> iterator() {
-        //noinspection DataFlowIssue
         return value.iterator();
     }
 
@@ -150,7 +146,6 @@ public class ObjectProperty extends Property<KofiObject> implements Cloneable, S
     @NotNull
     @Override
     public Spliterator<KofiObject.Entry> spliterator() {
-        //noinspection DataFlowIssue
         return value.spliterator();
     }
 }

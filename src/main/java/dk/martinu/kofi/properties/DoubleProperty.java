@@ -81,7 +81,6 @@ public class DoubleProperty extends Property<Double> implements Cloneable, Seria
     @NotNull
     @Override
     public String getValueString() {
-        //noinspection DataFlowIssue
         return Double.toString(value) + 'd';
     }
 }

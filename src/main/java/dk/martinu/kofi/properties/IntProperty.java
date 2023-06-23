@@ -81,7 +81,6 @@ public class IntProperty extends Property<Integer> implements Cloneable, Seriali
     @NotNull
     @Override
     public String getValueString() {
-        //noinspection DataFlowIssue
         return Integer.toString(value);
     }
 }
