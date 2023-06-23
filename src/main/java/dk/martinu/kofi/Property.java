@@ -47,9 +47,12 @@ public abstract class Property<V> extends Element {
     @NotNull
     public final String key;
     /**
-     * The property value
+     * The property value.
+     * <p>
+     * <b>NOTE:</b> the nullability of a property's value depends on the
+     * implementation. The only property implementation provided by the KoFi
+     * API that can have a {@code null} value is {@code NullProperty}.
      */
-    @Nullable
     public final V value;
     /**
      * Cached hash code.
