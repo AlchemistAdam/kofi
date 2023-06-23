@@ -24,7 +24,7 @@
  *     <li>
  *         {@code null} as
  *         {@link dk.martinu.kofi.properties.NullProperty NullProperty} (not
- *         specifically a type, but null values are supported)
+ *         specifically a type, but {@code null} values are supported)
  *     </li>
  *     <li>
  *         {@code String} as
