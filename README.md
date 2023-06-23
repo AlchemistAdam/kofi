@@ -34,7 +34,7 @@ name = "Van"
 type = "cat"
 age = 2
 [obj]
-dogObject = { "name": "Susie", "type": "dog", "age": 5 }
+dogObject = { name: "Susie", type: "dog", age: 5 }
 ```
 
 *Pet.java*
