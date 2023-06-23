@@ -26,7 +26,8 @@ import java.util.Objects;
 import dk.martinu.kofi.Property;
 
 /**
- * A {@link Property} that holds a {@code Long} value.
+ * A {@link Property} that holds a {@code Long} value. The value of a
+ * {@code LongProperty} can never be {@code null}.
  *
  * @author Adam Martinu
  * @since 1.0

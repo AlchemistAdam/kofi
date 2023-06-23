@@ -26,7 +26,8 @@ import java.util.Objects;
 import dk.martinu.kofi.Property;
 
 /**
- * A {@link Property} that holds a float value.
+ * A {@link Property} that holds a {@code Float} value. The value of a
+ * {@code FloatProperty} can never be {@code null}.
  *
  * @author Adam Martinu
  * @since 1.0

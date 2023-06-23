@@ -28,7 +28,8 @@ import dk.martinu.kofi.KofiArray;
 import dk.martinu.kofi.Property;
 
 /**
- * A {@link Property} that holds a {@link KofiArray} value.
+ * A {@link Property} that holds a {@link KofiArray} value. The value of an
+ * {@code ArrayProperty} can never be {@code null}.
  *
  * @author Adam Martinu
  * @since 1.0

@@ -26,7 +26,8 @@ import java.util.Objects;
 import dk.martinu.kofi.Property;
 
 /**
- * A {@link Property} that holds a double value.
+ * A {@link Property} that holds a {@code Double} value. The value of a
+ * {@code DoubleProperty} can never be {@code null}.
  *
  * @author Adam Martinu
  * @since 1.0

@@ -28,7 +28,8 @@ import dk.martinu.kofi.KofiObject;
 import dk.martinu.kofi.Property;
 
 /**
- * A {@link Property} that holds a {@link KofiObject} value.
+ * A {@link Property} that holds a {@link KofiObject} value. The value of an
+ * {@code ObjectProperty} can never be {@code null}.
  *
  * @author Adam Martinu
  * @since 1.0

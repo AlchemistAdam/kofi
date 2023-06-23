@@ -30,7 +30,7 @@ import dk.martinu.kofi.Property;
  * A {@link Property} whose value is always {@code null}. Because a
  * {@code null} value does not inherently belong to a specific value type, the
  * value type of {@code NullProperty} is {@code Object}. This means that all
- * (except primitive) types will {@link #matches(Class) match} against an
+ * (except primitive) types will {@link #matches(Class) match} with an
  * instance of this class.
  *
  * @author Adam Martinu

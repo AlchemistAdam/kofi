@@ -27,7 +27,8 @@ import dk.martinu.kofi.KofiUtil;
 import dk.martinu.kofi.Property;
 
 /**
- * A {@link Property} implementation that holds a string value.
+ * A {@link Property} implementation that holds a {@code String} value. The
+ * value of a {@code StringProperty} can never be {@code null}.
  *
  * @author Adam Martinu
  * @since 1.0

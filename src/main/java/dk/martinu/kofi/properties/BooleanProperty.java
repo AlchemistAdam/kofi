@@ -26,7 +26,8 @@ import java.util.Objects;
 import dk.martinu.kofi.Property;
 
 /**
- * A {@link Property} that holds a boolean value.
+ * A {@link Property} that holds a {@code Boolean} value. The value of an
+ * {@code BooleanProperty} can never be {@code null}.
  *
  * @author Adam Martinu
  * @since 1.0

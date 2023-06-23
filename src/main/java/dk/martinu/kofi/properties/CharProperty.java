@@ -27,7 +27,8 @@ import dk.martinu.kofi.KofiUtil;
 import dk.martinu.kofi.Property;
 
 /**
- * A {@link Property} that holds a character value.
+ * A {@link Property} that holds a {@code Character} value. The value of an
+ * {@code CharProperty} can never be {@code null}.
  *
  * @author Adam Martinu
  * @since 1.0
