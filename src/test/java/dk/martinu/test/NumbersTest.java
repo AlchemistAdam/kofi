@@ -17,198 +17,187 @@
 
 package dk.martinu.test;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-
-import java.io.IOException;
-
 import dk.martinu.kofi.Document;
 import dk.martinu.kofi.codecs.KofiCodec;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.*;
+
+import java.io.IOException;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Testing number parsing implementation of {@link KofiCodec}.
  */
+@DisplayName("parsing numbers with KofiCodec")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class NumbersTest {
 
     /**
+     * Provides arguments for {@link #numbersValue(Number, String)} test. The
+     * String arguments represent an unnamed global property and hence start
+     * with {@code =}.
+     */
+    static Stream<Arguments> numbersValueProvider() {
+        return Stream.of(
+                Arguments.of(18578282, "=18578282"),
+                Arguments.of(623749871478372582L, "=623749871478372582L"),
+                Arguments.of(8237.98683F, "=8237.98683F"),
+                Arguments.of(1234.5678, "=1234.5678"),
+                Arguments.of(183.6254e3F, "=183.6254e3F"),
+                Arguments.of(183.6254e+5F, "=183.6254e+5F"),
+                Arguments.of(1234.5678e2, "=1234.5678e2"),
+                Arguments.of(942597.29723848213d, "=942597.29723848213d"),
+                Arguments.of(934.9053234e3d, "=934.9053234e3d"),
+                Arguments.of(934.9053234e+5d, "=934.9053234e+5d"),
+                Arguments.of(934.9053234e-6d, "=934.9053234e-6d"),
+                Arguments.of(Float.NaN, "=NaN"),
+                Arguments.of(Float.POSITIVE_INFINITY, "=infinity"),
+                Arguments.of(Float.POSITIVE_INFINITY, "=+infinity"),
+                Arguments.of(Float.NEGATIVE_INFINITY, "=-infinity")
+        );
+    }
+
+    /**
      * Test for different representations of numbers.
      */
-    @Test
-    void numbers() {
+    @DisplayName("can read numbers from string")
+    @ParameterizedTest
+    @CsvSource({
+            // plain number
+            "n = 0",
+            // fractional part
+            "n = .0",
+            "n = 0.",
+            "n = 0.0",
+            // precision
+            "n = 0d ",
+            "n = 0d",
+            "n = 0.d",
+            "n = .0d",
+            "n = 0.0d",
+            "n = 0e0d",
+            "n = 0.e0d",
+            "n = .0e0d",
+            "n = 0.0e0d",
+            // sign
+            "n = +0",
+            "n = -0",
+            "n = +0.",
+            "n = -0.",
+            "n = +.0",
+            "n = -.0",
+            "n = +0.0",
+            "n = -0.0",
+            // exponent part
+            "n = 0e0",
+            "n = .0e0",
+            "n = 0.e0",
+            "n = 0.0e0",
+            "n = 0e+0",
+            "n = 0e-0",
+            "n = 0.e+0",
+            "n = .0e+0",
+            "n = 0.0e+0",
+            // constants
+            "n = nan",
+            "n = NAN",
+            "n = infinity",
+            "n = INFINITY",
+            "n = +infinity",
+            "n = +INFINITY",
+            "n = -infinity",
+            "n = -INFINITY"
+    })
+    public void numbers(final String s) {
         final KofiCodec codec = new KofiCodec();
-
-        // plain number
-        assertDoesNotThrow(() -> codec.readString("n = 0"));
-
-        // fractional part
-        assertDoesNotThrow(() -> codec.readString("n = .0"));
-        assertDoesNotThrow(() -> codec.readString("n = 0."));
-        assertDoesNotThrow(() -> codec.readString("n = 0.0"));
-
-        // precision
-        assertDoesNotThrow(() -> codec.readString("n = 0d "));
-        assertDoesNotThrow(() -> codec.readString("n = 0d"));
-        assertDoesNotThrow(() -> codec.readString("n = 0.d"));
-        assertDoesNotThrow(() -> codec.readString("n = .0d"));
-        assertDoesNotThrow(() -> codec.readString("n = 0.0d"));
-        assertDoesNotThrow(() -> codec.readString("n = 0e0d"));
-        assertDoesNotThrow(() -> codec.readString("n = 0.e0d"));
-        assertDoesNotThrow(() -> codec.readString("n = .0e0d"));
-        assertDoesNotThrow(() -> codec.readString("n = 0.0e0d"));
-
-        // sign
-        assertDoesNotThrow(() -> codec.readString("n = +0"));
-        assertDoesNotThrow(() -> codec.readString("n = -0"));
-        assertDoesNotThrow(() -> codec.readString("n = +0."));
-        assertDoesNotThrow(() -> codec.readString("n = -0."));
-        assertDoesNotThrow(() -> codec.readString("n = +.0"));
-        assertDoesNotThrow(() -> codec.readString("n = -.0"));
-        assertDoesNotThrow(() -> codec.readString("n = +0.0"));
-        assertDoesNotThrow(() -> codec.readString("n = -0.0"));
-
-        // exponent part
-        assertDoesNotThrow(() -> codec.readString("n = 0e0"));
-        assertDoesNotThrow(() -> codec.readString("n = .0e0"));
-        assertDoesNotThrow(() -> codec.readString("n = 0.e0"));
-        assertDoesNotThrow(() -> codec.readString("n = 0.0e0"));
-        assertDoesNotThrow(() -> codec.readString("n = 0e+0"));
-        assertDoesNotThrow(() -> codec.readString("n = 0e-0"));
-        assertDoesNotThrow(() -> codec.readString("n = 0.e+0"));
-        assertDoesNotThrow(() -> codec.readString("n = .0e+0"));
-        assertDoesNotThrow(() -> codec.readString("n = 0.0e+0"));
-
-        // constants
-        assertDoesNotThrow(() -> codec.readString("n = nan"));
-        assertDoesNotThrow(() -> codec.readString("n = NAN"));
-        assertDoesNotThrow(() -> codec.readString("n = infinity"));
-        assertDoesNotThrow(() -> codec.readString("n = INFINITY"));
-        assertDoesNotThrow(() -> codec.readString("n = +infinity"));
-        assertDoesNotThrow(() -> codec.readString("n = +INFINITY"));
-        assertDoesNotThrow(() -> codec.readString("n = -infinity"));
-        assertDoesNotThrow(() -> codec.readString("n = -INFINITY"));
+        assertDoesNotThrow(() -> codec.readString(s));
     }
 
     /**
-     * Test for errornous representations of numbers
+     * Test for erroneous representations of numbers
      */
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    @Test
-    void numbersError() {
+    @DisplayName("throws exception for invalid number representations")
+    @ParameterizedTest
+    @CsvSource({
+            // empty numbers
+            "n = .",
+            "n = +",
+            "n = -",
+            // fractional/exponent part for long
+            "n = 0.L",
+            "n = .0L",
+            "n = 0.0L",
+            "n = 0e0L",
+            "n = 0.e0L",
+            "n = .0e0L",
+            "n = 0.0e0L",
+            // double operators
+            "n = 0..",
+            "n = .0.",
+            "n = ..0",
+            "n = ++0",
+            "n = +0+",
+            "n = --0",
+            "n = -0-",
+            // invalid exponents
+            "n = 0e",
+            "n = 0ee",
+            "n = 0e++0",
+            "n = 0e+0+",
+            "n = 0e--0",
+            "n = 0e-0-",
+            "n = 0e0.",
+            "n = 0e.0",
+            "n = 0e0.0",
+            // invalid number
+            "n = 0a"
+    })
+    public void numbersError(final String s) {
         final KofiCodec codec = new KofiCodec();
-
-        // empty numbers
-        assertThrows(IOException.class, () -> codec.readString("n = ."));
-        assertThrows(IOException.class, () -> codec.readString("n = +"));
-        assertThrows(IOException.class, () -> codec.readString("n = -"));
-
-        // fractional/exponent part for long
-        assertThrows(IOException.class, () -> codec.readString("n = 0.L"));
-        assertThrows(IOException.class, () -> codec.readString("n = .0L"));
-        assertThrows(IOException.class, () -> codec.readString("n = 0.0L"));
-        assertThrows(IOException.class, () -> codec.readString("n = 0e0L"));
-        assertThrows(IOException.class, () -> codec.readString("n = 0.e0L"));
-        assertThrows(IOException.class, () -> codec.readString("n = .0e0L"));
-        assertThrows(IOException.class, () -> codec.readString("n = 0.0e0L"));
-
-        // double operators
-        assertThrows(IOException.class, () -> codec.readString("n = 0.."));
-        assertThrows(IOException.class, () -> codec.readString("n = .0."));
-        assertThrows(IOException.class, () -> codec.readString("n = ..0"));
-        assertThrows(IOException.class, () -> codec.readString("n = ++0"));
-        assertThrows(IOException.class, () -> codec.readString("n = +0+"));
-        assertThrows(IOException.class, () -> codec.readString("n = --0"));
-        assertThrows(IOException.class, () -> codec.readString("n = -0-"));
-
-        // invalid exponents
-        assertThrows(IOException.class, () -> codec.readString("n = 0e"));
-        assertThrows(IOException.class, () -> codec.readString("n = 0ee"));
-        assertThrows(IOException.class, () -> codec.readString("n = 0e++0"));
-        assertThrows(IOException.class, () -> codec.readString("n = 0e+0+"));
-        assertThrows(IOException.class, () -> codec.readString("n = 0e--0"));
-        assertThrows(IOException.class, () -> codec.readString("n = 0e-0-"));
-        assertThrows(IOException.class, () -> codec.readString("n = 0e0."));
-        assertThrows(IOException.class, () -> codec.readString("n = 0e.0"));
-        assertThrows(IOException.class, () -> codec.readString("n = 0e0.0"));
-
-        // invalid number
-        assertThrows(IOException.class, () -> codec.readString("n = 0a"));
+        //noinspection ResultOfMethodCallIgnored
+        assertThrows(IOException.class, () -> codec.readString(s));
     }
 
     /**
-     * Test for number representations nested inside an array.
+     * Test for number representations nested inside an array (KofiValue).
      */
-    @Test
-    void numbersKofi() {
+    @DisplayName("can read nested numbers from string")
+    @ParameterizedTest
+    @CsvSource({
+            // plain number
+            "n = [ 0 ]",
+            "n = [ 1000 ]",
+            // fractional part
+            "n = [ 0.0 ]",
+            // sign
+            "n = [ -0 ]",
+            "n = [ -0.0 ]",
+            // exponent part
+            "n = [ 0e0 ]",
+            "n = [ 0.0e0 ]",
+            "n = [ 0e+0 ]",
+            "n = [ 0e-0 ]"
+    })
+    public void numbersKofi(final String s) {
         final KofiCodec codec = new KofiCodec();
-
-        // plain number
-        assertDoesNotThrow(() -> codec.readString("n = [ 0 ]"));
-        assertDoesNotThrow(() -> codec.readString("n = [ 1000 ]"));
-
-        // fractional part
-        assertDoesNotThrow(() -> codec.readString("n = [ 0.0 ]"));
-
-        // sign
-        assertDoesNotThrow(() -> codec.readString("n = [ -0 ]"));
-        assertDoesNotThrow(() -> codec.readString("n = [ -0.0 ]"));
-
-        // exponent part
-        assertDoesNotThrow(() -> codec.readString("n = [ 0e0 ]"));
-        assertDoesNotThrow(() -> codec.readString("n = [ 0.0e0 ]"));
-        assertDoesNotThrow(() -> codec.readString("n = [ 0e+0 ]"));
-        assertDoesNotThrow(() -> codec.readString("n = [ 0e-0 ]"));
+        assertDoesNotThrow(() -> codec.readString(s));
     }
 
     /**
      * Test for asserting that the value of a number is correct when retrieved
      * from a document.
      */
-    @Test
-    void numbersValue() {
+    @DisplayName("can read correct numbers from string")
+    @ParameterizedTest
+    @MethodSource("numbersValueProvider")
+    public void numbersValue(final Number n, final String s) {
         final KofiCodec codec = new KofiCodec();
-
-        final String input = """
-                int = 18578282
-                long = 623749871478372582L
-                float = 8237.98683F
-                float_def = 1234.5678
-                float_exp = 183.6254e3F
-                float_exp_pos = 183.6254e+5F
-                float_exp_neg = 183.6254e-6F
-                float_exp_def = 1234.5678e2
-                double = 942597.29723848213d
-                double_exp = 934.9053234e3d
-                double_exp_pos = 934.9053234e+5d
-                double_exp_neg = 934.9053234e-6d
-                nan = NaN
-                inf = infinity
-                inf_pos = +infinity
-                inf_neg = -infinity
-                """;
-        final Document doc = assertDoesNotThrow(() -> codec.readString(input));
-
-        assertEquals(18578282, doc.getInt("int"));
-
-        assertEquals(623749871478372582L, doc.getLong("long"));
-
-        assertEquals(8237.98683F, doc.getFloat("float"));
-        assertEquals(1234.5678F, doc.getFloat("float_def"));
-        assertEquals(183.6254e3F, doc.getFloat("float_exp"));
-        assertEquals(183.6254e+5F, doc.getFloat("float_exp_pos"));
-        assertEquals(183.6254e-6F, doc.getFloat("float_exp_neg"));
-        assertEquals((float) 1234.5678e2, doc.getFloat("float_exp_def"));
-
-        assertEquals(942597.29723848213d, doc.getDouble("double"));
-        assertEquals(934.9053234e3d, doc.getDouble("double_exp"));
-        assertEquals(934.9053234e+5d, doc.getDouble("double_exp_pos"));
-        assertEquals(934.9053234e-6d, doc.getDouble("double_exp_neg"));
-
-        assertEquals(Float.NaN, doc.getFloat("nan"));
-        assertEquals(Float.POSITIVE_INFINITY, doc.getFloat("inf"));
-        assertEquals(Float.POSITIVE_INFINITY, doc.getFloat("inf_pos"));
-        assertEquals(Float.NEGATIVE_INFINITY, doc.getFloat("inf_neg"));
+        final Document doc = assertDoesNotThrow(() -> codec.readString(s));
+        assertEquals(n, doc.getValue("", null), () -> "failed with number type: " + n.getClass());
     }
 }
