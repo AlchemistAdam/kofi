@@ -17,251 +17,264 @@
 
 package dk.martinu.test;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-
 import dk.martinu.kofi.*;
 import dk.martinu.test.dummy.Dummy;
 import dk.martinu.test.dummy.Dummy2;
 
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.*;
+
+import java.util.stream.Stream;
+
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("KofiUtil")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class KofiUtilTest {
 
+    /**
+     * Provides arguments for {@link #escape(String, String, char[])}.
+     */
+    static Stream<Arguments> escapeProvider() {
+        return Stream.of(
+                Arguments.of("", "", null),
+                Arguments.of("", "", new char[] {'l', 'W'}),
+                Arguments.of("\\\\Hello, World!\\n", "\\Hello, World!\n", null),
+                Arguments.of("\\\\He\\l\\lo, \\Wor\\ld!\\n", "\\Hello, World!\n", new char[] {'l', 'W'})
+        );
+    }
+
+    /**
+     * Provides arguments for {@link #getKofiValue(Object, Object)}.
+     */
+    static Stream<Arguments> getKofiValueProvider() {
+        return Stream.of(
+                // simple values
+                Arguments.of(null, null),
+                Arguments.of("\"Hello\"", "Hello"),
+                Arguments.of(1, 1),
+                Arguments.of(1L, 1L),
+                Arguments.of(1f, 1f),
+                Arguments.of(1d, 1d),
+                Arguments.of((byte) 1, (byte) 1),
+                Arguments.of((short) 1, (short) 1),
+                Arguments.of(true, true),
+                Arguments.of('A', 'A'),
+                // arrays
+                Arguments.of(new KofiArray(), new KofiArray()),
+                Arguments.of(new KofiArray(), new int[0]),
+                Arguments.of(new KofiArray(), new Object[0]),
+                // objects
+                Arguments.of(new KofiObject(), new KofiObject()),
+                Arguments.of(new KofiObject(), new Object())
+        );
+    }
+
+    /**
+     * Provides arguments for {@link #getJavaValue(Object, Object, Class)}.
+     */
+    static Stream<Arguments> getJavaValueProvider() {
+        return Stream.of(
+                Arguments.of(null, null, void.class),
+                Arguments.of("Hello", "\"Hello\"", String.class),
+                Arguments.of(1, 1, Integer.class),
+                Arguments.of(1L, 1L, Long.class),
+                Arguments.of(1f, 1f, Float.class),
+                Arguments.of(1d, 1d, Double.class),
+                Arguments.of((byte) 1, (byte) 1, Byte.class),
+                Arguments.of((short) 1, (short) 1, Short.class),
+                Arguments.of(true, true, Boolean.class),
+                Arguments.of('A', 'A', Character.class)
+        );
+    }
 
     /**
      * Test for {@link KofiUtil#escape(String)} and
      * {@link KofiUtil#escape(String, char...)}.
      */
-    @Test
-    void escape() {
-        // assert escaped string is equal
-        assertEquals(
-                "\\\\Hello, World!\\n",
-                KofiUtil.escape("\\Hello, World!\n"));
-
-        // assert escaped string and other is equal
-        assertEquals(
-                "\\\\He\\l\\lo, \\Wor\\ld!\\n",
-                KofiUtil.escape("\\Hello, World!\n", 'l', 'W'));
-
-        // empty string
-        assertEquals(
-                "",
-                KofiUtil.escape(""));
+    @DisplayName("can escape strings")
+    @ParameterizedTest
+    @MethodSource("escapeProvider")
+    public void escape(final String expected, final String escape, final char[] other) {
+        assertEquals(expected, KofiUtil.escape(escape, other));
     }
 
     /**
      * Test for {@link KofiUtil#getJavaString(String)}.
      */
-    @Test
-    void getJavaString() {
-        // assert converted KoFi string is equal to Java string
-        final String[][] content = {
-                /* 0 */ {"", "\"\""}, // empty string
-                /* 1 */ {"Hello, ", "\"Hello, \""}, // plain string
-                /* 2 */ {"World!\n", "\"World!\\n\""}, // two-character escapes
-                /* 3 */ {"Ko\u0066\u0069", "\"Ko\\u0066\\u0069\""} // six-character escapes
-        };
-        for (int i = 0; i < content.length; i++)
-            assertEquals(
-                    content[i][0],
-                    KofiUtil.getJavaString(content[i][1]),
-                    i + ":");
+    @DisplayName("can get KoFi strings from Java strings")
+    @ParameterizedTest
+    @CsvSource({
+            "'', \"\"",
+            "'Hello, ', '\"Hello, \"'",
+            "'World!\n', '\"World!\\n\"'",
+            "'Ko\u0066\u0069', '\"Ko\\u0066\\u0069\"'"
+    })
+    public void getJavaString(final String javaString, final String kofiString) {
+        assertEquals(javaString, KofiUtil.getJavaString(kofiString));
     }
 
     /**
      * Test for {@link KofiUtil#getJavaValue(Object, Class)}.
      */
-    @Test
-    void getJavaValue() {
-        // assert converted defined values are equal
-        assertNull(KofiUtil.getJavaValue(null, void.class));
-        assertEquals("Hello", KofiUtil.getJavaValue("\"Hello\"", String.class));
-        assertEquals(1, KofiUtil.getJavaValue(1, Integer.class));
-        assertEquals(1L, KofiUtil.getJavaValue(1L, Long.class));
-        assertEquals(1f, KofiUtil.getJavaValue(1f, Float.class));
-        assertEquals(1d, KofiUtil.getJavaValue(1d, Double.class));
-        assertEquals((byte) 1, KofiUtil.getJavaValue((byte) 1, Byte.class));
-        assertEquals((short) 1, KofiUtil.getJavaValue((short) 1, Short.class));
-        assertEquals(true, KofiUtil.getJavaValue(true, Boolean.class));
-        assertEquals('A', KofiUtil.getJavaValue('A', Character.class));
+    @DisplayName("can get Java values from KoFi values")
+    @ParameterizedTest
+    @MethodSource("getJavaValueProvider")
+    public void getJavaValue(final Object expected, final Object kofiValue, final Class<?> cls) {
+        assertEquals(expected, KofiUtil.getJavaValue(kofiValue, cls));
+    }
 
+    /**
+     * Test for {@link KofiUtil#getJavaValue(Object, Class)} that specifically
+     * tests converting KoFi arrays.
+     */
+    @DisplayName("can get Java array values from KoFi values")
+    @Test
+    public void getJavaValueWithArray() {
         // assert converted primitive array is equal
         assertArrayEquals(
                 new int[] {1},
-                KofiUtil.getJavaValue(new KofiArray(1), int[].class)
-        );
-
-        // dummy objects used for undefined values below (arrays and objects)
-        final Dummy<Integer> dummy = new Dummy<>(1);
-        final Dummy2<Integer> dummy2 = new Dummy2<>(1, 2);
-        final Dummy<Integer[]> dummyX = new Dummy<>(new Integer[] {1});
+                KofiUtil.getJavaValue(new KofiArray(1), int[].class));
 
         // assert converted array is equal
         assertArrayEquals(
-                new Dummy<?>[] {dummy},
-                KofiUtil.getJavaValue(new KofiArray(dummy), Dummy[].class)
-        );
+                new Dummy<?>[] {Dummy.of(1)},
+                KofiUtil.getJavaValue(new KofiArray(Dummy.of(1)), Dummy[].class));
+
         // assert converted array is equal, with elements extending array component type
         assertArrayEquals(
-                new Dummy<?>[] {dummy2},
-                KofiUtil.getJavaValue(new KofiArray(dummy2), Dummy[].class)
-        );
+                new Dummy<?>[] {Dummy2.of(1, 2)},
+                KofiUtil.getJavaValue(new KofiArray(Dummy2.of(1, 2)), Dummy[].class));
+
         // assert converted array is equal, with nested array
         assertArrayEquals(
-                new Dummy<?>[][] {new Dummy[] {dummy}},
-                KofiUtil.getJavaValue(new KofiArray((Object) new Dummy[] {dummy}), Dummy[][].class)
-        );
+                new Dummy<?>[][] {new Dummy[] {Dummy.of(1)}},
+                KofiUtil.getJavaValue(new KofiArray((Object) new Dummy[] {Dummy.of(1)}), Dummy[][].class));
+
         // assert converted array is equal, with nested array extending array component type
         assertArrayEquals(
-                new Dummy<?>[][] {new Dummy2[] {dummy2}},
-                KofiUtil.getJavaValue(new KofiArray((Object) new Dummy2[] {dummy2}), Dummy[][].class)
-        );
+                new Dummy<?>[][] {new Dummy2[] {Dummy2.of(1, 2)}},
+                KofiUtil.getJavaValue(new KofiArray((Object) new Dummy2[] {Dummy2.of(1, 2)}), Dummy[][].class));
+    }
 
+    /**
+     * Test for {@link KofiUtil#getJavaValue(Object, Class)} that specifically
+     * tests converting KoFi objects.
+     */
+    @DisplayName("can get Java object values from KoFi values")
+    @Test
+    public void getJavaValueWithObject() {
         // assert converted object is equal
         assertEquals(
-                dummy,
-                KofiUtil.getJavaValue(KofiObject.reflect(dummy), Dummy.class)
-        );
+                Dummy.of(1),
+                KofiUtil.getJavaValue(KofiObject.reflect(Dummy.of(1)), Dummy.class));
+
         // assert converted object is equal, with fields from supertype
         assertEquals(
-                dummy2,
-                KofiUtil.getJavaValue(KofiObject.reflect(dummy2), Dummy2.class)
-        );
+                Dummy2.of(1, 2),
+                KofiUtil.getJavaValue(KofiObject.reflect(Dummy2.of(1, 2)), Dummy2.class));
+
         // assert converted object is equal, with nested array
         assertEquals(
-                dummyX,
-                KofiUtil.getJavaValue(KofiObject.reflect(dummyX), Dummy.class)
-        );
+                Dummy.of(new Integer[] {1}),
+                KofiUtil.getJavaValue(KofiObject.reflect(Dummy.of(new Integer[] {1})), Dummy.class));
     }
 
     /**
      * Test for {@link KofiUtil#getKofiString(String)}.
      */
-    @Test
-    void getKofiString() {
-        // assert converted Java string is equal to KoFi string
-        final String[][] content = {
-                /* 0 */ {"\"\"", ""}, // empty string
-                /* 1 */ {"\"Hello\"", "Hello"}, // plain string
-                /* 2 */ {"\"World!\\r\\n\"", "World!\r\n"}, // two-character escapes
-        };
-        for (int i = 0; i < content.length; i++)
-            assertEquals(
-                    content[i][0],
-                    KofiUtil.getKofiString(content[i][1]),
-                    i + ":");
+    @DisplayName("can get Java strings from KoFi strings")
+    @ParameterizedTest
+    @CsvSource({
+            "'\"\"', ''",
+            "'\"Hello, \"', 'Hello, '",
+            "'\"World!\\r\\n\"', 'World!\r\n'",
+            "'\"Hello, \\u000B\"', 'Hello, \u000B'"
+    })
+    public void getKofiString(final String kofiString, final String javaString) {
+        assertEquals(kofiString, KofiUtil.getKofiString(javaString));
     }
 
     /**
      * Test for {@link KofiUtil#getKofiValue(Object)}.
      */
-    @Test
-    void getKofiValue() {
-        // defined values
-        assertNull(KofiUtil.getKofiValue(null));
-        assertEquals("\"Hello\"", KofiUtil.getKofiValue("Hello"));
-        assertEquals(1, KofiUtil.getKofiValue(1));
-        assertEquals(1L, KofiUtil.getKofiValue(1L));
-        assertEquals(1f, KofiUtil.getKofiValue(1f));
-        assertEquals(1d, KofiUtil.getKofiValue(1d));
-        assertEquals((byte) 1, KofiUtil.getKofiValue((byte) 1));
-        assertEquals((short) 1, KofiUtil.getKofiValue((short) 1));
-        assertEquals(true, KofiUtil.getKofiValue(true));
-        assertEquals('A', KofiUtil.getKofiValue('A'));
-
-        // arrays
-        assertEquals(new KofiArray(), KofiUtil.getKofiValue(new KofiArray()));
-        assertEquals(new KofiArray(), KofiUtil.getKofiValue(new int[0]));
-        assertEquals(new KofiArray(), KofiUtil.getKofiValue(new Object[0]));
-
-        // objects
-        assertEquals(new KofiObject(), KofiUtil.getKofiValue(new KofiObject()));
-        assertEquals(new KofiObject(), KofiUtil.getKofiValue(new Object()));
+    @DisplayName("can get KoFi values from Java values")
+    @ParameterizedTest
+    @MethodSource("getKofiValueProvider")
+    public void getKofiValue(final Object expected, final Object javaObject) {
+        assertEquals(expected, KofiUtil.getKofiValue(javaObject));
     }
 
     /**
      * Test for {@link KofiUtil#indexOf(char, char[], int, int)}
      */
-    @Test
-    void indexOf() {
-        assertEquals(0, KofiUtil.indexOf('a', "a".toCharArray(), 0, 1));
-        assertEquals(0, KofiUtil.indexOf('a', "a   ".toCharArray(), 0, 4));
-        assertEquals(1, KofiUtil.indexOf('a', " a  ".toCharArray(), 0, 4));
-        assertEquals(3, KofiUtil.indexOf('a', "   a".toCharArray(), 0, 4));
-
-        assertEquals(-1, KofiUtil.indexOf('a', "".toCharArray(), 0, 0));
-        assertEquals(-1, KofiUtil.indexOf('a', " ".toCharArray(), 0, 1));
-        assertEquals(-1, KofiUtil.indexOf('a', "    ".toCharArray(), 0, 4));
-        assertEquals(-1, KofiUtil.indexOf('a', "aaaa".toCharArray(), 0, 0));
-
-        assertEquals(0, KofiUtil.indexOf('a', "a  a".toCharArray(), 0, 4));
-        assertEquals(0, KofiUtil.indexOf('a', "a  a".toCharArray(), 0, 3));
-        assertEquals(3, KofiUtil.indexOf('a', "a  a".toCharArray(), 1, 4));
-        assertEquals(1, KofiUtil.indexOf('a', "aa a".toCharArray(), 1, 4));
-
-        assertEquals(3, KofiUtil.indexOf('a', "\\a a".toCharArray(), 0, 4));
-        assertEquals(2, KofiUtil.indexOf('a', "\\\\aa".toCharArray(), 0, 4));
-        assertEquals(1, KofiUtil.indexOf('\\', "\\\\  ".toCharArray(), 0, 4));
-        assertEquals(-1, KofiUtil.indexOf('\\', "\\   ".toCharArray(), 0, 4));
-        assertEquals(3, KofiUtil.indexOf('\\', "\\ \\\\".toCharArray(), 0, 4));
-        assertEquals(-1, KofiUtil.indexOf('a', "\\a  ".toCharArray(), 0, 4));
+    @DisplayName("can get index of unescaped character in string")
+    @ParameterizedTest
+    @CsvSource({
+            "0,  'a',  'a',       0, 1",
+            "0,  'a',  'a   ',    0, 4",
+            "1,  'a',  ' a  ',    0, 4",
+            "3,  'a',  '   a',    0, 4",
+            "-1, 'a',  '',        0, 0",
+            "-1, 'a',  ' ',       0, 1",
+            "-1, 'a',  '    ',    0, 4",
+            "-1, 'a',  'aaaa',    0, 0",
+            "0,  'a',  'a  a',    0, 4",
+            "0,  'a',  'a  a',    0, 3",
+            "3,  'a',  'a  a',    1, 4",
+            "1,  'a',  'aa a',    1, 4",
+            "3,  'a',  '\\a a',   0, 4",
+            "2,  'a',  '\\\\aa',  0, 4",
+            "-1, 'a',  '\\a  ',   0, 4",
+            "1,  '\\', '\\\\  ',  0, 4",
+            "3,  '\\', '\\ \\\\', 0, 4",
+            "-1, '\\', '\\   ',   0, 4",
+    })
+    public void indexOf(final int expected, final char c, final String s, final int start, final int end) {
+        assertEquals(expected, KofiUtil.indexOf(c, s.toCharArray(), start, end));
     }
 
     /**
      * Test for {@link KofiUtil#isDefinedType(Object)}.
      */
+    @DisplayName("can determine if an object's type is defined")
     @Test
-    void isDefinedType() {
-        // null, string and primitives
-        assertTrue(KofiUtil.isDefinedType(null));
-        assertTrue(KofiUtil.isDefinedType("Hello"));
-        assertTrue(KofiUtil.isDefinedType(1));
-        assertTrue(KofiUtil.isDefinedType(true));
-        assertTrue(KofiUtil.isDefinedType('A'));
-
-        // KoFi values
-        assertTrue(KofiUtil.isDefinedType(new KofiArray()));
-        assertTrue(KofiUtil.isDefinedType(new KofiObject()));
-
-        assertFalse(KofiUtil.isDefinedType(this));
+    public void isDefinedType() {
+        final Object[] values = {null, "Hello", 1, true, 'A', new KofiArray(), new KofiObject()};
+        for (Object value : values)
+            assertTrue(KofiUtil.isDefinedType(value), "isDefinedType(" + value + ")");
     }
 
     /**
      * Test for {@link KofiUtil#isDigit(char)}.
      */
-    @Test
-    void isDigit() {
-        // assert all characters are digits
-        final char[] digits = {
-                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-        };
-        for (char c : digits)
-            assertTrue(KofiUtil.isDigit(c), "isDigit(" + c + ")");
+    @DisplayName("can determine if a character represents a digit")
+    @ParameterizedTest
+    @ValueSource(chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'})
+    public void isDigit(final char c) {
+        assertTrue(KofiUtil.isDigit(c));
     }
 
     /**
      * Test for {@link KofiUtil#isHexDigit(char)}.
      */
-    @Test
-    void isHexDigit() {
-        // assert all characters are hex digits
-        final char[] hexDigits = {
-                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                'A', 'B', 'C', 'D', 'E', 'F',
-                'a', 'b', 'c', 'd', 'e', 'f'
-        };
-        for (char c : hexDigits)
-            assertTrue(KofiUtil.isHexDigit(c), "isHexDigit(" + c + ")");
+    @DisplayName("can determine if a character represents a hexadecimal digit")
+    @ParameterizedTest
+    @ValueSource(chars = {
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            'A', 'B', 'C', 'D', 'E', 'F',
+            'a', 'b', 'c', 'd', 'e', 'f'})
+    public void isHexDigit(final char c) {
+        assertTrue(KofiUtil.isHexDigit(c));
     }
 
     /**
      * Test for {@link KofiUtil#isWhitespace(char)}.
      */
+    @DisplayName("can determine if a character represents whitespace")
     @Test
-    void isWhitespace() {
+    public void isWhitespace() {
         for (int i = 0; i < 256; i++) {
             if (i == ' ' || i == '\r' || i == '\t')
                 assertTrue(KofiUtil.isWhitespace((char) i),
@@ -275,41 +288,28 @@ public class KofiUtilTest {
     /**
      * Test for {@link KofiUtil#matches(char[], int, int, char[])}.
      */
-    @Test
-    void matches() {
-        // assert entire content matches
-        {
-            final String[][] content = {
-                    /* 0 */ {"", ""},
-                    /* 1 */ {"true", ""},
-                    /* 2 */ {"true", "TRUE"},
-                    /* 3 */ {"TRUE", "TRUE"},
-                    /* 4 */ {"True", "TRUE"}
-            };
-            for (int i = 0; i < content.length; i++) {
-                // string to compare to
-                final char[] string = content[i][0].toCharArray();
-                // string to compare with
-                final char[] comp = content[i][1].toCharArray();
-                assertTrue(KofiUtil.matches(string, 0, string.length, comp), i + ":");
-            }
-        }
-
-        // assert subcontent matches
-        {
-            // string to compare to
-            final char[] content = "Hello, World!".toCharArray();
-            // string to compare with
-            final char[] comp = "WORLD".toCharArray();
-            assertTrue(KofiUtil.matches(content, 7, content.length, comp));
-        }
+    @DisplayName("can match strings")
+    @ParameterizedTest
+    @CsvSource({
+            "'',              '',      0",
+            "'true',          '',      0",
+            "'true',          'TRUE',  0",
+            "'TRUE',          'TRUE',  0",
+            "'True',          'TRUE',  0",
+            "'Hello, World!', 'WORLD', 7",
+    })
+    public void matches(final String s, final String c, final int start) {
+        final char[] sChars = s.toCharArray();
+        final char[] cChars = c.toCharArray();
+        assertTrue(KofiUtil.matches(sChars, start, sChars.length, cChars));
     }
 
     /**
      * Test for {@link KofiUtil#trim(char[], int, int)}.
      */
+    @DisplayName("can trim strings")
     @Test
-    void trim() {
+    public void trim() {
 //        // assert content is equal -- trim whole string
 //        {
 //            final String[][] content = {
@@ -368,23 +368,15 @@ public class KofiUtilTest {
     /**
      * Test for {@link KofiUtil#unescape(String, int, int)}.
      */
+    @DisplayName("can unescape strings")
     @Test
-    void unescape() {
+    public void unescape() {
         // assert content is equal
-        {
-            // string to unescape
-            final String s = "\\\\Hello, \u0057orld!\\n";
-            assertEquals(
-                    "\\Hello, World!\n",
-                    KofiUtil.unescape(s, 0, s.length()));
-        }
+        final String kofiString = "\\\\Hello, \u0057orld!\\n";
+        assertEquals("\\Hello, World!\n", KofiUtil.unescape(kofiString, 0, kofiString.length()));
 
         // assert returned string is same as passed if no characters were unescaped
-        {
-            final String expected = "No escapes";
-            assertSame(
-                    expected,
-                    KofiUtil.unescape(expected, 0, expected.length()));
-        }
+        final String expected = "No escapes";
+        assertSame(expected, KofiUtil.unescape(expected, 0, expected.length()));
     }
 }
