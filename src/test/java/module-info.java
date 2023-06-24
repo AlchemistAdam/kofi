@@ -21,6 +21,7 @@ module dk.martinu.kofi.test {
 
     requires dk.martinu.kofi;
     requires org.junit.jupiter.api;
+    requires org.junit.jupiter.params;
 
     // classes must be exported to be accessible via reflection
     exports dk.martinu.test.dummy;
