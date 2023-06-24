@@ -83,16 +83,7 @@ public class KofiUtil {
     @Contract(pure = true)
     @NotNull
     public static String escape(@NotNull final String string) {
-        final char[] chars = string.toCharArray();
-        final StringBuilder sb = new StringBuilder(chars.length);
-        for (char c : chars)
-            if (c < 0x20)
-                sb.append(ESCAPED_CHARS_00_1F[c]);
-            else if (c == '\\')
-                sb.append("\\\\");
-            else
-                sb.append(c);
-        return chars.length == sb.length() ? string : sb.toString();
+        return escape(string, (char[]) null);
     }
 
     /**
@@ -121,24 +112,32 @@ public class KofiUtil {
     public static String escape(@NotNull final String string, final char... other) {
         final char[] chars = string.toCharArray();
         final StringBuilder sb = new StringBuilder(chars.length);
-        outer:
-        for (char c : chars) {
-            if (c < 0x20) {
-                sb.append(ESCAPED_CHARS_00_1F[c]);
-                continue;
+        if (other != null && other.length > 0) {
+            for (char c : chars) {
+                if (c < 0x20)
+                    sb.append(ESCAPED_CHARS_00_1F[c]);
+                else if (c == '\\')
+                    sb.append("\\\\");
+                else {
+                    for (char co : other)
+                        if (c == co) {
+                            sb.append('\\');
+                            break;
+                        }
+                    sb.append(c);
+                }
             }
-            else if (c == '\\') {
-                sb.append("\\\\");
-                continue;
-            }
-            else
-                for (char co : other)
-                    if (c == co) {
-                        sb.append('\\').append(c);
-                        continue outer;
-                    }
-            sb.append(c);
         }
+        else {
+            for (char c : chars)
+                if (c < 0x20)
+                    sb.append(ESCAPED_CHARS_00_1F[c]);
+                else if (c == '\\')
+                    sb.append("\\\\");
+                else
+                    sb.append(c);
+        }
+        // TEST if it matters whether string.length() or chars.length is used
         return string.length() == sb.length() ? string : sb.toString();
     }
 
