@@ -451,7 +451,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                                     new ParsableDouble(chars, start, end, length) :
                                     new ParsableFloat(chars, start, end, length);
                         else
-                            return new ParsableFloat(chars, start, end, length);
+                            return new ParsableDouble(chars, start, end, length);
                     }
                     // long and int
                     else {
@@ -668,6 +668,10 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
      */
     protected void write(@NotNull final Supplier<BufferedWriter> supplier, @NotNull final Document document) throws
             IOException {
+        // TODO It's possible to convert elements to strings in parralel, and
+        //  then aggregate the result and write on single thread.
+        //  This would also reduce the amount of time the file is locked,
+        //  because element conversion is done outside of the try-with block
         Objects.requireNonNull(supplier, "supplier is null");
         Objects.requireNonNull(document, "document is null");
         try (BufferedWriter writer = supplier.get()) {
