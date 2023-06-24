@@ -25,8 +25,8 @@ import java.io.PrintStream;
 import dk.martinu.kofi.codecs.KofiCodec;
 
 /**
- * Contains static utility methods for strings and characters based on the KoFi
- * Text Syntax.
+ * Contains static utility methods for strings and characters, and conversion
+ * between Java and KoFi values based on the KoFi Text Syntax.
  *
  * @author Adam Martinu
  * @since 1.0
@@ -46,12 +46,13 @@ public class KofiUtil {
      *    <li>{@code \r U+000D} CARRIAGE RETURN</li>
      * </ul>
      */
+    //@formatter:off
     private static final String[] ESCAPED_CHARS_00_1F = {
-            "\\0", "\\u0001", "\\u0002",
+            "\\0",     "\\u0001", "\\u0002",
             "\\u0003", "\\u0004", "\\u0005",
             "\\u0006", "\\u0007", "\\b",
-            "\\t", "\\n", "\\u000B",
-            "\\f", "\\r", "\\u000E",
+            "\\t",     "\\n",     "\\u000B",
+            "\\f",     "\\r",     "\\u000E",
             "\\u000F", "\\u0010", "\\u0011",
             "\\u0012", "\\u0013", "\\u0014",
             "\\u0015", "\\u0016", "\\u0017",
@@ -59,6 +60,7 @@ public class KofiUtil {
             "\\u001B", "\\u001C", "\\u001D",
             "\\u001E", "\\u001F"
     };
+    //@formatter:on
 
     /**
      * Returns an escaped version of {@code string}. Characters in the range
@@ -502,8 +504,10 @@ public class KofiUtil {
 
     /**
      * Returns {@code true} if the start of the specified region matches
-     * {@code comp}, ignoring case, otherwise {@code false} is returned. The
-     * {@code comp} array must only contain uppercase Latin letters (A-Z).
+     * {@code comp}, ignoring case, otherwise {@code false} is returned.
+     * <p>
+     * <b>NOTE:</b> the {@code comp} array must only contain uppercase Latin
+     * letters (A-Z).
      *
      * @param chars the characters to match
      * @param start the starting index, inclusive
