@@ -21,28 +21,32 @@ import java.util.Arrays;
 
 public class Dummy2<V> extends Dummy<V> {
 
-    public V value_b;
+    public static <V> Dummy2<V> of (final V v0, final V v1) {
+        return new Dummy2<>(v0, v1);
+    }
+
+    public V v1;
 
     public Dummy2() {
         this(null, null);
     }
 
-    public Dummy2(final V value_a, final V value_b) {
+    public Dummy2(final V value_a, final V v1) {
         super(value_a);
-        this.value_b = value_b;
+        this.v1 = v1;
     }
 
     @Override
     public boolean equals(final Object obj) {
         if (obj == this)
             return true;
-        else if (obj instanceof Dummy2 d && super.equals(d)) {
-            if (value_b == null)
-                return d.value_b == null;
-            else if (!value_b.getClass().isArray())
-                return value_b.equals(d.value_b);
-            else if (d.value_b.getClass().isArray())
-                return Arrays.deepEquals((Object[]) value_b, (Object[]) d.value_b);
+        else if (obj instanceof Dummy2<?> d && super.equals(d)) {
+            if (v1 == null)
+                return d.v1 == null;
+            else if (!v1.getClass().isArray())
+                return v1.equals(d.v1);
+            else if (d.v1.getClass().isArray())
+                return Arrays.deepEquals((Object[]) v1, (Object[]) d.v1);
             else
                 return false;
         }

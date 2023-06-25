@@ -48,8 +48,8 @@ public class KofiObjectTest {
             assertDoesNotThrow(() -> {
                 //noinspection unchecked
                 final Dummy2<Integer> dummy = object.construct(Dummy2.class);
-                assertEquals(1, dummy.value_a);
-                assertEquals(2, dummy.value_b);
+                assertEquals(1, dummy.v0);
+                assertEquals(2, dummy.v1);
             });
         }
 
@@ -69,7 +69,7 @@ public class KofiObjectTest {
             assertDoesNotThrow(() -> {
                 //noinspection unchecked
                 final NestedDummy<Integer> dummy = object.construct(NestedDummy.class);
-                assertEquals(1, dummy.value_a.value_a);
+                assertEquals(1, dummy.dummy.v0);
             });
         }
     }
