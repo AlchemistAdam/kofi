@@ -35,8 +35,8 @@ public class KofiObjectTest {
         // simple object
         {
             final KofiObject.Builder builder = new KofiObject.Builder()
-                    .put("value_a", 1)
-                    .put("value_b", 2);
+                    .put("v0", 1)
+                    .put("v1", 2);
             final KofiObject object = builder.build();
 
             assertEquals(builder.size(), object.size());
@@ -56,8 +56,7 @@ public class KofiObjectTest {
         // nested object
         {
             final KofiObject.Builder builder = new KofiObject.Builder()
-                    .put("value_a",
-                            new KofiObject.Builder().put("value_a", 1).build());
+                    .put("dummy", new KofiObject.Builder().put("v0", 1).build());
             final KofiObject object = builder.build();
 
             assertEquals(builder.size(), object.size());
@@ -83,7 +82,7 @@ public class KofiObjectTest {
         final KofiObject object = KofiObject.reflect(numbers);
 
         assertEquals(2, object.size());
-        assertEquals(1, object.get("value_a"));
-        assertEquals(2, object.get("value_b"));
+        assertEquals(1, object.get("v0"));
+        assertEquals(2, object.get("v1"));
     }
 }
