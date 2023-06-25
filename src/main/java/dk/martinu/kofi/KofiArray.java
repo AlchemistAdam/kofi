@@ -100,9 +100,9 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * Constructs a new {@code KofiArray} containing the
-     * {@link KofiUtil#isDefinedType(Object) defined} object values of
-     * {@code values}.
+     * Constructs a new {@code KofiArray} containing the values of
+     * {@code values} converted to
+     * {@link KofiUtil#isDefinedType(Object) defined} objects.
      *
      * @param values the array objects, or {@code null}
      * @see KofiUtil#getKofiValue(Object)
@@ -116,6 +116,166 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
         }
         else
             array = EMPTY;
+    }
+
+    /**
+     * Constructs a new {@code KofiArray} containing the values of
+     * {@code string} converted to KoFi strings.
+     *
+     * @param strings the array of strings, or {@code null}
+     * @see KofiUtil#getKofiString(String)
+     */
+    @Contract(pure = true)
+    public KofiArray(@Nullable final String[] strings) {
+        if (strings != null && strings.length != 0) {
+            array = new Object[strings.length];
+            for (int i = 0; i < strings.length; i++) {
+                final String s = strings[i];
+                if (s != null)
+                    array[i] = KofiUtil.getKofiString(s);
+                else
+                    array[i] = null;
+            }
+        }
+        else
+            array = EMPTY;
+        arrayType = String[].class;
+    }
+
+    /**
+     * DOC
+     *
+     * @param ints
+     */
+    @Contract(pure = true)
+    public KofiArray(final int[] ints) {
+        if (ints != null && ints.length != 0) {
+            array = new Integer[ints.length];
+            for (int i = 0; i < ints.length; i++)
+                array[i] = ints[i];
+        }
+        else
+            array = EMPTY;
+        arrayType = int[].class;
+    }
+
+    /**
+     * DOC
+     *
+     * @param longs
+     */
+    @Contract(pure = true)
+    public KofiArray(final long[] longs) {
+        if (longs != null && longs.length != 0) {
+            array = new Long[longs.length];
+            for (int i = 0; i < longs.length; i++)
+                array[i] = longs[i];
+        }
+        else
+            array = EMPTY;
+        arrayType = long[].class;
+    }
+
+    /**
+     * DOC
+     *
+     * @param floats
+     */
+    @Contract(pure = true)
+    public KofiArray(final float[] floats) {
+        if (floats != null && floats.length != 0) {
+            array = new Float[floats.length];
+            for (int i = 0; i < floats.length; i++)
+                array[i] = floats[i];
+        }
+        else
+            array = EMPTY;
+        arrayType = float[].class;
+    }
+
+    /**
+     * DOC
+     *
+     * @param doubles
+     */
+    @Contract(pure = true)
+    public KofiArray(final double[] doubles) {
+        if (doubles != null && doubles.length != 0) {
+            array = new Double[doubles.length];
+            for (int i = 0; i < doubles.length; i++)
+                array[i] = doubles[i];
+        }
+        else
+            array = EMPTY;
+        arrayType = double[].class;
+    }
+
+    /**
+     * DOC
+     *
+     * @param bytes
+     */
+    @Contract(pure = true)
+    public KofiArray(final byte[] bytes) {
+        if (bytes != null && bytes.length != 0) {
+            array = new Byte[bytes.length];
+            for (int i = 0; i < bytes.length; i++)
+                array[i] = bytes[i];
+        }
+        else
+            array = EMPTY;
+        arrayType = byte[].class;
+    }
+
+    /**
+     * DOC
+     *
+     * @param shorts
+     */
+    @Contract(pure = true)
+    public KofiArray(final short[] shorts) {
+        if (shorts != null && shorts.length != 0) {
+            array = new Short[shorts.length];
+            for (int i = 0; i < shorts.length; i++)
+                array[i] = shorts[i];
+        }
+        else
+            array = EMPTY;
+        arrayType = short[].class;
+    }
+
+    /**
+     * DOC
+     *
+     * @param booleans
+     */
+    @Contract(pure = true)
+    public KofiArray(final boolean[] booleans) {
+        if (booleans != null && booleans.length != 0) {
+            array = new Boolean[booleans.length];
+            for (int i = 0; i < booleans.length; i++)
+                array[i] = booleans[i];
+        }
+        else
+            array = EMPTY;
+        arrayType = boolean[].class;
+    }
+
+    /**
+     * DOC
+     *
+     * @param chars
+     */
+    @Contract(pure = true)
+    public KofiArray(final char[] chars) {
+        if (chars != null && chars.length != 0) {
+            array = new Character[chars.length];
+            for (int i = 0; i < chars.length; i++)
+                array[i] = chars[i];
+        }
+        else
+            array = EMPTY;
+        arrayType = char[].class;
     }
 
     /**
