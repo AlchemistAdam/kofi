@@ -143,6 +143,7 @@ public class KofiCodecTest {
         assertNotNull(document.getSection("\\"));
     }
 
+    // TODO user Order annotation when JUnit version is updated
     @DisplayName("B ReadFile")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -256,6 +257,7 @@ public class KofiCodecTest {
         }
     }
 
+    // TODO user Order annotation when JUnit version is updated
     @DisplayName("A WriteFile")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
