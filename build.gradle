@@ -21,7 +21,7 @@ plugins {
 }
 
 group 'dk.martinu'
-version '1.0'
+version 'master-SNAPSHOT'
 
 repositories {
     mavenCentral()
