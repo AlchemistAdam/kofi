@@ -30,16 +30,8 @@ repositories {
 dependencies {
     implementation 'org.jetbrains:annotations:23.0.0'
 
-    /*
-     * --- DO NOT UPDATE JUNIT ---
-     * All JUnit tests will fail if dependency is updated.
-     * See https://github.com/gradle/gradle/issues/18627.
-     * TODO issue has been closed, test with new JUnit version
-     */
-    //noinspection GradlePackageUpdate
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
-    //noinspection GradlePackageUpdate
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
