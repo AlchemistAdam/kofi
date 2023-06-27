@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.DisplayName.class)
+@TestClassOrder(ClassOrderer.OrderAnnotation.class)
 public class KofiCodecTest {
 
     final Path path = Paths.get("KofiCodecTest.kofi");
@@ -143,11 +144,11 @@ public class KofiCodecTest {
         assertNotNull(document.getSection("\\"));
     }
 
-    // TODO user Order annotation when JUnit version is updated
-    @DisplayName("B ReadFile")
+    @DisplayName("can read file")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @TestMethodOrder(MethodOrderer.Random.class)
+    @Order(2)
     public class ReadFile {
 
         Document document;
@@ -257,11 +258,11 @@ public class KofiCodecTest {
         }
     }
 
-    // TODO user Order annotation when JUnit version is updated
-    @DisplayName("A WriteFile")
+    @DisplayName("can write file")
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @TestMethodOrder(MethodOrderer.Random.class)
+    @Order(1)
     public class WriteFile {
 
         Document document;
