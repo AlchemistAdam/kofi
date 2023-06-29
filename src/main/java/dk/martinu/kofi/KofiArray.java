@@ -102,7 +102,8 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     /**
      * Constructs a new {@code KofiArray} containing the values of
      * {@code values} converted to
-     * {@link KofiUtil#isDefinedType(Object) defined} objects.
+     * {@link KofiUtil#isDefinedType(Object) defined} objects. If
+     * {@code values} is {@code null}, then the array will be empty.
      *
      * @param values the array objects, or {@code null}
      * @see KofiUtil#getKofiValue(Object)
@@ -120,7 +121,8 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
 
     /**
      * Constructs a new {@code KofiArray} containing the values of
-     * {@code string} converted to KoFi strings.
+     * {@code strings} converted to KoFi strings. If {@code strings} is
+     * {@code null}, then the array will be empty
      *
      * @param strings the array of strings, or {@code null}
      * @see KofiUtil#getKofiString(String)
@@ -143,9 +145,11 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * DOC
+     * Constructs a new {@code KofiArray} containing the values of
+     * {@code ints}. If {@code ints} is {@code null}, then the array will be
+     * empty
      *
-     * @param ints
+     * @param ints the array values, or {@code null}
      */
     @Contract(pure = true)
     public KofiArray(final int[] ints) {
@@ -160,9 +164,11 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * DOC
+     * Constructs a new {@code KofiArray} containing the values of
+     * {@code longs}. If {@code longs} is {@code null}, then the array will be
+     * empty
      *
-     * @param longs
+     * @param longs the array values, or {@code null}
      */
     @Contract(pure = true)
     public KofiArray(final long[] longs) {
@@ -177,9 +183,11 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * DOC
+     * Constructs a new {@code KofiArray} containing the values of
+     * {@code floats}. If {@code floats} is {@code null}, then the array will
+     * be empty
      *
-     * @param floats
+     * @param floats the array values, or {@code null}
      */
     @Contract(pure = true)
     public KofiArray(final float[] floats) {
@@ -194,9 +202,11 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * DOC
+     * Constructs a new {@code KofiArray} containing the values of
+     * {@code doubles}. If {@code doubles} is {@code null}, then the array will
+     * be empty
      *
-     * @param doubles
+     * @param doubles the array values, or {@code null}
      */
     @Contract(pure = true)
     public KofiArray(final double[] doubles) {
@@ -211,9 +221,11 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * DOC
+     * Constructs a new {@code KofiArray} containing the values of
+     * {@code bytes}. If {@code bytes} is {@code null}, then the array will be
+     * empty
      *
-     * @param bytes
+     * @param bytes the array values, or {@code null}
      */
     @Contract(pure = true)
     public KofiArray(final byte[] bytes) {
@@ -228,9 +240,11 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * DOC
+     * Constructs a new {@code KofiArray} containing the values of
+     * {@code shorts}. If {@code shorts} is {@code null}, then the array will
+     * be empty
      *
-     * @param shorts
+     * @param shorts the array values, or {@code null}
      */
     @Contract(pure = true)
     public KofiArray(final short[] shorts) {
@@ -245,9 +259,11 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * DOC
+     * Constructs a new {@code KofiArray} containing the values of
+     * {@code booleans}. If {@code booleans} is {@code null}, then the array
+     * will be empty
      *
-     * @param booleans
+     * @param booleans the array values, or {@code null}
      */
     @Contract(pure = true)
     public KofiArray(final boolean[] booleans) {
@@ -262,9 +278,11 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
-     * DOC
+     * Constructs a new {@code KofiArray} containing the values of
+     * {@code chars}. If {@code chars} is {@code null}, then the array will be
+     * empty
      *
-     * @param chars
+     * @param chars the array values, or {@code null}
      */
     @Contract(pure = true)
     public KofiArray(final char[] chars) {
@@ -281,7 +299,8 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     /**
      * Constructs a new {@code KofiArray} containing the
      * {@link KofiUtil#isDefinedType(Object) defined} object values of the
-     * values in the specified list.
+     * values in the specified list. If {@code list} is {@code null}, then the
+     * array will be empty
      *
      * @param list the list of objects, or {@code null}
      * @see KofiUtil#getKofiValue(Object)

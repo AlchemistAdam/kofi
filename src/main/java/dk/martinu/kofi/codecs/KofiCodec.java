@@ -34,8 +34,7 @@ import dk.martinu.kofi.spi.*;
 import static dk.martinu.kofi.KofiUtil.*;
 
 /**
- * Codec for reading and writing text that conforms to the KoFi Text Syntax
- * specification.
+ * Codec for reading and writing text that conforms to the KoFi Text Syntax.
  * <p>
  * For information on the textual representations of documents and their
  * contents, see the KoFi Technical Specification.
@@ -45,13 +44,30 @@ import static dk.martinu.kofi.KofiUtil.*;
  */
 public class KofiCodec implements DocumentFileReader, DocumentFileWriter, DocumentStringReader, DocumentStringWriter {
 
-    // list returned by getExtensions
+
+    /**
+     * List returned by {@link #getExtensions()}.
+     */
     private static final List<String> EXTENSIONS = List.of("kofi");
-    // array constants used for KofiUtil.equalsIgnoreCase
+    /**
+     * Constant for matching a string with {@code "null"}.
+     */
     private static final char[] NULL = {'N', 'U', 'L', 'L'};
+    /**
+     * Constant for matching a string with {@code "true"}.
+     */
     private static final char[] TRUE = {'T', 'R', 'U', 'E'};
+    /**
+     * Constant for matching a string with {@code "false"}.
+     */
     private static final char[] FALSE = {'F', 'A', 'L', 'S', 'E'};
+    /**
+     * Constant for matching a string with {@code "NaN"}.
+     */
     private static final char[] NAN = {'N', 'A', 'N'};
+    /**
+     * Constant for matching a string with {@code "infinity"}.
+     */
     private static final char[] INFINITY = {'I', 'N', 'F', 'I', 'N', 'I', 'T', 'Y'};
 
     /**
@@ -668,7 +684,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
      */
     protected void write(@NotNull final Supplier<BufferedWriter> supplier, @NotNull final Document document) throws
             IOException {
-        // TODO It's possible to convert elements to strings in parralel, and
+        // TODO It's possible to convert elements to strings in parallel, and
         //  then aggregate the result and write on single thread.
         //  This would also reduce the amount of time the file is locked,
         //  because element conversion is done outside of the try-with block
@@ -740,51 +756,6 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         @Contract(value = "-> new", pure = true)
         @NotNull
         T get() throws IOException;
-    }
-
-    /**
-     * A task that parses a line of characters to an {@link Element}.
-     *
-     * @see #parseLine(char[], int)
-     */
-    protected class ParseTask implements Callable<Element> {
-
-        /**
-         * The characters to parse.
-         */
-        public final char[] chars;
-        /**
-         * The line number of the characters.
-         */
-        public final int line;
-
-        /**
-         * Constructs a new {@code ParseTask} with the specified characters and
-         * line numer.
-         *
-         * @param chars the characters to parse
-         * @param line  the line number of the characters
-         */
-        @Contract(value = "null, _ -> fail", pure = true)
-        public ParseTask(final char[] chars, final int line) {
-            assert chars != null : "chars is null";
-            this.chars = chars;
-            this.line = line;
-        }
-
-        /**
-         * Calls {@link #parseLine(char[], int)} and returns the parsed
-         * element.
-         *
-         * @return a new element
-         * @throws ParseException if an error occurs while parsing
-         */
-        @Contract(value = "-> new", pure = true)
-        @NotNull
-        @Override
-        public Element call() throws ParseException {
-            return parseLine(chars, line);
-        }
     }
 
     /**
@@ -1017,7 +988,6 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             return Double.parseDouble(new String(chars, start, count));
         }
     }
-
 
     /**
      * A parsable that represents an entry name. The name is trimmed for
@@ -1357,6 +1327,51 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             // that is done by StringProperty.getValueString() and
             // KofiObject.Entry(String, Object) constructor
             return new String(unescape(chars, start + 1, end - 1));
+        }
+    }
+
+    /**
+     * A task that parses a line of characters to an {@link Element}.
+     *
+     * @see #parseLine(char[], int)
+     */
+    protected class ParseTask implements Callable<Element> {
+
+        /**
+         * The characters to parse.
+         */
+        public final char[] chars;
+        /**
+         * The line number of the characters.
+         */
+        public final int line;
+
+        /**
+         * Constructs a new {@code ParseTask} with the specified characters and
+         * line numer.
+         *
+         * @param chars the characters to parse
+         * @param line  the line number of the characters
+         */
+        @Contract(value = "null, _ -> fail", pure = true)
+        public ParseTask(final char[] chars, final int line) {
+            assert chars != null : "chars is null";
+            this.chars = chars;
+            this.line = line;
+        }
+
+        /**
+         * Calls {@link #parseLine(char[], int)} and returns the parsed
+         * element.
+         *
+         * @return a new element
+         * @throws ParseException if an error occurs while parsing
+         */
+        @Contract(value = "-> new", pure = true)
+        @NotNull
+        @Override
+        public Element call() throws ParseException {
+            return parseLine(chars, line);
         }
     }
 }

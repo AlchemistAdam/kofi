@@ -38,7 +38,9 @@ import dk.martinu.kofi.spi.DocumentFileWriter;
  */
 public class SerFileCodec implements DocumentFileReader, DocumentFileWriter {
 
-    // list returned by getExtensions
+    /**
+     * List returned by {@link #getExtensions()}.
+     */
     private static final List<String> EXTENSIONS = List.of("ser");
 
     /**

@@ -17,6 +17,9 @@
 
 package dk.martinu.kofi.spi;
 
+import dk.martinu.kofi.Document;
+import dk.martinu.kofi.DocumentIO;
+
 import org.jetbrains.annotations.*;
 
 import java.io.IOException;
@@ -24,9 +27,6 @@ import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.util.List;
 import java.util.Objects;
-
-import dk.martinu.kofi.Document;
-import dk.martinu.kofi.DocumentIO;
 
 /**
  * Service provider interface for reading a {@link Document} from file.
@@ -49,10 +49,6 @@ public interface DocumentFileReader {
      * The default implementation returns {@code true} if {@code filePath} is a
      * regular file and its file extenstion is equal to one of the extentions
      * returned by {@link #getExtensions()}, ignoring case.
-     * <p>
-     * <b>NOTE:</b> a return value of {@code true} is not a guarantee that a
-     * document can be read <i>successfully</i>; reading a file in an invalid
-     * format or failing to decode its contents can throw an exception.
      *
      * @param filePath the path to read from
      * @return {@code true} if this reader can read from {@code filePath},
@@ -77,7 +73,6 @@ public interface DocumentFileReader {
     /**
      * Returns a list of file extensions supported by this reader.
      */
-    @Contract(pure = true)
     @NotNull
     List<String> getExtensions();
 
@@ -92,7 +87,7 @@ public interface DocumentFileReader {
      * @throws IOException          if an error occurs is while reading from
      *                              the file
      */
-    @Contract(value = "_ -> new", pure = true)
+    @Contract(value = "_ -> new")
     @NotNull
     default Document readFile(@NotNull final Path filePath) throws IOException {
         return readFile(filePath, null);
@@ -112,7 +107,7 @@ public interface DocumentFileReader {
      *                              the file
      * @see Files#isRegularFile(Path, LinkOption...)
      */
-    @Contract(value = "_, _ -> new", pure = true)
+    @Contract(value = "_, _ -> new")
     @NotNull
     Document readFile(@NotNull final Path filePath, @Nullable final Charset cs) throws IOException;
 }

@@ -43,17 +43,12 @@ import dk.martinu.kofi.DocumentIO;
 public interface DocumentFileWriter {
 
     /**
-     * Returns {@code true} if this writer can write {@link Document} to the
+     * Returns {@code true} if this writer can write a {@link Document} to the
      * specified path, otherwise {@code false}.
      * <p>
      * The default implementation returns {@code true} if {@code filePath} does
      * not exist or is a regular file, and its file extenstion is equal to one
      * of the extentions returned by {@link #getExtensions()}, ignoring case.
-     * <p>
-     * <b>NOTE:</b> a return value of {@code true} is not a guarantee that a
-     * document can be written <i>successfully</i>; writing a document in an
-     * erroneous state or failing to encode its elements can throw an
-     * exception.
      *
      * @param filePath the path to write to
      * @param document the document to write
@@ -82,7 +77,6 @@ public interface DocumentFileWriter {
     /**
      * Returns a list of file extensions supported by this writer.
      */
-    @Contract(pure = true)
     @NotNull
     List<String> getExtensions();
 
@@ -98,7 +92,6 @@ public interface DocumentFileWriter {
      * @throws IOException          if an error occurs while writing to the
      *                              file
      */
-    @Contract(pure = true)
     default void writeFile(@NotNull final Path filePath, @NotNull final Document document) throws IOException {
         writeFile(filePath, document, null);
     }
@@ -116,7 +109,6 @@ public interface DocumentFileWriter {
      * @throws IOException          if an error occurs while writing to the
      *                              file
      */
-    @Contract(pure = true)
-    void writeFile(@NotNull final Path filePath, @NotNull final Document document, @Nullable final Charset cs) throws
-            IOException;
+    void writeFile(@NotNull final Path filePath, @NotNull final Document document, @Nullable final Charset cs)
+            throws IOException;
 }
