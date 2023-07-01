@@ -17,6 +17,8 @@
 
 package dk.martinu.kofi;
 
+import dk.martinu.kofi.properties.ArrayProperty;
+
 import org.jetbrains.annotations.*;
 
 import java.io.Serial;
@@ -26,8 +28,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
-import dk.martinu.kofi.properties.ArrayProperty;
-
 /**
  * Immutable {@link KofiValue} implementation of an array.
  *
@@ -35,6 +35,9 @@ import dk.martinu.kofi.properties.ArrayProperty;
  * @see ArrayProperty
  * @since 1.0
  */
+// TODO Implement parallelism in constructors (including construct method) for
+//  large array sizes. Requires benchmarking to determine how large an array
+//  must be before it is beneficial.
 public class KofiArray extends KofiValue implements Iterable<Object>, Serializable {
 
     /**
@@ -88,35 +91,53 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      * The runtime type of this array when it was reflected, or {@code null} if
      * unknown.
      */
-    // TODO set arrayType when constructing -- requires arrayType to be serialized
-    protected transient Class<?> arrayType = null;
+    @Nullable
+    protected Class<?> arrayType = null;
 
     /**
      * Construct a new, empty {@code KofiArray}.
      */
     @Contract(pure = true)
     public KofiArray() {
-        array = EMPTY;
+        this((Class<?>) null);
     }
 
     /**
-     * Constructs a new {@code KofiArray} containing the values of
-     * {@code values} converted to
-     * {@link KofiUtil#isDefinedType(Object) defined} objects. If
+     * Construct a new, empty {@code KofiArray} with the specified array type.
+     *
+     * @param arrayType the runtime type of the array, can be {@code null}
+     * @throws IllegalArgumentException if {@code arrayType} is not
+     *                                  {@code null} and is not an array class
+     */
+    // TEST arrayType
+    @Contract(pure = true)
+    public KofiArray(@Nullable final Class<?> arrayType) {
+        if (arrayType != null && !arrayType.isArray())
+            throw new IllegalArgumentException("arrayType does not represent an array class");
+        array = EMPTY;
+        this.arrayType = arrayType;
+    }
+
+    /**
+     * Constructs a new {@code KofiArray} containing the specified values
+     * converted to {@link KofiUtil#isDefinedType(Object) defined} objects. If
      * {@code values} is {@code null}, then the array will be empty.
      *
-     * @param values the array objects, or {@code null}
+     * @param values the array elements, or {@code null}
      * @see KofiUtil#getKofiValue(Object)
      */
+    // TEST arrayType
+    @SafeVarargs // values are only cast to Object
     @Contract(pure = true)
-    public KofiArray(@Nullable final Object... values) {
+    public <T> KofiArray(@Nullable final T... values) {
         if (values != null && values.length != 0) {
             array = new Object[values.length];
-            for (int i = 0; i < values.length; i++)
+            for (int i = 0; i < array.length; i++)
                 array[i] = KofiUtil.getKofiValue(values[i]);
         }
         else
             array = EMPTY;
+        arrayType = values != null ? values.getClass() : null;
     }
 
     /**
@@ -298,21 +319,65 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
 
     /**
      * Constructs a new {@code KofiArray} containing the
-     * {@link KofiUtil#isDefinedType(Object) defined} object values of the
-     * values in the specified list. If {@code list} is {@code null}, then the
-     * array will be empty
+     * {@link KofiUtil#isDefinedType(Object) defined} objects of the elements
+     * in the specified list. If {@code list} is {@code null}, then the array
+     * will be empty.
+     * <p>
+     * The array type of the {@code KofiArray} will be the lowest common
+     * ancestor of all elements in {@code list}. If the list is {@code null},
+     * empty or only contains {@code null} elements, then the array type will
+     * be {@code null}.
      *
      * @param list the list of objects, or {@code null}
      * @see KofiUtil#getKofiValue(Object)
      */
+    // TEST arrayType
     @Contract(pure = true)
-    public KofiArray(@Nullable final List<Object> list) {
-        if (list != null && !list.isEmpty())
+    public KofiArray(@Nullable final List<?> list) {
+        if (list != null && !list.isEmpty()) {
+//            array = list.parallelStream()
+//                    .map(KofiUtil::getKofiValue)
+//                    .toArray(Object[]::new);
+            array = new Object[list.size()];
+            // lowest common ancestor
+            Class<?> lca = null;
+            for (int i = 0; i < array.length; i++) {
+                final Object value = list.get(i);
+                array[i] = KofiUtil.getKofiValue(value);
+                if (lca != Object.class)
+                    lca = getLowestCommonAncestor(lca, value);
+            }
+            if (lca != null)
+                arrayType = lca.arrayType();
+        }
+        else
+            array = EMPTY;
+    }
+
+    /**
+     * Constructs a new {@code KofiArray} containing the
+     * {@link KofiUtil#isDefinedType(Object) defined} objects of the elements
+     * in the specified list and with the specified array type. If {@code list}
+     * is {@code null}, then the array will be empty.
+     *
+     * @param list      the list of objects, or {@code null}
+     * @param arrayType the runtime type of the array, can be {@code null}
+     * @throws IllegalArgumentException if {@code arrayType} is not
+     *                                  {@code null} and is not an array class
+     * @see KofiUtil#getKofiValue(Object)
+     */
+    // TEST arrayType
+    public <T> KofiArray(@Nullable final List<T> list, @Nullable final Class<T> arrayType) {
+        if (arrayType != null && !arrayType.isArray())
+            throw new IllegalArgumentException("arrayType does not represent an array class");
+        if (list != null && !list.isEmpty()) {
             array = list.parallelStream()
                     .map(KofiUtil::getKofiValue)
                     .toArray(Object[]::new);
+        }
         else
             array = EMPTY;
+        this.arrayType = arrayType;
     }
 
     /**
@@ -328,6 +393,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      *                                  cannot be converted to the component
      *                                  type
      */
+    // TODO log warnings for suspicious/incompatible array types
     @SuppressWarnings("DataFlowIssue")
     @Contract(value = "_ -> new", pure = true)
     @NotNull
@@ -340,9 +406,8 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
 
         final Class<?> componentType = type.componentType();
 
-        final int len = length();
         //noinspection unchecked
-        final V array = (V) Array.newInstance(componentType, len);
+        final V array = (V) Array.newInstance(componentType, length());
         // lambda expression to assign values to array
         final IntConsumer assign;
 
@@ -369,7 +434,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
             assign = i -> Array.setChar(array, i, (Character) get(i));
 
         // assign values to array
-        for (int i = 0; i < len; i++) {
+        for (int i = 0; i < length(); i++) {
             try {
                 assign.accept(i);
             }
@@ -516,24 +581,53 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     }
 
     /**
+     * Returns the lowest common ancestor in the class hierarchy between
+     * {@code lca} and the class of the specified object, or {@code null} if it
+     * could not be determined.
+     * <p>
+     * If {@code o} is {@code null} then the object is skipped and {@code lca}
+     * is returned. If {@code lca} is {@code null} or the object's class is a
+     * supertype of {@code lca}, then the object's class is returned.
+     * Otherwise, if {@code lca} is a super type of the object's class it is
+     * returned and if not then {@code Object.class} is returned.
+     *
+     * @param o the object to determine the lowest common ancestor for
+     * @return the lowest common ancestor, or {@code null}
+     */
+    @Contract(pure = true)
+    @Nullable
+    protected Class<?> getLowestCommonAncestor(@Nullable final Class<?> lca, @Nullable final Object o) {
+        if (o != null) {
+            final Class<?> oc = o.getClass();
+            // object class is either the initial lca, equal to lca or the new lca
+            if (lca == null || oc == lca || oc.isAssignableFrom(lca)) {
+                return oc;
+            }
+            // object class and lca do not share a common ancestor higher than Object
+            else if (!lca.isAssignableFrom(oc)) {
+                return Object.class;
+            }
+        }
+        return lca;
+    }
+
+    /**
      * An immutable iterator over the indexed objects of a {@code KofiArray}.
      */
     protected class ObjectIterator implements Iterator<Object> {
 
         /**
-         * The current index (position) of the iteration.
+         * The current index (position) of the iterator.
          */
         @Range(from = 0, to = Integer.MAX_VALUE)
         private int index = 0;
 
         /**
          * Performs the given action for each remaining element until all
-         * elements have been processed or the action throws an exception. If
-         * the action throws an exception, use of the iterator can continue as
-         * long as it has more elements.
+         * elements have been processed or the action throws an exception.
          *
-         * @param action the action to be performed for each element
-         * @throws NullPointerException if the specified action is {@code null}
+         * @param action the action to perform on each element
+         * @throws NullPointerException if {@code action} is {@code null}
          */
         @Override
         public void forEachRemaining(@NotNull final Consumer<? super Object> action) {
@@ -554,7 +648,6 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
         /**
          * {@inheritDoc}
          */
-        @Contract(pure = true)
         @NotNull
         @Override
         public Object next() {
