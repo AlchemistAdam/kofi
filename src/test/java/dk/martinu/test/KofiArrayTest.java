@@ -35,6 +35,71 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class KofiArrayTest {
 
     /**
+     * Provides arguments for {@link #constructBoolean(boolean[])}
+     */
+    static Stream<boolean[]> constructBooleanProvider() {
+        return Stream.of(
+                new boolean[] {},
+                new boolean[] {true},
+                new boolean[] {true, false},
+                new boolean[] {true, false, true, false},
+                new boolean[] {true, false, true, false, true, false, true, false}
+        );
+    }
+
+    /**
+     * Provides arguments for {@link #constructByte(byte[])}
+     */
+    static Stream<byte[]> constructByteProvider() {
+        return Stream.of(
+                new byte[] {},
+                new byte[] {1},
+                new byte[] {1, 2},
+                new byte[] {1, 2, 3, 4},
+                new byte[] {1, 2, 3, 4, 5, 6, 7, 8}
+        );
+    }
+
+    /**
+     * Provides arguments for {@link #constructChar(char[])}
+     */
+    static Stream<char[]> constructCharProvider() {
+        return Stream.of(
+                new char[] {},
+                new char[] {'A'},
+                new char[] {'A', 'B'},
+                new char[] {'A', 'B', 'C', 'D'},
+                new char[] {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'}
+        );
+    }
+
+    /**
+     * Provides arguments for {@link #constructDouble(double[])}
+     */
+    static Stream<double[]> constructDoubleProvider() {
+        return Stream.of(
+                new double[] {},
+                new double[] {1},
+                new double[] {1, 2},
+                new double[] {1, 2, 3, 4},
+                new double[] {1, 2, 3, 4, 5, 6, 7, 8}
+        );
+    }
+
+    /**
+     * Provides arguments for {@link #constructFloat(float[])}
+     */
+    static Stream<float[]> constructFloatProvider() {
+        return Stream.of(
+                new float[] {},
+                new float[] {1},
+                new float[] {1, 2},
+                new float[] {1, 2, 3, 4},
+                new float[] {1, 2, 3, 4, 5, 6, 7, 8}
+        );
+    }
+
+    /**
      * Provides arguments for {@link #constructInt(int[])}
      */
     static Stream<int[]> constructIntProvider() {
@@ -61,45 +126,6 @@ public class KofiArrayTest {
     }
 
     /**
-     * Provides arguments for {@link #constructFloat(float[])}
-     */
-    static Stream<float[]> constructFloatProvider() {
-        return Stream.of(
-                new float[] {},
-                new float[] {1},
-                new float[] {1, 2},
-                new float[] {1, 2, 3, 4},
-                new float[] {1, 2, 3, 4, 5, 6, 7, 8}
-        );
-    }
-
-    /**
-     * Provides arguments for {@link #constructDouble(double[])}
-     */
-    static Stream<double[]> constructDoubleProvider() {
-        return Stream.of(
-                new double[] {},
-                new double[] {1},
-                new double[] {1, 2},
-                new double[] {1, 2, 3, 4},
-                new double[] {1, 2, 3, 4, 5, 6, 7, 8}
-        );
-    }
-
-    /**
-     * Provides arguments for {@link #constructByte(byte[])}
-     */
-    static Stream<byte[]> constructByteProvider() {
-        return Stream.of(
-                new byte[] {},
-                new byte[] {1},
-                new byte[] {1, 2},
-                new byte[] {1, 2, 3, 4},
-                new byte[] {1, 2, 3, 4, 5, 6, 7, 8}
-        );
-    }
-
-    /**
      * Provides arguments for {@link #constructShort(short[])}
      */
     static Stream<short[]> constructShortProvider() {
@@ -113,28 +139,15 @@ public class KofiArrayTest {
     }
 
     /**
-     * Provides arguments for {@link #constructBoolean(boolean[])}
+     * Provides arguments for {@link #constructStrings(String[])}.
      */
-    static Stream<boolean[]> constructBooleanProvider() {
+    static Stream<Arguments> constructStringsProvider() {
         return Stream.of(
-                new boolean[] {},
-                new boolean[] {true},
-                new boolean[] {true, false},
-                new boolean[] {true, false, true, false},
-                new boolean[] {true, false, true, false, true, false, true, false}
-        );
-    }
-
-    /**
-     * Provides arguments for {@link #constructChar(char[])}
-     */
-    static Stream<char[]> constructCharProvider() {
-        return Stream.of(
-                new char[] {},
-                new char[] {'A'},
-                new char[] {'A', 'B'},
-                new char[] {'A', 'B', 'C', 'D'},
-                new char[] {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'}
+                Arguments.of((Object) new String[] {}),
+                Arguments.of((Object) new String[] {"Hello"}),
+                Arguments.of((Object) new String[] {"Hello", "World"}),
+                Arguments.of((Object) new String[] {"Hello", "World", "Foo", "Bar"}),
+                Arguments.of((Object) new String[] {"Hello", "World", "Foo", "Bar", "Baz", "Monkey", "likes", "banana"})
         );
     }
 
@@ -153,19 +166,6 @@ public class KofiArrayTest {
     }
 
     /**
-     * Provides arguments for {@link #constructStrings(String[])}.
-     */
-    static Stream<Arguments> constructStringsProvider() {
-        return Stream.of(
-                Arguments.of((Object) new String[] {}),
-                Arguments.of((Object) new String[] {"Hello"}),
-                Arguments.of((Object) new String[] {"Hello", "World"}),
-                Arguments.of((Object) new String[] {"Hello", "World", "Foo", "Bar"}),
-                Arguments.of((Object) new String[] {"Hello", "World", "Foo", "Bar", "Baz", "Monkey", "likes", "banana"})
-        );
-    }
-
-    /**
      * Test for {@link KofiArray#construct(Class)} with mixed objects.
      */
     @DisplayName("can construct Object arrays")
@@ -178,7 +178,7 @@ public class KofiArrayTest {
         final Object[][] o0 = new Object[objects.length][];
         for (int i = 0; i < o0.length; i++)
             o0[i] = new Object[] {objects[i]};
-        assertArrayEquals(o0, new KofiArray((Object[]) o0).construct(Object[][].class));
+        assertArrayEquals(o0, new KofiArray(o0).construct(Object[][].class));
 
         // 2d array with multiple element arrays
         final Object[][] o1 = new Object[(objects.length + 1) / 2][];
@@ -187,7 +187,7 @@ public class KofiArrayTest {
                 o1[i] = new Object[] {objects[k], objects[k + 1]};
             else
                 o1[i] = new Object[] {objects[k]};
-        assertArrayEquals(o1, new KofiArray((Object[]) o1).construct(Object[][].class));
+        assertArrayEquals(o1, new KofiArray(o1).construct(Object[][].class));
     }
 
     /**
