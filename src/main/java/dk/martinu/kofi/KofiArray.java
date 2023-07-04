@@ -17,8 +17,6 @@
 
 package dk.martinu.kofi;
 
-import dk.martinu.kofi.properties.ArrayProperty;
-
 import org.jetbrains.annotations.*;
 
 import java.io.Serial;
@@ -27,6 +25,8 @@ import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
+
+import dk.martinu.kofi.properties.ArrayProperty;
 
 /**
  * Immutable {@link KofiValue} implementation of an array.
@@ -74,6 +74,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
             list.add(Array.get(array, i));
 
         final KofiArray rv = new KofiArray(list);
+        // TODO arrayType should not be set here, but in constructor
         rv.arrayType = array.getClass();
 
         return rv;
@@ -109,7 +110,6 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      * @throws IllegalArgumentException if {@code arrayType} is not
      *                                  {@code null} and is not an array class
      */
-    // TEST arrayType
     @Contract(pure = true)
     public KofiArray(@Nullable final Class<?> arrayType) {
         if (arrayType != null && !arrayType.isArray())
@@ -126,7 +126,6 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      * @param values the array elements, or {@code null}
      * @see KofiUtil#getKofiValue(Object)
      */
-    // TEST arrayType
     @SafeVarargs // values are only cast to Object
     @Contract(pure = true)
     public <T> KofiArray(@Nullable final T... values) {
@@ -331,7 +330,6 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      * @param list the list of objects, or {@code null}
      * @see KofiUtil#getKofiValue(Object)
      */
-    // TEST arrayType
     @Contract(pure = true)
     public KofiArray(@Nullable final List<?> list) {
         if (list != null && !list.isEmpty()) {
@@ -366,7 +364,6 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      *                                  {@code null} and is not an array class
      * @see KofiUtil#getKofiValue(Object)
      */
-    // TEST arrayType
     public <T> KofiArray(@Nullable final List<T> list, @Nullable final Class<T> arrayType) {
         if (arrayType != null && !arrayType.isArray())
             throw new IllegalArgumentException("arrayType does not represent an array class");
@@ -393,7 +390,6 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      *                                  cannot be converted to the component
      *                                  type
      */
-    // TODO log warnings for suspicious/incompatible array types
     @SuppressWarnings("DataFlowIssue")
     @Contract(value = "_ -> new", pure = true)
     @NotNull
@@ -408,7 +404,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
 
         //noinspection unchecked
         final V array = (V) Array.newInstance(componentType, length());
-        // lambda expression to assign values to array
+        // lambda expression to assign a value to array at a given index
         final IntConsumer assign;
 
         // Java objects
