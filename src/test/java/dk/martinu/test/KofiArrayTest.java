@@ -17,6 +17,7 @@
 package dk.martinu.test;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -32,12 +33,13 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DisplayName("KofiArray")
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class KofiArrayTest {
 
     /**
-     * Provides arguments for {@link #constructBoolean(boolean[])}
+     * Provides a {@code boolean[]} argument.
      */
-    static Stream<boolean[]> constructBooleanProvider() {
+    static Stream<boolean[]> booleanArrayProvider() {
         return Stream.of(
                 new boolean[] {},
                 new boolean[] {true},
@@ -48,9 +50,9 @@ public class KofiArrayTest {
     }
 
     /**
-     * Provides arguments for {@link #constructByte(byte[])}
+     * Provides a {@code byte[]} argument.
      */
-    static Stream<byte[]> constructByteProvider() {
+    static Stream<byte[]> byteArrayProvider() {
         return Stream.of(
                 new byte[] {},
                 new byte[] {1},
@@ -61,9 +63,9 @@ public class KofiArrayTest {
     }
 
     /**
-     * Provides arguments for {@link #constructChar(char[])}
+     * Provides a {@code char[]} argument.
      */
-    static Stream<char[]> constructCharProvider() {
+    static Stream<char[]> charArrayProvider() {
         return Stream.of(
                 new char[] {},
                 new char[] {'A'},
@@ -74,9 +76,9 @@ public class KofiArrayTest {
     }
 
     /**
-     * Provides arguments for {@link #constructDouble(double[])}
+     * Provides a {@code double[]} argument.
      */
-    static Stream<double[]> constructDoubleProvider() {
+    static Stream<double[]> doubleArrayProvider() {
         return Stream.of(
                 new double[] {},
                 new double[] {1},
@@ -87,9 +89,9 @@ public class KofiArrayTest {
     }
 
     /**
-     * Provides arguments for {@link #constructFloat(float[])}
+     * Provides a {@code float[]} argument.
      */
-    static Stream<float[]> constructFloatProvider() {
+    static Stream<float[]> floatArrayProvider() {
         return Stream.of(
                 new float[] {},
                 new float[] {1},
@@ -100,9 +102,9 @@ public class KofiArrayTest {
     }
 
     /**
-     * Provides arguments for {@link #constructInt(int[])}
+     * Provides a {@code int[]} argument.
      */
-    static Stream<int[]> constructIntProvider() {
+    static Stream<int[]> intArrayProvider() {
         return Stream.of(
                 new int[] {},
                 new int[] {1},
@@ -113,9 +115,9 @@ public class KofiArrayTest {
     }
 
     /**
-     * Provides arguments for {@link #constructLong(long[])}
+     * Provides a {@code long[]} argument.
      */
-    static Stream<long[]> constructLongProvider() {
+    static Stream<long[]> longArrayProvider() {
         return Stream.of(
                 new long[] {},
                 new long[] {1},
@@ -126,36 +128,9 @@ public class KofiArrayTest {
     }
 
     /**
-     * Provides arguments for {@link #constructShort(short[])}
+     * Provides a {@code Object[]} argument.
      */
-    static Stream<short[]> constructShortProvider() {
-        return Stream.of(
-                new short[] {},
-                new short[] {1},
-                new short[] {1, 2},
-                new short[] {1, 2, 3, 4},
-                new short[] {1, 2, 3, 4, 5, 6, 7, 8}
-        );
-    }
-
-    /**
-     * Provides arguments for {@link #constructStrings(String[])}.
-     */
-    static Stream<Arguments> constructStringsProvider() {
-        return Stream.of(
-                Arguments.of((Object) new String[] {}),
-                Arguments.of((Object) new String[] {"Hello"}),
-                Arguments.of((Object) new String[] {"Hello", "World"}),
-                Arguments.of((Object) new String[] {"Hello", "World", "Foo", "Bar"}),
-                Arguments.of((Object) new String[] {"Hello", "World", "Foo", "Bar", "Baz", "Monkey", "likes", "banana"})
-        );
-    }
-
-    /**
-     * Provides arguments for {@link #construct(Object[])} and
-     * {@link #reflect(Object[])}
-     */
-    static Stream<Arguments> objectsProvider() {
+    static Stream<Arguments> objectArrayProvider() {
         return Stream.of(
                 Arguments.of((Object) new Object[] {}),
                 Arguments.of((Object) new Object[] {1}),
@@ -166,267 +141,448 @@ public class KofiArrayTest {
     }
 
     /**
-     * Test for {@link KofiArray#construct(Class)} with mixed objects.
+     * Provides a {@code short[]} argument.
      */
-    @DisplayName("can construct Object arrays")
-    @ParameterizedTest
-    @MethodSource("objectsProvider")
-    public void construct(final Object[] objects) {
-        assertArrayEquals(objects, new KofiArray(objects).construct(Object[].class));
+    static Stream<short[]> shortArrayProvider() {
+        return Stream.of(
+                new short[] {},
+                new short[] {1},
+                new short[] {1, 2},
+                new short[] {1, 2, 3, 4},
+                new short[] {1, 2, 3, 4, 5, 6, 7, 8}
+        );
+    }
 
-        // 2d array with single element arrays
-        final Object[][] o0 = new Object[objects.length][];
-        for (int i = 0; i < o0.length; i++)
-            o0[i] = new Object[] {objects[i]};
-        assertArrayEquals(o0, new KofiArray(o0).construct(Object[][].class));
-
-        // 2d array with multiple element arrays
-        final Object[][] o1 = new Object[(objects.length + 1) / 2][];
-        for (int i = 0, k = 0; i < o1.length; i++, k += 2)
-            if (k < objects.length - 1)
-                o1[i] = new Object[] {objects[k], objects[k + 1]};
-            else
-                o1[i] = new Object[] {objects[k]};
-        assertArrayEquals(o1, new KofiArray(o1).construct(Object[][].class));
+    /**
+     * Provides a {@code String[]} argument.
+     */
+    static Stream<Arguments> stringArrayProvider() {
+        return Stream.of(
+                Arguments.of((Object) new String[] {}),
+                Arguments.of((Object) new String[] {"Hello"}),
+                Arguments.of((Object) new String[] {"Hello", "World"}),
+                Arguments.of((Object) new String[] {"Hello", "World", "Foo", "Bar"}),
+                Arguments.of((Object) new String[] {"Hello", "World", "Foo", "Bar", "Baz", "Monkey", "likes", "banana"})
+        );
     }
 
     /**
      * Test for {@link KofiArray#construct(Class)} with {@code boolean} arrays.
      */
-    @DisplayName("can construct boolean arrays")
+    @DisplayName("can construct boolean array")
     @ParameterizedTest
-    @MethodSource("constructBooleanProvider")
+    @MethodSource("booleanArrayProvider")
     public void constructBoolean(final boolean[] booleans) {
-        assertArrayEquals(booleans, new KofiArray(booleans).construct(boolean[].class));
+        final KofiArray array = new KofiArray(booleans);
+        assertEquals(boolean[].class, array.getArrayType());
+        assertArrayEquals(booleans, array.construct(boolean[].class));
+    }
 
-        // 2d array with single element arrays
-        final boolean[][] b0 = new boolean[booleans.length][];
-        for (int i = 0; i < b0.length; i++)
-            b0[i] = new boolean[] {booleans[i]};
-        assertArrayEquals(b0, new KofiArray((Object[]) b0).construct(boolean[][].class));
-
-        // 2d array with multiple element arrays
-        final boolean[][] b1 = new boolean[(booleans.length + 1) / 2][];
-        for (int i = 0, k = 0; i < b1.length; i++, k += 2)
-            if (k < booleans.length - 1)
-                b1[i] = new boolean[] {booleans[k], booleans[k + 1]};
-            else
-                b1[i] = new boolean[] {booleans[k]};
-        assertArrayEquals(b1, new KofiArray((Object[]) b1).construct(boolean[][].class));
+    /**
+     * Test for {@link KofiArray#construct(Class)} with 2 dimensional
+     * {@code boolean} arrays.
+     */
+    @DisplayName("can construct 2 dimensional boolean array")
+    @ParameterizedTest
+    @MethodSource("booleanArrayProvider")
+    public void constructBooleanMulti(final boolean[] booleans) {
+        final boolean[][] multi = new boolean[booleans.length][];
+        for (int i = 0; i < booleans.length; i++)
+            multi[i] = booleans;
+        final KofiArray array = new KofiArray((Object[]) multi);
+        assertEquals(boolean[][].class, array.getArrayType());
+        assertArrayEquals(multi, array.construct(boolean[][].class));
     }
 
     /**
      * Test for {@link KofiArray#construct(Class)} with {@code byte} arrays.
      */
-    @DisplayName("can construct byte arrays")
+    @DisplayName("can construct byte array")
     @ParameterizedTest
-    @MethodSource("constructByteProvider")
+    @MethodSource("byteArrayProvider")
     public void constructByte(final byte[] bytes) {
-        assertArrayEquals(bytes, new KofiArray(bytes).construct(byte[].class));
+        final KofiArray array = new KofiArray(bytes);
+        assertEquals(byte[].class, array.getArrayType());
+        assertArrayEquals(bytes, array.construct(byte[].class));
+    }
 
-        // 2d array with single element arrays
-        final byte[][] b0 = new byte[bytes.length][];
-        for (int i = 0; i < b0.length; i++)
-            b0[i] = new byte[] {bytes[i]};
-        assertArrayEquals(b0, new KofiArray((Object[]) b0).construct(byte[][].class));
-
-        // 2d array with multiple element arrays
-        final byte[][] b1 = new byte[(bytes.length + 1) / 2][];
-        for (int i = 0, k = 0; i < b1.length; i++, k += 2)
-            if (k < bytes.length - 1)
-                b1[i] = new byte[] {bytes[k], bytes[k + 1]};
-            else
-                b1[i] = new byte[] {bytes[k]};
-        assertArrayEquals(b1, new KofiArray((Object[]) b1).construct(byte[][].class));
+    /**
+     * Test for {@link KofiArray#construct(Class)} with 2 dimensional
+     * {@code byte} arrays.
+     */
+    @DisplayName("can construct 2 dimensional byte array")
+    @ParameterizedTest
+    @MethodSource("byteArrayProvider")
+    public void constructByteMulti(final byte[] bytes) {
+        final byte[][] multi = new byte[bytes.length][];
+        for (int i = 0; i < bytes.length; i++)
+            multi[i] = bytes;
+        final KofiArray array = new KofiArray((Object[]) multi);
+        assertEquals(byte[][].class, array.getArrayType());
+        assertArrayEquals(multi, array.construct(byte[][].class));
     }
 
     /**
      * Test for {@link KofiArray#construct(Class)} with {@code char} arrays.
      */
-    @DisplayName("can construct char arrays")
+    @DisplayName("can construct char array")
     @ParameterizedTest
-    @MethodSource("constructCharProvider")
+    @MethodSource("charArrayProvider")
     public void constructChar(final char[] chars) {
-        assertArrayEquals(chars, new KofiArray(chars).construct(char[].class));
+        final KofiArray array = new KofiArray(chars);
+        assertEquals(char[].class, array.getArrayType());
+        assertArrayEquals(chars, array.construct(char[].class));
+    }
 
-        // 2d array with single element arrays
-        final char[][] c0 = new char[chars.length][];
-        for (int i = 0; i < c0.length; i++)
-            c0[i] = new char[] {chars[i]};
-        assertArrayEquals(c0, new KofiArray((Object[]) c0).construct(char[][].class));
-
-        // 2d array with multiple element arrays
-        final char[][] c1 = new char[(chars.length + 1) / 2][];
-        for (int i = 0, k = 0; i < c1.length; i++, k += 2)
-            if (k < chars.length - 1)
-                c1[i] = new char[] {chars[k], chars[k + 1]};
-            else
-                c1[i] = new char[] {chars[k]};
-        assertArrayEquals(c1, new KofiArray((Object[]) c1).construct(char[][].class));
+    /**
+     * Test for {@link KofiArray#construct(Class)} with 2 dimensional
+     * {@code char} arrays.
+     */
+    @DisplayName("can construct 2 dimensional char array")
+    @ParameterizedTest
+    @MethodSource("charArrayProvider")
+    public void constructCharMulti(final char[] chars) {
+        final char[][] multi = new char[chars.length][];
+        for (int i = 0; i < chars.length; i++)
+            multi[i] = chars;
+        final KofiArray array = new KofiArray((Object[]) multi);
+        assertEquals(char[][].class, array.getArrayType());
+        assertArrayEquals(multi, array.construct(char[][].class));
     }
 
     /**
      * Test for {@link KofiArray#construct(Class)} with {@code double} arrays.
      */
-    @DisplayName("can construct double arrays")
+    @DisplayName("can construct double array")
     @ParameterizedTest
-    @MethodSource("constructDoubleProvider")
+    @MethodSource("doubleArrayProvider")
     public void constructDouble(final double[] doubles) {
-        assertArrayEquals(doubles, new KofiArray(doubles).construct(double[].class));
+        final KofiArray array = new KofiArray(doubles);
+        assertEquals(double[].class, array.getArrayType());
+        assertArrayEquals(doubles, array.construct(double[].class));
+    }
 
-        // 2d array with single element arrays
-        final double[][] d0 = new double[doubles.length][];
-        for (int i = 0; i < d0.length; i++)
-            d0[i] = new double[] {doubles[i]};
-        assertArrayEquals(d0, new KofiArray((Object[]) d0).construct(double[][].class));
-
-        // 2d array with multiple element arrays
-        final double[][] d1 = new double[(doubles.length + 1) / 2][];
-        for (int i = 0, k = 0; i < d1.length; i++, k += 2)
-            if (k < doubles.length - 1)
-                d1[i] = new double[] {doubles[k], doubles[k + 1]};
-            else
-                d1[i] = new double[] {doubles[k]};
-        assertArrayEquals(d1, new KofiArray((Object[]) d1).construct(double[][].class));
+    /**
+     * Test for {@link KofiArray#construct(Class)} with 2 dimensional
+     * {@code double} arrays.
+     */
+    @DisplayName("can construct 2 dimensional double array")
+    @ParameterizedTest
+    @MethodSource("doubleArrayProvider")
+    public void constructDoubleMulti(final double[] doubles) {
+        final double[][] multi = new double[doubles.length][];
+        for (int i = 0; i < doubles.length; i++)
+            multi[i] = doubles;
+        final KofiArray array = new KofiArray((Object[]) multi);
+        assertEquals(double[][].class, array.getArrayType());
+        assertArrayEquals(multi, array.construct(double[][].class));
     }
 
     /**
      * Test for {@link KofiArray#construct(Class)} with {@code float} arrays.
      */
-    @DisplayName("can construct float arrays")
+    @DisplayName("can construct float array")
     @ParameterizedTest
-    @MethodSource("constructFloatProvider")
+    @MethodSource("floatArrayProvider")
     public void constructFloat(final float[] floats) {
-        assertArrayEquals(floats, new KofiArray(floats).construct(float[].class));
+        final KofiArray array = new KofiArray(floats);
+        assertEquals(float[].class, array.getArrayType());
+        assertArrayEquals(floats, array.construct(float[].class));
+    }
 
-        // 2d array with single element arrays
-        final float[][] f0 = new float[floats.length][];
-        for (int i = 0; i < f0.length; i++)
-            f0[i] = new float[] {floats[i]};
-        assertArrayEquals(f0, new KofiArray((Object[]) f0).construct(float[][].class));
-
-        // 2d array with multiple element arrays
-        final float[][] f1 = new float[(floats.length + 1) / 2][];
-        for (int i = 0, k = 0; i < f1.length; i++, k += 2)
-            if (k < floats.length - 1)
-                f1[i] = new float[] {floats[k], floats[k + 1]};
-            else
-                f1[i] = new float[] {floats[k]};
-        assertArrayEquals(f1, new KofiArray((Object[]) f1).construct(float[][].class));
+    /**
+     * Test for {@link KofiArray#construct(Class)} with 2 dimensional
+     * {@code float} arrays.
+     */
+    @DisplayName("can construct 2 dimensional float array")
+    @ParameterizedTest
+    @MethodSource("floatArrayProvider")
+    public void constructFloatMulti(final float[] floats) {
+        final float[][] multi = new float[floats.length][];
+        for (int i = 0; i < floats.length; i++)
+            multi[i] = floats;
+        final KofiArray array = new KofiArray((Object[]) multi);
+        assertEquals(float[][].class, array.getArrayType());
+        assertArrayEquals(multi, array.construct(float[][].class));
     }
 
     /**
      * Test for {@link KofiArray#construct(Class)} with {@code int} arrays.
      */
-    @DisplayName("can construct int arrays")
+    @DisplayName("can construct int array")
     @ParameterizedTest
-    @MethodSource("constructIntProvider")
+    @MethodSource("intArrayProvider")
     public void constructInt(final int[] ints) {
-        assertArrayEquals(ints, new KofiArray(ints).construct(int[].class));
+        final KofiArray array = new KofiArray(ints);
+        assertEquals(int[].class, array.getArrayType());
+        assertArrayEquals(ints, array.construct(int[].class));
+    }
 
-        // 2d array with single element arrays
-        final int[][] i0 = new int[ints.length][];
-        for (int i = 0; i < i0.length; i++)
-            i0[i] = new int[] {ints[i]};
-        assertArrayEquals(i0, new KofiArray((Object[]) i0).construct(int[][].class));
-
-        // 2d array with multiple element arrays
-        final int[][] i1 = new int[(ints.length + 1) / 2][];
-        for (int i = 0, k = 0; i < i1.length; i++, k += 2)
-            if (k < ints.length - 1)
-                i1[i] = new int[] {ints[k], ints[k + 1]};
-            else
-                i1[i] = new int[] {ints[k]};
-        assertArrayEquals(i1, new KofiArray((Object[]) i1).construct(int[][].class));
+    /**
+     * Test for {@link KofiArray#construct(Class)} with 2 dimensional
+     * {@code int} arrays.
+     */
+    @DisplayName("can construct 2 dimensional int array")
+    @ParameterizedTest
+    @MethodSource("intArrayProvider")
+    public void constructIntMulti(final int[] ints) {
+        final int[][] multi = new int[ints.length][];
+        for (int i = 0; i < ints.length; i++)
+            multi[i] = ints;
+        final KofiArray array = new KofiArray((Object[]) multi);
+        assertEquals(int[][].class, array.getArrayType());
+        assertArrayEquals(multi, array.construct(int[][].class));
     }
 
     /**
      * Test for {@link KofiArray#construct(Class)} with {@code long} arrays.
      */
-    @DisplayName("can construct long arrays")
+    @DisplayName("can construct long array")
     @ParameterizedTest
-    @MethodSource("constructLongProvider")
+    @MethodSource("longArrayProvider")
     public void constructLong(final long[] longs) {
-        assertArrayEquals(longs, new KofiArray(longs).construct(long[].class));
+        final KofiArray array = new KofiArray(longs);
+        assertEquals(long[].class, array.getArrayType());
+        assertArrayEquals(longs, array.construct(long[].class));
+    }
 
-        // 2d array with single element arrays
-        final long[][] L0 = new long[longs.length][];
-        for (int i = 0; i < L0.length; i++)
-            L0[i] = new long[] {longs[i]};
-        assertArrayEquals(L0, new KofiArray((Object[]) L0).construct(long[][].class));
+    /**
+     * Test for {@link KofiArray#construct(Class)} with 2 dimensional
+     * {@code long} arrays.
+     */
+    @DisplayName("can construct 2 dimensional long array")
+    @ParameterizedTest
+    @MethodSource("longArrayProvider")
+    public void constructLongMulti(final long[] longs) {
+        final long[][] multi = new long[longs.length][];
+        for (int i = 0; i < longs.length; i++)
+            multi[i] = longs;
+        final KofiArray array = new KofiArray((Object[]) multi);
+        assertEquals(long[][].class, array.getArrayType());
+        assertArrayEquals(multi, array.construct(long[][].class));
+    }
 
-        // 2d array with multiple element arrays
-        final long[][] L1 = new long[(longs.length + 1) / 2][];
-        for (int i = 0, k = 0; i < L1.length; i++, k += 2)
-            if (k < longs.length - 1)
-                L1[i] = new long[] {longs[k], longs[k + 1]};
-            else
-                L1[i] = new long[] {longs[k]};
-        assertArrayEquals(L1, new KofiArray((Object[]) L1).construct(long[][].class));
+    /**
+     * Test for {@link KofiArray#construct(Class)} with {@code Object} arrays.
+     */
+    @DisplayName("can construct Object array")
+    @ParameterizedTest
+    @MethodSource("objectArrayProvider")
+    public void constructObject(final Object[] objects) {
+        final KofiArray array = new KofiArray(objects);
+        assertEquals(Object[].class, array.getArrayType());
+        assertArrayEquals(objects, array.construct(Object[].class));
+    }
+
+    /**
+     * Test for {@link KofiArray#construct(Class)} with 2 dimensional
+     * {@code Object} arrays.
+     */
+    @DisplayName("can construct 2 dimensional Object array")
+    @ParameterizedTest
+    @MethodSource("objectArrayProvider")
+    public void constructObjectMulti(final Object[] objects) {
+        final Object[][] multi = new Object[objects.length][];
+        for (int i = 0; i < objects.length; i++)
+            multi[i] = objects;
+        final KofiArray array = new KofiArray((Object[]) multi);
+        assertEquals(Object[][].class, array.getArrayType());
+        assertArrayEquals(multi, array.construct(Object[][].class));
     }
 
     /**
      * Test for {@link KofiArray#construct(Class)} with {@code short} arrays.
      */
-    @DisplayName("can construct short arrays")
+    @DisplayName("can construct short array")
     @ParameterizedTest
-    @MethodSource("constructShortProvider")
+    @MethodSource("shortArrayProvider")
     public void constructShort(final short[] shorts) {
-        assertArrayEquals(shorts, new KofiArray(shorts).construct(short[].class));
-
-        // 2d array with single element arrays
-        final short[][] s0 = new short[shorts.length][];
-        for (int i = 0; i < s0.length; i++)
-            s0[i] = new short[] {shorts[i]};
-        assertArrayEquals(s0, new KofiArray((Object[]) s0).construct(short[][].class));
-
-        // 2d array with multiple element arrays
-        final short[][] s1 = new short[(shorts.length + 1) / 2][];
-        for (int i = 0, k = 0; i < s1.length; i++, k += 2)
-            if (k < shorts.length - 1)
-                s1[i] = new short[] {shorts[k], shorts[k + 1]};
-            else
-                s1[i] = new short[] {shorts[k]};
-        assertArrayEquals(s1, new KofiArray((Object[]) s1).construct(short[][].class));
+        final KofiArray array = new KofiArray(shorts);
+        assertEquals(short[].class, array.getArrayType());
+        assertArrayEquals(shorts, array.construct(short[].class));
     }
 
     /**
-     * Test for {@link KofiArray#construct(Class)} with mixed objects.
+     * Test for {@link KofiArray#construct(Class)} with 2 dimensional
+     * {@code short} arrays.
      */
-    @DisplayName("can construct String arrays")
+    @DisplayName("can construct 2 dimensional short array")
     @ParameterizedTest
-    @MethodSource("constructStringsProvider")
-    public void constructStrings(final String[] strings) {
-        assertArrayEquals(strings, new KofiArray(strings).construct(String[].class));
-
-        // 2d array with single element arrays
-        final String[][] s0 = new String[strings.length][];
-        for (int i = 0; i < s0.length; i++)
-            s0[i] = new String[] {strings[i]};
-        assertArrayEquals(s0, new KofiArray((Object[]) s0).construct(String[][].class));
-
-        // 2d array with multiple element arrays
-        final String[][] s1 = new String[(strings.length + 1) / 2][];
-        for (int i = 0, k = 0; i < s1.length; i++, k += 2)
-            if (k < strings.length - 1)
-                s1[i] = new String[] {strings[k], strings[k + 1]};
-            else
-                s1[i] = new String[] {strings[k]};
-        assertArrayEquals(s1, new KofiArray((Object[]) s1).construct(String[][].class));
+    @MethodSource("shortArrayProvider")
+    public void constructShortMulti(final short[] shorts) {
+        final short[][] multi = new short[shorts.length][];
+        for (int i = 0; i < shorts.length; i++)
+            multi[i] = shorts;
+        final KofiArray array = new KofiArray((Object[]) multi);
+        assertEquals(short[][].class, array.getArrayType());
+        assertArrayEquals(multi, array.construct(short[][].class));
     }
 
     /**
-     * Test for {@link KofiArray#reflect(Object)}.
+     * Test for {@link KofiArray#construct(Class)} with {@code String} arrays.
      */
-    @DisplayName("can reflect array")
+    @DisplayName("can construct String array")
     @ParameterizedTest
-    @MethodSource("objectsProvider")
-    public void reflect(final Object[] objects) {
+    @MethodSource("stringArrayProvider")
+    public void constructString(final String[] strings) {
+        final KofiArray array = new KofiArray(strings);
+        assertEquals(String[].class, array.getArrayType());
+        assertArrayEquals(strings, array.construct(String[].class));
+    }
+
+    /**
+     * Test for {@link KofiArray#construct(Class)} with 2 dimensional
+     * {@code String} arrays.
+     */
+    @DisplayName("can construct 2 dimensional String array")
+    @ParameterizedTest
+    @MethodSource("stringArrayProvider")
+    public void constructStringMulti(final String[] strings) {
+        final String[][] multi = new String[strings.length][];
+        for (int i = 0; i < strings.length; i++)
+            multi[i] = strings;
+        final KofiArray array = new KofiArray((Object[]) multi);
+        assertEquals(String[][].class, array.getArrayType());
+        assertArrayEquals(multi, array.construct(String[][].class));
+    }
+
+    /**
+     * Test for {@link KofiArray#reflect(Object)} with a {@code boolean} array.
+     */
+    @DisplayName("can reflect boolean array")
+    @ParameterizedTest
+    @MethodSource("booleanArrayProvider")
+    public void reflectBoolean(final boolean[] booleans) {
+        final KofiArray array = KofiArray.reflect(booleans);
+        assertEquals(boolean[].class, array.getArrayType());
+        assertEquals(booleans.length, array.length());
+        for (int i = 0; i < booleans.length; i++)
+            assertEquals(KofiUtil.getKofiValue(booleans[i]), array.get(i));
+    }
+
+    /**
+     * Test for {@link KofiArray#reflect(Object)} with a {@code byte} array.
+     */
+    @DisplayName("can reflect byte array")
+    @ParameterizedTest
+    @MethodSource("byteArrayProvider")
+    public void reflectByte(final byte[] bytes) {
+        final KofiArray array = KofiArray.reflect(bytes);
+        assertEquals(byte[].class, array.getArrayType());
+        assertEquals(bytes.length, array.length());
+        for (int i = 0; i < bytes.length; i++)
+            assertEquals(KofiUtil.getKofiValue(bytes[i]), array.get(i));
+    }
+
+    /**
+     * Test for {@link KofiArray#reflect(Object)} with a {@code char} array.
+     */
+    @DisplayName("can reflect char array")
+    @ParameterizedTest
+    @MethodSource("charArrayProvider")
+    public void reflectChar(final char[] chars) {
+        final KofiArray array = KofiArray.reflect(chars);
+        assertEquals(char[].class, array.getArrayType());
+        assertEquals(chars.length, array.length());
+        for (int i = 0; i < chars.length; i++)
+            assertEquals(KofiUtil.getKofiValue(chars[i]), array.get(i));
+    }
+
+    /**
+     * Test for {@link KofiArray#reflect(Object)} with a {@code double} array.
+     */
+    @DisplayName("can reflect double array")
+    @ParameterizedTest
+    @MethodSource("doubleArrayProvider")
+    public void reflectDouble(final double[] doubles) {
+        final KofiArray array = KofiArray.reflect(doubles);
+        assertEquals(double[].class, array.getArrayType());
+        assertEquals(doubles.length, array.length());
+        for (int i = 0; i < doubles.length; i++)
+            assertEquals(KofiUtil.getKofiValue(doubles[i]), array.get(i));
+    }
+
+    /**
+     * Test for {@link KofiArray#reflect(Object)} with a {@code float} array.
+     */
+    @DisplayName("can reflect float array")
+    @ParameterizedTest
+    @MethodSource("floatArrayProvider")
+    public void reflectFloat(final float[] objects) {
+        final KofiArray array = KofiArray.reflect(objects);
+        assertEquals(float[].class, array.getArrayType());
+        assertEquals(objects.length, array.length());
+        for (int i = 0; i < objects.length; i++)
+            assertEquals(KofiUtil.getKofiValue(objects[i]), array.get(i));
+    }
+
+    /**
+     * Test for {@link KofiArray#reflect(Object)} with an {@code int} array.
+     */
+    @DisplayName("can reflect int array")
+    @ParameterizedTest
+    @MethodSource("intArrayProvider")
+    public void reflectInt(final int[] ints) {
+        final KofiArray array = KofiArray.reflect(ints);
+        assertEquals(int[].class, array.getArrayType());
+        assertEquals(ints.length, array.length());
+        for (int i = 0; i < ints.length; i++)
+            assertEquals(KofiUtil.getKofiValue(ints[i]), array.get(i));
+    }
+
+    /**
+     * Test for {@link KofiArray#reflect(Object)} with a {@code long} array.
+     */
+    @DisplayName("can reflect long array")
+    @ParameterizedTest
+    @MethodSource("longArrayProvider")
+    public void reflectLong(final long[] longs) {
+        final KofiArray array = KofiArray.reflect(longs);
+        assertEquals(long[].class, array.getArrayType());
+        assertEquals(longs.length, array.length());
+        for (int i = 0; i < longs.length; i++)
+            assertEquals(KofiUtil.getKofiValue(longs[i]), array.get(i));
+    }
+
+    /**
+     * Test for {@link KofiArray#reflect(Object)} with an {@code Object} array.
+     */
+    @DisplayName("can reflect Object array")
+    @ParameterizedTest
+    @MethodSource("objectArrayProvider")
+    public void reflectObject(final Object[] objects) {
         final KofiArray array = KofiArray.reflect(objects);
         assertEquals(Object[].class, array.getArrayType());
         assertEquals(objects.length, array.length());
         for (int i = 0; i < objects.length; i++)
-            // need to convert to KoFi value because KoFi array only stores defined types
             assertEquals(KofiUtil.getKofiValue(objects[i]), array.get(i));
+    }
+
+    /**
+     * Test for {@link KofiArray#reflect(Object)} with a {@code short} array.
+     */
+    @DisplayName("can reflect short array")
+    @ParameterizedTest
+    @MethodSource("shortArrayProvider")
+    public void reflectShort(final short[] shorts) {
+        final KofiArray array = KofiArray.reflect(shorts);
+        assertEquals(short[].class, array.getArrayType());
+        assertEquals(shorts.length, array.length());
+        for (int i = 0; i < shorts.length; i++)
+            assertEquals(KofiUtil.getKofiValue(shorts[i]), array.get(i));
+    }
+
+    /**
+     * Test for {@link KofiArray#reflect(Object)} with a {@code String} array.
+     */
+    @DisplayName("can reflect String array")
+    @ParameterizedTest
+    @MethodSource("stringArrayProvider")
+    public void reflectString(final String[] strings) {
+        final KofiArray array = KofiArray.reflect(strings);
+        assertEquals(String[].class, array.getArrayType());
+        assertEquals(strings.length, array.length());
+        for (int i = 0; i < strings.length; i++)
+            assertEquals(KofiUtil.getKofiValue(strings[i]), array.get(i));
     }
 }
