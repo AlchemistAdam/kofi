@@ -48,6 +48,20 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     private static final long serialVersionUID = 0L;
 
     /**
+     * DOC
+     *
+     * @param values
+     * @param <T>
+     * @return
+     */
+    @Contract(pure = true)
+    @SafeVarargs // values are only cast to Object
+    @NotNull
+    public static <T> KofiArray of(T... values) {
+        return new KofiArray(values);
+    }
+
+    /**
      * Constructs a new {@code KofiArray} that wraps around the specified array
      * using reflection and returns it. Removing or inserting elements in
      * {@code array} will not change the returned array.
@@ -79,7 +93,6 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
 
         return rv;
     }
-
     /**
      * The objects contained in this array. Each object is guaranteed to be a
      * {@link KofiUtil#isDefinedType(Object) defined} KoFi value.
@@ -87,7 +100,6 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      * @see KofiUtil#getKofiValue(Object)
      */
     protected final Object[] array;
-
     /**
      * The runtime type of this array when it was reflected, or {@code null} if
      * unknown.
@@ -126,9 +138,8 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      * @param values the array elements, or {@code null}
      * @see KofiUtil#getKofiValue(Object)
      */
-    @SafeVarargs // values are only cast to Object
     @Contract(pure = true)
-    public <T> KofiArray(@Nullable final T... values) {
+    public KofiArray(@Nullable final Object[] values) {
         if (values != null && values.length != 0) {
             array = new Object[values.length];
             for (int i = 0; i < array.length; i++)

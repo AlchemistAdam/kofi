@@ -332,11 +332,11 @@ public class DocumentTest {
 
         assertEquals(new KofiArray(), document.getArray("empty"));
 
-        assertEquals(new KofiArray("Hello", "World", true, 2, null), document.getArray("mix"));
+        assertEquals(KofiArray.of("Hello", "World", true, 2, null), document.getArray("mix"));
 
         assertEquals(new KofiArray(), document.getArray("abc", "empty"));
 
-        assertEquals(new KofiArray(123, 567, 890), document.getArray("def", "numbers"));
+        assertEquals(KofiArray.of(123, 567, 890), document.getArray("def", "numbers"));
     }
 
     @Test

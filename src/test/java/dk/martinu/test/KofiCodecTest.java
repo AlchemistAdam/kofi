@@ -157,11 +157,11 @@ public class KofiCodecTest {
         void containsArray() {
             assertTrue(document.contains("mix"));
             assertTrue(document.contains("mix", KofiArray.class));
-            assertEquals(new KofiArray("Hello", "World", true, 97), document.getArray("mix"));
+            assertEquals(KofiArray.of("Hello", "World", true, 97), document.getArray("mix"));
 
             assertTrue(document.contains("abc", "numbers"));
             assertTrue(document.contains("abc", "numbers", KofiArray.class));
-            assertEquals(new KofiArray(123, 567, 890), document.getArray("abc", "numbers"));
+            assertEquals( KofiArray.of(123, 567, 890), document.getArray("abc", "numbers"));
         }
 
         @Test
@@ -269,15 +269,15 @@ public class KofiCodecTest {
 
         @Test
         synchronized void addArray() {
-            assertDoesNotThrow(() -> document.addArray("mix", new KofiArray("Hello", "World", true, 97)));
+            assertDoesNotThrow(() -> document.addArray("mix",  KofiArray.of("Hello", "World", true, 97)));
             assertTrue(document.contains("mix"));
             assertTrue(document.contains("mix", KofiArray.class));
-            assertEquals(new KofiArray("Hello", "World", true, 97), document.getArray("mix"));
+            assertEquals( KofiArray.of("Hello", "World", true, 97), document.getArray("mix"));
 
-            assertDoesNotThrow(() -> document.addArray("abc", "numbers", new KofiArray(123, 567, 890)));
+            assertDoesNotThrow(() -> document.addArray("abc", "numbers",  KofiArray.of(123, 567, 890)));
             assertTrue(document.contains("abc", "numbers"));
             assertTrue(document.contains("abc", "numbers", KofiArray.class));
-            assertEquals(new KofiArray(123, 567, 890), document.getArray("abc", "numbers"));
+            assertEquals( KofiArray.of(123, 567, 890), document.getArray("abc", "numbers"));
         }
 
         @Test

@@ -135,27 +135,27 @@ public class KofiUtilTest {
         // assert converted primitive array is equal
         assertArrayEquals(
                 new int[] {1},
-                KofiUtil.getJavaValue(new KofiArray(1), int[].class));
+                KofiUtil.getJavaValue( KofiArray.of(1), int[].class));
 
         // assert converted array is equal
         assertArrayEquals(
                 new Dummy<?>[] {Dummy.of(1)},
-                KofiUtil.getJavaValue(new KofiArray(Dummy.of(1)), Dummy[].class));
+                KofiUtil.getJavaValue( KofiArray.of(Dummy.of(1)), Dummy[].class));
 
         // assert converted array is equal, with elements extending array component type
         assertArrayEquals(
                 new Dummy<?>[] {Dummy2.of(1, 2)},
-                KofiUtil.getJavaValue(new KofiArray(Dummy2.of(1, 2)), Dummy[].class));
+                KofiUtil.getJavaValue( KofiArray.of(Dummy2.of(1, 2)), Dummy[].class));
 
         // assert converted array is equal, with nested array
         assertArrayEquals(
                 new Dummy<?>[][] {new Dummy[] {Dummy.of(1)}},
-                KofiUtil.getJavaValue(new KofiArray((Object) new Dummy[] {Dummy.of(1)}), Dummy[][].class));
+                KofiUtil.getJavaValue( KofiArray.of((Object) new Dummy[] {Dummy.of(1)}), Dummy[][].class));
 
         // assert converted array is equal, with nested array extending array component type
         assertArrayEquals(
                 new Dummy<?>[][] {new Dummy2[] {Dummy2.of(1, 2)}},
-                KofiUtil.getJavaValue(new KofiArray((Object) new Dummy2[] {Dummy2.of(1, 2)}), Dummy[][].class));
+                KofiUtil.getJavaValue( KofiArray.of((Object) new Dummy2[] {Dummy2.of(1, 2)}), Dummy[][].class));
     }
 
     /**
