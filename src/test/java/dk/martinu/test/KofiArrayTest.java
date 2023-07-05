@@ -189,7 +189,7 @@ public class KofiArrayTest {
         final boolean[][] multi = new boolean[booleans.length][];
         for (int i = 0; i < booleans.length; i++)
             multi[i] = booleans;
-        final KofiArray array = new KofiArray((Object[]) multi);
+        final KofiArray array = new KofiArray(multi, boolean[][].class);
         assertEquals(boolean[][].class, array.getArrayType());
         assertArrayEquals(multi, array.construct(boolean[][].class));
     }
@@ -217,7 +217,7 @@ public class KofiArrayTest {
         final byte[][] multi = new byte[bytes.length][];
         for (int i = 0; i < bytes.length; i++)
             multi[i] = bytes;
-        final KofiArray array = new KofiArray((Object[]) multi);
+        final KofiArray array = new KofiArray(multi, byte[][].class);
         assertEquals(byte[][].class, array.getArrayType());
         assertArrayEquals(multi, array.construct(byte[][].class));
     }
@@ -245,7 +245,7 @@ public class KofiArrayTest {
         final char[][] multi = new char[chars.length][];
         for (int i = 0; i < chars.length; i++)
             multi[i] = chars;
-        final KofiArray array = new KofiArray((Object[]) multi);
+        final KofiArray array = new KofiArray(multi, char[][].class);
         assertEquals(char[][].class, array.getArrayType());
         assertArrayEquals(multi, array.construct(char[][].class));
     }
@@ -273,7 +273,7 @@ public class KofiArrayTest {
         final double[][] multi = new double[doubles.length][];
         for (int i = 0; i < doubles.length; i++)
             multi[i] = doubles;
-        final KofiArray array = new KofiArray((Object[]) multi);
+        final KofiArray array = new KofiArray(multi, double[][].class);
         assertEquals(double[][].class, array.getArrayType());
         assertArrayEquals(multi, array.construct(double[][].class));
     }
@@ -301,7 +301,7 @@ public class KofiArrayTest {
         final float[][] multi = new float[floats.length][];
         for (int i = 0; i < floats.length; i++)
             multi[i] = floats;
-        final KofiArray array = new KofiArray((Object[]) multi);
+        final KofiArray array = new KofiArray(multi, float[][].class);
         assertEquals(float[][].class, array.getArrayType());
         assertArrayEquals(multi, array.construct(float[][].class));
     }
@@ -329,7 +329,7 @@ public class KofiArrayTest {
         final int[][] multi = new int[ints.length][];
         for (int i = 0; i < ints.length; i++)
             multi[i] = ints;
-        final KofiArray array = new KofiArray((Object[]) multi);
+        final KofiArray array = new KofiArray(multi, int[][].class);
         assertEquals(int[][].class, array.getArrayType());
         assertArrayEquals(multi, array.construct(int[][].class));
     }
@@ -357,7 +357,7 @@ public class KofiArrayTest {
         final long[][] multi = new long[longs.length][];
         for (int i = 0; i < longs.length; i++)
             multi[i] = longs;
-        final KofiArray array = new KofiArray((Object[]) multi);
+        final KofiArray array = new KofiArray(multi, long[][].class);
         assertEquals(long[][].class, array.getArrayType());
         assertArrayEquals(multi, array.construct(long[][].class));
     }
@@ -385,7 +385,7 @@ public class KofiArrayTest {
         final Object[][] multi = new Object[objects.length][];
         for (int i = 0; i < objects.length; i++)
             multi[i] = objects;
-        final KofiArray array = new KofiArray((Object[]) multi);
+        final KofiArray array = new KofiArray(multi, Object[][].class);
         assertEquals(Object[][].class, array.getArrayType());
         assertArrayEquals(multi, array.construct(Object[][].class));
     }
@@ -413,7 +413,7 @@ public class KofiArrayTest {
         final short[][] multi = new short[shorts.length][];
         for (int i = 0; i < shorts.length; i++)
             multi[i] = shorts;
-        final KofiArray array = new KofiArray((Object[]) multi);
+        final KofiArray array = new KofiArray(multi, short[][].class);
         assertEquals(short[][].class, array.getArrayType());
         assertArrayEquals(multi, array.construct(short[][].class));
     }
@@ -441,7 +441,7 @@ public class KofiArrayTest {
         final String[][] multi = new String[strings.length][];
         for (int i = 0; i < strings.length; i++)
             multi[i] = strings;
-        final KofiArray array = new KofiArray((Object[]) multi);
+        final KofiArray array = new KofiArray(multi, String[][].class);
         assertEquals(String[][].class, array.getArrayType());
         assertArrayEquals(multi, array.construct(String[][].class));
     }
