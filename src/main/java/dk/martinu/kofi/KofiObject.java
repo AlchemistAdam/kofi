@@ -41,7 +41,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
      */
     protected static final Entry[] EMPTY = new Entry[0];
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 202307052158L;
 
     /**
      * Constructs a new {@code KofiObject} that wraps around the specified object
@@ -534,7 +534,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
     public static class Entry implements Comparable<Entry>, Serializable {
 
         @Serial
-        private static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = 202307052158L;
 
         /**
          * The entry name.

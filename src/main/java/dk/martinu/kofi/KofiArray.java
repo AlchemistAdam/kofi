@@ -45,7 +45,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      */
     protected static final Object[] EMPTY = new Object[0];
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 202307052158L;
 
     /**
      * DOC

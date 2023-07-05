@@ -49,7 +49,7 @@ import dk.martinu.kofi.properties.*;
 public class Document implements Iterable<Element>, Cloneable, Serializable {
 
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 202307052158L;
 
     /**
      * A list of all elements in this document. The order of the elements in

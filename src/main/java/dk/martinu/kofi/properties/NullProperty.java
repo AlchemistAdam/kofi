@@ -39,7 +39,7 @@ import dk.martinu.kofi.Property;
 public class NullProperty extends Property<Object> implements Cloneable, Serializable {
 
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 202307052159L;
 
     /**
      * Constructs a new property with the specified key.

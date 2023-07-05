@@ -32,7 +32,7 @@ import java.io.Serializable;
 public class ParseException extends Exception implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 202307052159L;
 
     /**
      * Constructs a new exception with the specified message and location of

@@ -32,7 +32,7 @@ import java.io.Serializable;
 public class ServiceUnavailableException extends Exception implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 202307052158L;
 
     /**
      * Constructs a new exception with the specified message.

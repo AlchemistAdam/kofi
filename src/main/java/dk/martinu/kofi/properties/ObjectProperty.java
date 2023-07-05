@@ -38,7 +38,7 @@ public class ObjectProperty extends Property<KofiObject> implements Cloneable, S
         Iterable<KofiObject.Entry> {
 
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 202307052159L;
 
     /**
      * Constructs a new property with the specified key and value. If

@@ -36,7 +36,7 @@ import java.util.Objects;
 public class Comment extends Element implements Cloneable, Serializable {
 
     @Serial
-    private static final long serialVersionUID = 0;
+    private static final long serialVersionUID = 202307052158L;
 
     /**
      * The text of this comment.

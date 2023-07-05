@@ -33,7 +33,7 @@ import java.io.Serializable;
 public class ConstructionException extends RuntimeException implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 202307052158L;
 
     /**
      * Creates a new exception with the specified message and cause.

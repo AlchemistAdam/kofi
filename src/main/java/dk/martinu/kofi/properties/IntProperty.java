@@ -35,7 +35,7 @@ import dk.martinu.kofi.Property;
 public class IntProperty extends Property<Integer> implements Cloneable, Serializable {
 
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 202307052159L;
 
     /**
      * Constructs a new property with the specified key and value. If

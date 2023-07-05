@@ -36,7 +36,7 @@ import dk.martinu.kofi.Property;
 public class StringProperty extends Property<String> implements Cloneable, Serializable {
 
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 202307052200L;
 
     /**
      * Cached escaped value.
