@@ -51,13 +51,11 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      * DOC
      *
      * @param values
-     * @param <T>
      * @return
      */
     @Contract(pure = true)
-    @SafeVarargs // values are only cast to Object
     @NotNull
-    public static <T> KofiArray of(T... values) {
+    public static KofiArray of(Object... values) {
         return new KofiArray(values);
     }
 
@@ -88,11 +86,11 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
             list.add(Array.get(array, i));
 
         final KofiArray rv = new KofiArray(list);
-        // TODO arrayType should not be set here, but in constructor
         rv.arrayType = array.getClass();
 
         return rv;
     }
+
     /**
      * The objects contained in this array. Each object is guaranteed to be a
      * {@link KofiUtil#isDefinedType(Object) defined} KoFi value.
@@ -140,6 +138,18 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      */
     @Contract(pure = true)
     public KofiArray(@Nullable final Object[] values) {
+        this(values, Object[].class);
+    }
+
+    /**
+     * DOC
+     *
+     * @param values
+     * @param arrayType
+     * @param <T>
+     */
+    @Contract(pure = true)
+    public <T> KofiArray(@Nullable final T[] values, @Nullable final Class<? super T[]> arrayType) {
         if (values != null && values.length != 0) {
             array = new Object[values.length];
             for (int i = 0; i < array.length; i++)
@@ -147,7 +157,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
         }
         else
             array = EMPTY;
-        arrayType = values != null ? values.getClass() : null;
+        this.arrayType = arrayType;
     }
 
     /**
@@ -343,24 +353,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      */
     @Contract(pure = true)
     public KofiArray(@Nullable final List<?> list) {
-        if (list != null && !list.isEmpty()) {
-//            array = list.parallelStream()
-//                    .map(KofiUtil::getKofiValue)
-//                    .toArray(Object[]::new);
-            array = new Object[list.size()];
-            // lowest common ancestor
-            Class<?> lca = null;
-            for (int i = 0; i < array.length; i++) {
-                final Object value = list.get(i);
-                array[i] = KofiUtil.getKofiValue(value);
-                if (lca != Object.class)
-                    lca = getLowestCommonAncestor(lca, value);
-            }
-            if (lca != null)
-                arrayType = lca.arrayType();
-        }
-        else
-            array = EMPTY;
+        this(list, Object[].class);
     }
 
     /**
@@ -371,13 +364,9 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      *
      * @param list      the list of objects, or {@code null}
      * @param arrayType the runtime type of the array, can be {@code null}
-     * @throws IllegalArgumentException if {@code arrayType} is not
-     *                                  {@code null} and is not an array class
      * @see KofiUtil#getKofiValue(Object)
      */
-    public <T> KofiArray(@Nullable final List<T> list, @Nullable final Class<T> arrayType) {
-        if (arrayType != null && !arrayType.isArray())
-            throw new IllegalArgumentException("arrayType does not represent an array class");
+    public <T> KofiArray(@Nullable final List<T> list, @Nullable final Class<? super T[]> arrayType) {
         if (list != null && !list.isEmpty()) {
             array = list.parallelStream()
                     .map(KofiUtil::getKofiValue)
@@ -585,37 +574,6 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     @Override
     public Spliterator<Object> spliterator() {
         return Arrays.spliterator(array);
-    }
-
-    /**
-     * Returns the lowest common ancestor in the class hierarchy between
-     * {@code lca} and the class of the specified object, or {@code null} if it
-     * could not be determined.
-     * <p>
-     * If {@code o} is {@code null} then the object is skipped and {@code lca}
-     * is returned. If {@code lca} is {@code null} or the object's class is a
-     * supertype of {@code lca}, then the object's class is returned.
-     * Otherwise, if {@code lca} is a super type of the object's class it is
-     * returned and if not then {@code Object.class} is returned.
-     *
-     * @param o the object to determine the lowest common ancestor for
-     * @return the lowest common ancestor, or {@code null}
-     */
-    @Contract(pure = true)
-    @Nullable
-    protected Class<?> getLowestCommonAncestor(@Nullable final Class<?> lca, @Nullable final Object o) {
-        if (o != null) {
-            final Class<?> oc = o.getClass();
-            // object class is either the initial lca, equal to lca or the new lca
-            if (lca == null || oc == lca || oc.isAssignableFrom(lca)) {
-                return oc;
-            }
-            // object class and lca do not share a common ancestor higher than Object
-            else if (!lca.isAssignableFrom(oc)) {
-                return Object.class;
-            }
-        }
-        return lca;
     }
 
     /**
