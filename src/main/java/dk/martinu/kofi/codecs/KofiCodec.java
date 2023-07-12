@@ -317,9 +317,9 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
 
             // null and NaN
             else if (c == 'n' || c == 'N') {
-                if (matches(chars, start, length, NULL))
+                if (matchesCI(chars, start, length, NULL))
                     return new ParsableNull(chars, start, length);
-                else if (matches(chars, start, length, NAN))
+                else if (matchesCI(chars, start, length, NAN))
                     return ParsableFloat.getNan(chars, start, length);
             }
 
@@ -361,17 +361,17 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
 
             // Boolean
             else if (c == 't' || c == 'T') {
-                if (matches(chars, start, length, TRUE))
+                if (matchesCI(chars, start, length, TRUE))
                     return ParsableBoolean.getTrue(chars, start, length);
             }
             else if (c == 'f' || c == 'F') {
-                if (matches(chars, start, length, FALSE))
+                if (matchesCI(chars, start, length, FALSE))
                     return ParsableBoolean.getFalse(chars, start, length);
             }
 
             // unsigned infinity
             else if (c == 'i' || c == 'I') {
-                if (matches(chars, start, length, INFINITY))
+                if (matchesCI(chars, start, length, INFINITY))
                     return ParsableFloat.getInfinity(chars, start, length);
             }
 
@@ -427,7 +427,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                     }
                     // signed infinity
                     else if (c == 'i' || c == 'I') {
-                        if (!hasDigits && fraction == null && matches(chars, end, length, INFINITY))
+                        if (!hasDigits && fraction == null && matchesCI(chars, end, length, INFINITY))
                             if (positive)
                                 return ParsableFloat.getPositiveInfinity(chars, start, length);
                             else

@@ -317,6 +317,8 @@ public class KofiUtil {
      *     </li>
      * </ul>
      *
+     * @param o the object to wrap in a KoFi value, can be {@code null}
+     * @return a KoFi value that represents {@code o}
      * @see KofiArray
      * @see KofiObject
      */
@@ -395,7 +397,8 @@ public class KofiUtil {
      *         {@code Number} wrapper of a primitive type, such as {@code Integer}
      *     </li>
      *     <li>
-     *         {@code KofiValue}
+     *         {@code KofiValue} (such as {@link KofiArray} and
+     *         {@link KofiObject})
      *     </li>
      * </ul>
      *
@@ -504,6 +507,26 @@ public class KofiUtil {
 
     /**
      * Returns {@code true} if the start of the specified region matches
+     * {@code comp}, otherwise {@code false} is returned.
+     *
+     * @param chars the characters to match
+     * @param start the starting index, inclusive
+     * @param end   the ending index, exclusive
+     * @param comp  the charaters to compare to
+     * @return {@code true} if a match was found, otherwise {@code false}
+     */
+    @Contract(pure = true)
+    public static boolean matches(final char[] chars, final int start, final int end, final char[] comp) {
+        if (end - start < comp.length)
+            return false;
+        for (int i = 0; i < comp.length; i++)
+            if (chars[start + i] != comp[i])
+                return false;
+        return true;
+    }
+
+    /**
+     * Returns {@code true} if the start of the specified region matches
      * {@code comp}, ignoring case, otherwise {@code false} is returned.
      * <p>
      * <b>NOTE:</b> the {@code comp} array must only contain uppercase Latin
@@ -516,7 +539,7 @@ public class KofiUtil {
      * @return {@code true} if a match was found, otherwise {@code false}
      */
     @Contract(pure = true)
-    public static boolean matches(final char[] chars, final int start, final int end, final char[] comp) {
+    public static boolean matchesCI(final char[] chars, final int start, final int end, final char[] comp) {
         if (end - start < comp.length)
             return false;
         for (int i = 0; i < comp.length; i++)
