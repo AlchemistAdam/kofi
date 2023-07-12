@@ -17,8 +17,7 @@
 
 package dk.martinu.kofi.codecs;
 
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -36,7 +35,7 @@ public class ParseException extends Exception implements Serializable {
 
     /**
      * Constructs a new exception with the specified message and location of
-     * the data the caused this exception.
+     * the data that caused this exception.
      *
      * @param line   the line number
      * @param column the column at the specified line
@@ -44,6 +43,21 @@ public class ParseException extends Exception implements Serializable {
      */
     @Contract(pure = true)
     public ParseException(final int line, final int column, @NotNull final String msg) {
-        super("[" + line + ":" + column + "] " + msg);
+        this(line, column, msg, null);
+    }
+
+    /**
+     * Constructs a new exception with the specified message, location of
+     * the data and {@code Throwable} that caused this exception.
+     *
+     * @param line   the line number
+     * @param column the column at the specified line
+     * @param msg    the message
+     * @param cause  the {@code Throwable} that cause this exception, can be
+     *               {@code null}
+     */
+    public ParseException(final int line, final int column, @NotNull final String msg,
+            @Nullable final Throwable cause) {
+        super("[" + line + ":" + column + "] " + msg, cause);
     }
 }
