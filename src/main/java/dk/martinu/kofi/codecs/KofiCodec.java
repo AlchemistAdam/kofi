@@ -269,7 +269,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             if (parsable.length == end) {
                 final String key = new String(unescape(trim(chars, 0, delimiter)));
                 final Object value = parsable.getValue();
-                return switch (parsable.getType()) {
+                return switch (parsable.getValueType()) {
                     case NULL -> new NullProperty(key);
                     case STRING -> new StringProperty(key, (String) value);
                     case DOUBLE -> new DoubleProperty(key, (Double) value);
@@ -820,21 +820,21 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
 
         /**
-         * Returns the type of value returned by {@link #getValue()} of
-         * this parsable.
-         */
-        @NotNull
-        public abstract Type getType();
-
-        /**
          * Returns the value represented by this parsable.
          */
         public abstract T getValue();
 
         /**
+         * Returns the type of value returned by {@link #getValue()} of
+         * this parsable.
+         */
+        @NotNull
+        public abstract Type getValueType();
+
+        /**
          * An enumeration of the different value types that can be parsed.
          *
-         * @see #getType()
+         * @see #getValueType()
          */
         public enum Type {
             NULL, STRING, INT, LONG, FLOAT, DOUBLE, CHAR, BOOLEAN, ARRAY, OBJECT
@@ -889,21 +889,21 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
 
         /**
-         * Returns {@code Type.BOOLEAN}.
-         */
-        @NotNull
-        @Override
-        public Type getType() {
-            return Type.BOOLEAN;
-        }
-
-        /**
          * {@inheritDoc}
          */
         @NotNull
         @Override
         public Boolean getValue() {
             return value;
+        }
+
+        /**
+         * Returns {@code Type.BOOLEAN}.
+         */
+        @NotNull
+        @Override
+        public Type getValueType() {
+            return Type.BOOLEAN;
         }
     }
 
@@ -917,15 +917,6 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
          */
         public ParsableChar(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
-        }
-
-        /**
-         * Returns {@code Type.CHAR}.
-         */
-        @NotNull
-        @Override
-        public Type getType() {
-            return Type.CHAR;
         }
 
         /**
@@ -954,6 +945,15 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                 default -> throw new RuntimeException("unexpected length {" + len + "}");
             };
         }
+
+        /**
+         * Returns {@code Type.CHAR}.
+         */
+        @NotNull
+        @Override
+        public Type getValueType() {
+            return Type.CHAR;
+        }
     }
 
     /**
@@ -969,15 +969,6 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
 
         /**
-         * Returns {@code Type.DOUBLE}.
-         */
-        @NotNull
-        @Override
-        public Type getType() {
-            return Type.DOUBLE;
-        }
-
-        /**
          * {@inheritDoc}
          */
         @NotNull
@@ -986,6 +977,15 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             // do not include specifier if present
             final int count = chars[end - 1] > '9' ? end - start - 1 : end - start;
             return Double.parseDouble(new String(chars, start, count));
+        }
+
+        /**
+         * Returns {@code Type.DOUBLE}.
+         */
+        @NotNull
+        @Override
+        public Type getValueType() {
+            return Type.DOUBLE;
         }
     }
 
@@ -1003,15 +1003,6 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
 
         /**
-         * Returns {@code Type.STRING}.
-         */
-        @NotNull
-        @Override
-        public Type getType() {
-            return Type.STRING;
-        }
-
-        /**
          * {@inheritDoc}
          */
         @Contract(value = "-> new", pure = true)
@@ -1019,6 +1010,15 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         @Override
         public String getValue() {
             return new String(unescape(chars, start, end));
+        }
+
+        /**
+         * Returns {@code Type.STRING}.
+         */
+        @NotNull
+        @Override
+        public Type getValueType() {
+            return Type.STRING;
         }
     }
 
@@ -1087,15 +1087,6 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
 
         /**
-         * Returns {@code Type.FLOAT}.
-         */
-        @NotNull
-        @Override
-        public Type getType() {
-            return Type.FLOAT;
-        }
-
-        /**
          * {@inheritDoc}
          */
         @NotNull
@@ -1108,6 +1099,16 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                 final int count = chars[end - 1] > '9' ? end - start - 1 : end - start;
                 return Float.parseFloat(new String(chars, start, count));
             }
+        }
+
+        /**
+         * Returns {@code Type.FLOAT}.
+         */
+        @Contract(pure = true)
+        @NotNull
+        @Override
+        public Type getValueType() {
+            return Type.FLOAT;
         }
     }
 
@@ -1124,21 +1125,21 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
 
         /**
-         * Returns {@code Type.INT}.
-         */
-        @NotNull
-        @Override
-        public Type getType() {
-            return Type.INT;
-        }
-
-        /**
          * {@inheritDoc}
          */
         @NotNull
         @Override
         public Integer getValue() {
             return Integer.parseInt(new String(chars, start, end - start));
+        }
+
+        /**
+         * Returns {@code Type.INT}.
+         */
+        @NotNull
+        @Override
+        public Type getValueType() {
+            return Type.INT;
         }
     }
 
@@ -1163,15 +1164,6 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
 
         /**
-         * Returns {@code Type.ARRAY}.
-         */
-        @NotNull
-        @Override
-        public Type getType() {
-            return Type.ARRAY;
-        }
-
-        /**
          * {@inheritDoc}
          */
         @Contract(value = "-> new", pure = true)
@@ -1182,6 +1174,15 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             for (int i = 0; i < array.length; i++)
                 array[i] = values.get(i).getValue();
             return new KofiArray(array);
+        }
+
+        /**
+         * Returns {@code Type.ARRAY}.
+         */
+        @NotNull
+        @Override
+        public Type getValueType() {
+            return Type.ARRAY;
         }
     }
 
@@ -1206,15 +1207,6 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
 
         /**
-         * Returns {@code Type.OBJECT}.
-         */
-        @NotNull
-        @Override
-        public Type getType() {
-            return Type.OBJECT;
-        }
-
-        /**
          * {@inheritDoc}
          */
         @Contract(value = "-> new", pure = true)
@@ -1226,6 +1218,15 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                 builder.put((String) entries.get(i).getValue(),
                         entries.get(i + 1).getValue());
             return builder.build();
+        }
+
+        /**
+         * Returns {@code Type.OBJECT}.
+         */
+        @NotNull
+        @Override
+        public Type getValueType() {
+            return Type.OBJECT;
         }
     }
 
@@ -1242,15 +1243,6 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
 
         /**
-         * Returns {@code Type.LONG}.
-         */
-        @NotNull
-        @Override
-        public Type getType() {
-            return Type.LONG;
-        }
-
-        /**
          * {@inheritDoc}
          */
         @NotNull
@@ -1259,6 +1251,15 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             // do not include specifier if present, e.g. 22L -> 22
             final int count = chars[end - 1] > '9' ? end - start - 1 : end - start;
             return Long.parseLong(new String(chars, start, count));
+        }
+
+        /**
+         * Returns {@code Type.LONG}.
+         */
+        @NotNull
+        @Override
+        public Type getValueType() {
+            return Type.LONG;
         }
     }
 
@@ -1275,15 +1276,6 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
 
         /**
-         * Returns {@code Type.NULL}.
-         */
-        @Override
-        @NotNull
-        public Type getType() {
-            return Type.NULL;
-        }
-
-        /**
          * Returns {@code null}.
          */
         @Contract(value = "-> null", pure = true)
@@ -1291,6 +1283,15 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         @Nullable
         public Object getValue() {
             return null;
+        }
+
+        /**
+         * Returns {@code Type.NULL}.
+         */
+        @Override
+        @NotNull
+        public Type getValueType() {
+            return Type.NULL;
         }
     }
 
@@ -1308,15 +1309,6 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
 
         /**
-         * Returns {@code Type.STRING}.
-         */
-        @NotNull
-        @Override
-        public Type getType() {
-            return Type.STRING;
-        }
-
-        /**
          * {@inheritDoc}
          */
         @Contract(value = "-> new", pure = true)
@@ -1327,6 +1319,15 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             // that is done by StringProperty.getValueString() and
             // KofiObject.Entry(String, Object) constructor
             return new String(unescape(chars, start + 1, end - 1));
+        }
+
+        /**
+         * Returns {@code Type.STRING}.
+         */
+        @NotNull
+        @Override
+        public Type getValueType() {
+            return Type.STRING;
         }
     }
 
