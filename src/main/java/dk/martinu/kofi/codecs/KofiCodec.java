@@ -335,7 +335,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             else if (c == '\'') {
                 final int remainder = length - start;
                 final int end;
-                // four-character unicode escape sequence
+                // six-character unicode escape sequence
                 // '\UXXXX'
                 if (remainder >= 8 && chars[start + 1] == '\\'
                         && (chars[start + 2] == 'u' || chars[start + 2] == 'U')
@@ -512,17 +512,34 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                 }
                 if (end == -1)
                     throw KofiLog.exception(src, new ParseException(line, start, "array is not enclosed"));
-
+                // index for array characters
+                int i = start + 1;
+                // skip whitespace until first significant character
+                while (i < end - 1) {
+                    if (isWhitespace(chars[i]))
+                        i++;
+                    else
+                        break;
+                }
+                // parsable component type of array, if any
+                final ParsableTypeSpecifier typeSpecifier = parseTypeSpecifier(chars, start + 1, end - 1, line);
                 // list of parsable values in the array
                 final ArrayList<Parsable<?>> values = new ArrayList<>();
+                // true if parsing a value, false if expecting an array value separator
                 boolean parse = true;
-                for (int i = start + 1; i < end - 1; ) {
+                // update i and parse if type specifier is present
+                if (typeSpecifier != null) {
+                    i = typeSpecifier.length;
+                    parse = false;
+                }
+                // parse array values
+                while (i < end - 1) {
                     if (parse) {
-                        final Parsable<?> pv = parseValue(chars, i, end - 1, line);
+                        final Parsable<?> value = parseValue(chars, i, end - 1, line);
                         // add non-empty values to list
-                        if (pv != null) {
-                            values.add(pv);
-                            i = pv.length;
+                        if (value != null) {
+                            values.add(value);
+                            i = value.length;
                             parse = false;
                         }
                         // allow empty arrays, but not empty values in populated arrays
@@ -539,6 +556,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                         throw KofiLog.exception(src,
                                 new ParseException(line, i + 1, "array value separator ',' expected"));
                 }
+                // TODO add type specifier to array
                 return new ParsableKofiArray(chars, start, end, length, values);
             }
 
@@ -577,6 +595,8 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                 }
                 if (end == -1)
                     throw KofiLog.exception(src, new ParseException(line, start + 1, "object is not enclosed"));
+
+                // TODO type specifier
 
                 // list of parsable name/value pairs in the object
                 final ArrayList<Parsable<?>> entries = new ArrayList<>();
@@ -625,6 +645,12 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                 return new ParsableKofiObject(chars, start, end, length, entries);
             }
 
+            // TODO removing this exception would allow implementers to add their own value types
+            //  call parseOther(...) default implementation throws ParseException.
+            //  Seems like a bad design; it would only allow one subclass to override parseOther.
+            //  Maybe add method isParsable(char) or getParser(char)
+            //    isParsable: simple but checks the same characters twice
+            //    getParser: complex but only iterates characters once (possible ParserParsable?)
             // unknown value type
             throw KofiLog.exception(src, new ParseException(line, start + 1, "invalid value"));
         }
@@ -669,6 +695,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             return document;
         }
         finally {
+            // TODO use shutdownNow() instead
             executor.shutdown();
         }
     }
@@ -686,7 +713,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             IOException {
         // TODO It's possible to convert elements to strings in parallel, and
         //  then aggregate the result and write on single thread.
-        //  This would also reduce the amount of time the file is locked,
+        //  This could also reduce the amount of time the file is locked (for very large files),
         //  because element conversion is done outside of the try-with block
         Objects.requireNonNull(supplier, "supplier is null");
         Objects.requireNonNull(document, "document is null");
@@ -806,6 +833,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
          * @param len   the highest possible index of this parsable in the
          *              array source, exclusive
          */
+        @Contract(pure = true)
         public Parsable(final char[] chars, final int start, final int end, final int len) {
             this.chars = chars;
             this.start = start;
@@ -857,7 +885,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns a parsable that represents {@code false}.
          */
-        @Contract(value = "!null, _, _ -> new")
+        @Contract(value = "!null, _, _ -> new", pure = true)
         @NotNull
         public static ParsableBoolean getFalse(final char[] chars, final int start, final int len) {
             return new ParsableBoolean(chars, start, start + FALSE.length, len, Boolean.FALSE);
@@ -866,7 +894,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns a parsable that represents {@code true}.
          */
-        @Contract(value = "!null, _, _ -> new")
+        @Contract(value = "!null, _, _ -> new", pure = true)
         @NotNull
         public static ParsableBoolean getTrue(final char[] chars, final int start, final int len) {
             return new ParsableBoolean(chars, start, start + TRUE.length, len, Boolean.TRUE);
@@ -882,6 +910,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
          * Private constructor, use one of the static factory methods to get an
          * instance of this parsable type.
          */
+        @Contract(pure = true)
         private ParsableBoolean(final char[] chars, final int start, final int end, final int len,
                 @NotNull final Boolean value) {
             super(chars, start, end, len);
@@ -891,6 +920,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * {@inheritDoc}
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Boolean getValue() {
@@ -900,6 +930,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns {@code Type.BOOLEAN}.
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Type getValueType() {
@@ -915,6 +946,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Constructs a new {@code ParsableChar}.
          */
+        @Contract(pure = true)
         public ParsableChar(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
@@ -922,6 +954,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * {@inheritDoc}
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Character getValue() {
@@ -949,6 +982,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns {@code Type.CHAR}.
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Type getValueType() {
@@ -964,6 +998,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Constructs a new {@code ParsableDouble}.
          */
+        @Contract(pure = true)
         public ParsableDouble(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
@@ -971,6 +1006,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * {@inheritDoc}
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Double getValue() {
@@ -982,6 +1018,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns {@code Type.DOUBLE}.
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Type getValueType() {
@@ -998,6 +1035,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Constructs a new {@code ParsableEntryName}.
          */
+        @Contract(pure = true)
         public ParsableEntryName(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
@@ -1005,7 +1043,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * {@inheritDoc}
          */
-        @Contract(value = "-> new", pure = true)
+        @Contract(pure = true)
         @NotNull
         @Override
         public String getValue() {
@@ -1015,6 +1053,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns {@code Type.STRING}.
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Type getValueType() {
@@ -1032,7 +1071,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns a parsable that represents {@code Float.POSITIVE_INFINITY}.
          */
-        @Contract(value = "!null, _, _ -> new")
+        @Contract(value = "!null, _, _ -> new", pure = true)
         @NotNull
         public static ParsableFloat getInfinity(final char[] chars, final int start, final int len) {
             final ParsableFloat p = new ParsableFloat(chars, start, start + INFINITY.length, len);
@@ -1043,7 +1082,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns a parsable that represents {@code Float.NaN}.
          */
-        @Contract(value = "!null, _, _ -> new")
+        @Contract(value = "!null, _, _ -> new", pure = true)
         @NotNull
         public static ParsableFloat getNan(final char[] chars, final int start, final int len) {
             final ParsableFloat p = new ParsableFloat(chars, start, start + NAN.length, len);
@@ -1054,7 +1093,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns a parsable that represents {@code Float.NEGATIVE_INFINITY}.
          */
-        @Contract(value = "!null, _, _ -> new")
+        @Contract(value = "!null, _, _ -> new", pure = true)
         @NotNull
         public static ParsableFloat getNegativeInfinity(final char[] chars, final int start, final int len) {
             final ParsableFloat p = new ParsableFloat(chars, start, start + INFINITY.length + 1, len);
@@ -1065,7 +1104,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns a parsable that represents {@code Float.POSITIVE_INFINITY}.
          */
-        @Contract(value = "!null, _, _ -> new")
+        @Contract(value = "!null, _, _ -> new", pure = true)
         @NotNull
         public static ParsableFloat getPositiveInfinity(final char[] chars, final int start, final int len) {
             final ParsableFloat p = new ParsableFloat(chars, start, start + INFINITY.length + 1, len);
@@ -1082,6 +1121,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Constructs a new {@code ParsableFloat}.
          */
+        @Contract(pure = true)
         public ParsableFloat(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
@@ -1089,6 +1129,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * {@inheritDoc}
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Float getValue() {
@@ -1120,6 +1161,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Constructs a new {@code ParsableInt}.
          */
+        @Contract(pure = true)
         public ParsableInt(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
@@ -1127,6 +1169,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * {@inheritDoc}
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Integer getValue() {
@@ -1136,6 +1179,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns {@code Type.INT}.
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Type getValueType() {
@@ -1157,6 +1201,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Constructs a new {@code ParsableKofiArray}.
          */
+        @Contract(pure = true)
         public ParsableKofiArray(final char[] chars, final int start, final int end, final int len,
                 @NotNull final ArrayList<Parsable<?>> values) {
             super(chars, start, end, len);
@@ -1179,6 +1224,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns {@code Type.ARRAY}.
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Type getValueType() {
@@ -1200,6 +1246,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Constructs a new {@code ParsableKofiObject}.
          */
+        @Contract(pure = true)
         public ParsableKofiObject(final char[] chars, final int start, final int end, final int len,
                 @NotNull final ArrayList<Parsable<?>> entries) {
             super(chars, start, end, len);
@@ -1223,6 +1270,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns {@code Type.OBJECT}.
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Type getValueType() {
@@ -1238,6 +1286,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Constructs a new {@code ParsableLong}.
          */
+        @Contract(pure = true)
         public ParsableLong(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
@@ -1245,6 +1294,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * {@inheritDoc}
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Long getValue() {
@@ -1256,6 +1306,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns {@code Type.LONG}.
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Type getValueType() {
@@ -1271,6 +1322,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Constructs a new {@code ParsableNull}.
          */
+        @Contract(pure = true)
         public ParsableNull(final char[] chars, final int start, final int len) {
             super(chars, start, start + NULL.length, len);
         }
@@ -1288,6 +1340,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns {@code Type.NULL}.
          */
+        @Contract(pure = true)
         @Override
         @NotNull
         public Type getValueType() {
@@ -1304,6 +1357,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Constructs a new {@code ParsableString}.
          */
+        @Contract(pure = true)
         public ParsableString(final char[] chars, final int start, final int end, final int len) {
             super(chars, start, end, len);
         }
@@ -1311,7 +1365,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * {@inheritDoc}
          */
-        @Contract(value = "-> new", pure = true)
+        @Contract(pure = true)
         @NotNull
         @Override
         public String getValue() {
@@ -1324,6 +1378,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         /**
          * Returns {@code Type.STRING}.
          */
+        @Contract(pure = true)
         @NotNull
         @Override
         public Type getValueType() {
