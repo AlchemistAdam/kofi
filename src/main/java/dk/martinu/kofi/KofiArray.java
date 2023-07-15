@@ -99,11 +99,11 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      */
     protected final Object[] array;
     /**
-     * The runtime type of this array when it was reflected, or {@code null} if
-     * unknown.
+     * The runtime type of this array when it was reflected or constructed, or
+     * {@code null} if unknown.
      */
     @Nullable
-    protected Class<?> arrayType = null;
+    protected Class<?> arrayType;
 
     /**
      * Construct a new, empty {@code KofiArray}.
@@ -502,6 +502,22 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     @Nullable
     public Class<?> getArrayType() {
         return arrayType;
+    }
+
+    /**
+     * Sets the array type of this {@code KofiArray} to the specified class
+     * object.
+     * <p>
+     * <b>NOTE:</b> this method is inherently unsafe, as it allows the array
+     * to contain elements that cannot be cast to the component type of the
+     * array type. This method should only be called when the array type could
+     * not be determined at compile time.
+     *
+     * @param arrayType the array type, can be {@code null}
+     */
+    @Contract(mutates = "this")
+    public void setArrayType(@Nullable final Class<?> arrayType) {
+        this.arrayType = arrayType;
     }
 
     /**
