@@ -17,6 +17,10 @@
 
 package dk.martinu.kofi.codecs;
 
+import dk.martinu.kofi.*;
+import dk.martinu.kofi.properties.*;
+import dk.martinu.kofi.spi.*;
+
 import org.jetbrains.annotations.*;
 
 import java.io.*;
@@ -27,11 +31,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 
-import dk.martinu.kofi.*;
-import dk.martinu.kofi.properties.*;
-import dk.martinu.kofi.spi.*;
-
 import static dk.martinu.kofi.KofiUtil.*;
+import static dk.martinu.kofi.codecs.KofiCodec.TypeSpecFlag.*;
 
 /**
  * Codec for reading and writing text that conforms to the KoFi Text Syntax.
@@ -49,25 +50,20 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
      * List returned by {@link #getExtensions()}.
      */
     private static final List<String> EXTENSIONS = List.of("kofi");
-    /**
-     * Constant for matching a string with {@code "null"}.
-     */
+
+    /* constants for string matching  */
+    private static final char[] INT = {'i', 'n', 't'};
+    private static final char[] LONG = {'l', 'o', 'n', 'g'};
+    private static final char[] FLOAT = {'f', 'l', 'o', 'a', 't'};
+    private static final char[] DOUBLE = {'d', 'o', 'u', 'b', 'l', 'e'};
+    private static final char[] BYTE = {'b', 'y', 't', 'e'};
+    private static final char[] SHORT = {'s', 'h', 'o', 'r', 't'};
+    private static final char[] CHAR = {'c', 'h', 'a', 'r'};
+    private static final char[] BOOLEAN = {'b', 'o', 'o', 'l', 'e', 'a', 'n'};
     private static final char[] NULL = {'N', 'U', 'L', 'L'};
-    /**
-     * Constant for matching a string with {@code "true"}.
-     */
     private static final char[] TRUE = {'T', 'R', 'U', 'E'};
-    /**
-     * Constant for matching a string with {@code "false"}.
-     */
     private static final char[] FALSE = {'F', 'A', 'L', 'S', 'E'};
-    /**
-     * Constant for matching a string with {@code "NaN"}.
-     */
     private static final char[] NAN = {'N', 'A', 'N'};
-    /**
-     * Constant for matching a string with {@code "infinity"}.
-     */
     private static final char[] INFINITY = {'I', 'N', 'F', 'I', 'N', 'I', 'T', 'Y'};
 
     /**
@@ -288,6 +284,130 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         }
         else
             throw KofiLog.exception(src, new ParseException(line, delimiter + 1, "property value expected"));
+    }
+
+    /**
+     * Parses a type specifier from the specified region of characters and
+     * returns it, or {@code null} if the region does not contain a type
+     * specifier.
+     * <p>
+     * Type specifiers allow arrays and objects to specify the type of the
+     * content they describe.
+     * <p>
+     * <b>NOTE:</b> in order to retain backwards compatibility with Java 8 and
+     * earlier versions, Java identifiers consisting of a single {@code _}
+     * character are allowed.
+     *
+     * @param chars  the characters to parse
+     * @param offset start index in {@code chars}, inclusive
+     * @param length end index in {@code chars}, exclusive
+     * @param line   the line number that is being parsed
+     * @return a type specifier, or {@code null}
+     * @throws ParseException if an error occurs while parsing
+     */
+    // TEST
+    @Contract(pure = true)
+    @Nullable
+    protected ParsableTypeSpecifier parseTypeSpecifier(final char[] chars, final int offset, final int length,
+            final int line) throws ParseException {
+        // first character of a type specifier must be '$'
+        if (chars[offset] == '$') {
+            // start of identifier
+            final int start = offset + 1;
+            // parsable end
+            int end = -1;
+            // type specifier state for validating identifier
+            TypeSpecFlag flag = NAME_EMPTY;
+            boolean isPrimitive = true;
+            // validate structure of type specifier
+            for (int i = start; i < length; i++) {
+                final char c = chars[i];
+                // type specifiers can't contain whitespace or value separators
+                if (isWhitespace(c) || c == ',') {
+                    end = i;
+                    break;
+                }
+                // package separator
+                else if (c == '.') {
+                    if (flag == NAME_PARTIAL) {
+                        flag = PACKAGE_SEPARATOR;
+                        isPrimitive = false;
+                        continue;
+                    }
+                }
+                // arrays
+                else if (c == '[') {
+                    if (flag == NAME_PARTIAL || flag == ARRAY_END) {
+                        flag = ARRAY_START;
+                        isPrimitive = false;
+                        continue;
+                    }
+                }
+                else if (c == ']') {
+                    if (flag == ARRAY_START) {
+                        flag = ARRAY_END;
+                        continue;
+                    }
+                }
+                // Character is part of an identifier or primitive type.
+                // All characters used in primitive types are also valid in
+                // identifiers.
+                else if (flag == NAME_EMPTY || flag == PACKAGE_SEPARATOR) {
+                    if (Character.isJavaIdentifierStart(c)) {
+                        flag = NAME_PARTIAL;
+                        continue;
+                    }
+                }
+                else if (flag == NAME_PARTIAL && Character.isJavaIdentifierPart(c))
+                    continue;
+                throw new ParseException(line, i, "invalid type specifier");
+            }
+            // adjust end if loop terminated normally
+            if (end == -1)
+                end = length;
+
+            // ensure type specifier is in correct state
+            if (flag != NAME_PARTIAL && flag != ARRAY_END)
+                throw new ParseException(line, end - 1, "invalid type specifier");
+
+            // class object returned by parsable
+            final Class<?> cls;
+            // primitive type specifier
+            if (isPrimitive) {
+                if (matches(chars, start, end, INT))
+                    cls = int.class;
+                else if (matches(chars, start, end, LONG))
+                    cls = long.class;
+                else if (matches(chars, start, end, FLOAT))
+                    cls = float.class;
+                else if (matches(chars, start, end, DOUBLE))
+                    cls = double.class;
+                else if (matches(chars, start, end, BYTE))
+                    cls = byte.class;
+                else if (matches(chars, start, end, SHORT))
+                    cls = short.class;
+                else if (matches(chars, start, end, CHAR))
+                    cls = char.class;
+                else if (matches(chars, start, end, BOOLEAN))
+                    cls = boolean.class;
+                else
+                    throw new ParseException(line, start, "invalid primitive type specifier");
+            }
+            // class type specifier
+            else
+                try {
+                    final String name = new String(chars, start, end - start);
+                    cls = Class.forName(name, false, null);
+                }
+                catch (Exception e) {
+                    throw new ParseException(line, start, "cannot get class for type specifier", e);
+                }
+
+            return new ParsableTypeSpecifier(cls, chars, offset, end, length);
+        }
+        // not a type specifier
+        else
+            return null;
     }
 
     /**
@@ -556,8 +676,13 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                         throw KofiLog.exception(src,
                                 new ParseException(line, i + 1, "array value separator ',' expected"));
                 }
-                // TODO add type specifier to array
-                return new ParsableKofiArray(chars, start, end, length, values);
+
+                if (typeSpecifier != null) {
+                    final Class<?> arrayType = typeSpecifier.getValue().arrayType();
+                    return new ParsableKofiArray(arrayType, chars, start, end, length, values);
+                }
+                else
+                    return new ParsableKofiArray(chars, start, end, length, values);
             }
 
             // KofiObject
@@ -736,7 +861,35 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
     }
 
     /**
-     * Flags used to retain information about a number while it is being parsed.
+     * Flags used to retain information about a type specifier while it is
+     * being parsed.
+     */
+    protected enum TypeSpecFlag {
+        /**
+         * Empty package or class name.
+         */
+        NAME_EMPTY,
+        /**
+         * Partial package or class name.
+         */
+        NAME_PARTIAL,
+        /**
+         * Package separator.
+         */
+        PACKAGE_SEPARATOR,
+        /**
+         * Opening array bracket.
+         */
+        ARRAY_START,
+        /**
+         * Closing array bracket.
+         */
+        ARRAY_END
+    }
+
+    /**
+     * Flags used to retain information about a number while it is being
+     * parsed.
      */
     protected enum NumFlag {
         /**
@@ -783,6 +936,57 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         @Contract(value = "-> new", pure = true)
         @NotNull
         T get() throws IOException;
+    }
+
+    /**
+     * A parsable that represents a type specifier. Type specifiers allow
+     * arrays and objects to specify the type of the content they describe.
+     * <p>
+     * Because this parsable does not represent a value, but the <i>type</i> of
+     * a value, {@link #getValueType()} returns {@code Type.NULL}.
+     */
+    protected static class ParsableTypeSpecifier extends Parsable<Class<?>> {
+
+        /**
+         * A class instance of the specified type.
+         */
+        @NotNull
+        public final Class<?> cls;
+
+        /**
+         * Constructs a new {@code ParsableTypeSpecifier}.
+         *
+         * @throws NullPointerException if {@code cls} is {@code null}
+         * @see Parsable#Parsable(char[], int, int, int)
+         */
+        @Contract(pure = true)
+        public ParsableTypeSpecifier(@NotNull final Class<?> cls, final char[] chars, final int start, final int end,
+                final int len) {
+            super(chars, start, end, len);
+            this.cls = Objects.requireNonNull(cls, "class is null");
+        }
+
+        /**
+         * Returns the specified type (class object) represented by this
+         * parsable.
+         */
+        @Contract(pure = true)
+        @NotNull
+        @Override
+        public Class<?> getValue() {
+            return cls;
+        }
+
+        /**
+         * Returns {@code Type.NULL}. Type specifiers are not values and the
+         * value type is therefore ignored.
+         */
+        @Contract(pure = true)
+        @NotNull
+        @Override
+        public Type getValueType() {
+            return Type.NULL;
+        }
     }
 
     /**
@@ -1193,6 +1397,11 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
     protected static class ParsableKofiArray extends Parsable<KofiArray> {
 
         /**
+         * The runtime type of the array component type, can be {@code null}.
+         */
+        @Nullable
+        private final Class<?> cls;
+        /**
          * List of parsable values in this array.
          */
         @NotNull
@@ -1204,7 +1413,18 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
         @Contract(pure = true)
         public ParsableKofiArray(final char[] chars, final int start, final int end, final int len,
                 @NotNull final ArrayList<Parsable<?>> values) {
+            this(null, chars, start, end, len, values);
+        }
+
+        /**
+         * DOC cls
+         * Constructs a new {@code ParsableKofiArray}.
+         */
+        @Contract(pure = true)
+        public ParsableKofiArray(@Nullable final Class<?> cls, final char[] chars, final int start, final int end,
+                final int len, @NotNull final ArrayList<Parsable<?>> values) {
             super(chars, start, end, len);
+            this.cls = cls;
             this.values = values;
         }
 
@@ -1218,7 +1438,11 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             final Object[] array = new Object[values.size()];
             for (int i = 0; i < array.length; i++)
                 array[i] = values.get(i).getValue();
-            return new KofiArray(array);
+            // TEST constructor contract suggests that arrayType can only be Object[]
+            final KofiArray rv = new KofiArray(array);
+            if (cls != null)
+                rv.setArrayType(cls);
+            return rv;
         }
 
         /**
