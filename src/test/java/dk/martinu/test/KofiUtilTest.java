@@ -286,7 +286,7 @@ public class KofiUtilTest {
     }
 
     /**
-     * Test for {@link KofiUtil#matches(char[], int, int, char[])}.
+     * Test for {@link KofiUtil#matchesCI(char[], int, int, char[])}.
      */
     @DisplayName("can match strings")
     @ParameterizedTest
@@ -301,7 +301,7 @@ public class KofiUtilTest {
     public void matches(final String s, final String c, final int start) {
         final char[] sChars = s.toCharArray();
         final char[] cChars = c.toCharArray();
-        assertTrue(KofiUtil.matches(sChars, start, sChars.length, cChars));
+        assertTrue(KofiUtil.matchesCI(sChars, start, sChars.length, cChars));
     }
 
     /**
