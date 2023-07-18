@@ -319,6 +319,8 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             // type specifier state for validating identifier
             TypeSpecFlag flag = NAME_EMPTY;
             boolean isPrimitive = true;
+            // number of dimensions if the type is an array
+            int ndim = 0;
             // validate structure of type specifier
             for (int i = start; i < length; i++) {
                 final char c = chars[i];
@@ -339,7 +341,7 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                 else if (c == '[') {
                     if (flag == NAME_PARTIAL || flag == ARRAY_END) {
                         flag = ARRAY_START;
-                        isPrimitive = false;
+                        ndim++;
                         continue;
                     }
                 }
@@ -371,27 +373,33 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                 throw new ParseException(line, end - 1, "invalid type specifier");
 
             // class object returned by parsable
-            final Class<?> cls;
+            Class<?> cls;
             // primitive type specifier
             if (isPrimitive) {
-                if (matches(chars, start, end, INT))
+                // end of primitive type not including array brackets
+                int endpt = ndim == 0 ? end : indexOf('[', chars, start, end);
+                // determine primitive type
+                if (matches(chars, start, endpt, INT))
                     cls = int.class;
-                else if (matches(chars, start, end, LONG))
+                else if (matches(chars, start, endpt, LONG))
                     cls = long.class;
-                else if (matches(chars, start, end, FLOAT))
+                else if (matches(chars, start, endpt, FLOAT))
                     cls = float.class;
-                else if (matches(chars, start, end, DOUBLE))
+                else if (matches(chars, start, endpt, DOUBLE))
                     cls = double.class;
-                else if (matches(chars, start, end, BYTE))
+                else if (matches(chars, start, endpt, BYTE))
                     cls = byte.class;
-                else if (matches(chars, start, end, SHORT))
+                else if (matches(chars, start, endpt, SHORT))
                     cls = short.class;
-                else if (matches(chars, start, end, CHAR))
+                else if (matches(chars, start, endpt, CHAR))
                     cls = char.class;
-                else if (matches(chars, start, end, BOOLEAN))
+                else if (matches(chars, start, endpt, BOOLEAN))
                     cls = boolean.class;
                 else
                     throw new ParseException(line, start, "invalid primitive type specifier");
+                // convert to array type for arrays
+                for (; ndim > 0; ndim--)
+                    cls = cls.arrayType();
             }
             // class type specifier
             else
