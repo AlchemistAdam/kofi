@@ -20,6 +20,7 @@ package dk.martinu.test;
 import dk.martinu.kofi.Document;
 import dk.martinu.kofi.KofiArray;
 import dk.martinu.kofi.codecs.KofiCodec;
+import dk.martinu.test.dummy.Dummy;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.TestInstance;
@@ -151,6 +152,34 @@ public class TypeSpecifierArrayTest {
                 Arguments.of(
                         new long[] {1, 2},
                         "array = [$long, 1, 2]")
+        );
+    }
+
+    /**
+     * Provides a multidimensional object array and a KoFi string with a
+     * matching array.
+     */
+    static Stream<Arguments> multiObjectArrayProvider() {
+        final String pck = "dk.martinu.test.dummy.Dummy";
+        return Stream.of(
+                Arguments.of(
+                        new Dummy[0][],
+                        "array = [$" + pck + "[]]"),
+                Arguments.of(
+                        new Dummy[][] {{Dummy.of(1)}},
+                        "array = [$" + pck + "[], [{v0: 1}]]"),
+                Arguments.of(
+                        new Dummy[][] {{Dummy.of(1)}, {Dummy.of(2)}},
+                        "array = [$" + pck + "[], [{v0: 1}], [{v0: 2}]]"),
+                Arguments.of(
+                        new Dummy[][][] {{}, {}},
+                        "array = [$" + pck + "[][], [], []]"),
+                Arguments.of(
+                        new Dummy[][][] {{{Dummy.of(1)}}, {{Dummy.of(2)}}},
+                        "array = [$" + pck + "[][], [[{v0: 1}]], [[{v0: 2}]]]"),
+                Arguments.of(
+                        new Dummy[][][] {{{Dummy.of(1), Dummy.of(3)}}, {{Dummy.of(2)}, {Dummy.of(4)}}},
+                        "array = [$" + pck + "[][], [[{v0: 1}, {v0: 3}]], [[{v0: 2}], [{v0: 4}]]]")
         );
     }
 
@@ -311,9 +340,21 @@ public class TypeSpecifierArrayTest {
         });
     }
 
+    @ParameterizedTest
+    @MethodSource("multiObjectArrayProvider")
+    public void multiObjectArray(final Object[] source, final String str) {
+        assertDoesNotThrow(() -> {
+            final Document doc = KofiCodec.provider().readString(str);
+            final KofiArray kofi = doc.getArray("array");
+            assertNotNull(kofi);
+            assertEquals(source.getClass(), kofi.getArrayType());
+            final Object[] array = kofi.construct(source.getClass());
+            assertArrayEquals(source, array);
+        });
+    }
+
     /**
-     * Provides a multidimensional {@code int} array (n>1) and a KoFi string
-     * with a matching array.
+     * Test for parsing a multidiemsnional {@code int} array type specifier.
      */
     @ParameterizedTest
     @MethodSource("multiPrimitiveArrayProvider")
