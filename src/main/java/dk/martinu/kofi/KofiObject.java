@@ -17,6 +17,8 @@
 
 package dk.martinu.kofi;
 
+import dk.martinu.kofi.properties.ObjectProperty;
+
 import org.jetbrains.annotations.*;
 
 import java.io.Serial;
@@ -24,8 +26,6 @@ import java.io.Serializable;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Consumer;
-
-import dk.martinu.kofi.properties.ObjectProperty;
 
 /**
  * Immutable {@link KofiValue} implementation of an object.
@@ -99,7 +99,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
      * if unknown.
      */
     // TODO set objectType when constructing -- requires object type to be serialized
-    protected transient Class<?> objectType;
+    protected Class<?> objectType;
 
     /**
      * Construct a new, empty {@code KofiObject}.
@@ -386,6 +386,22 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
     @Override
     public Iterator<Entry> iterator() {
         return new EntryIterator();
+    }
+
+    /**
+     * Sets the object type of this {@code KofiObject} to the specified class
+     * object.
+     * <p>
+     * <b>NOTE:</b> this method is inherently unsafe, as it allows the object
+     * to contain entries that cannot be converted to fields of the object
+     * type. This method should only be called when the object type could not
+     * be determined at compile time.
+     *
+     * @param objectType the object type, can be {@code null}
+     */
+    @Contract(mutates = "this")
+    public void setObjectType(@Nullable final Class<?> objectType) {
+        this.objectType = objectType;
     }
 
     /**
