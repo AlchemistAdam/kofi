@@ -17,6 +17,8 @@
 
 package dk.martinu.kofi;
 
+import dk.martinu.kofi.properties.ArrayProperty;
+
 import org.jetbrains.annotations.*;
 
 import java.io.Serial;
@@ -517,6 +519,8 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      */
     @Contract(mutates = "this")
     public void setArrayType(@Nullable final Class<?> arrayType) {
+        if (arrayType != null && !arrayType.isArray())
+            throw new IllegalArgumentException("arrayType does not represent an array class");
         this.arrayType = arrayType;
     }
 
