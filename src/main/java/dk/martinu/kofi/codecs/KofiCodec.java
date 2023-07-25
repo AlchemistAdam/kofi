@@ -45,7 +45,6 @@ import static dk.martinu.kofi.codecs.KofiCodec.TypeSpecFlag.*;
  */
 public class KofiCodec implements DocumentFileReader, DocumentFileWriter, DocumentStringReader, DocumentStringWriter {
 
-
     /**
      * List returned by {@link #getExtensions()}.
      */
@@ -374,10 +373,10 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
 
             // class object returned by parsable
             Class<?> cls;
+            // end of type not including array brackets
+            final int endpt = ndim == 0 ? end : indexOf('[', chars, start, end);
             // primitive type specifier
             if (isPrimitive) {
-                // end of primitive type not including array brackets
-                int endpt = ndim == 0 ? end : indexOf('[', chars, start, end);
                 // determine primitive type
                 if (matches(chars, start, endpt, INT))
                     cls = int.class;
@@ -397,19 +396,19 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                     cls = boolean.class;
                 else
                     throw new ParseException(line, start, "invalid primitive type specifier");
-                // convert to array type for arrays
-                for (; ndim > 0; ndim--)
-                    cls = cls.arrayType();
             }
             // class type specifier
             else
                 try {
-                    final String name = new String(chars, start, end - start);
-                    cls = Class.forName(name, false, null);
+                    final String name = new String(chars, start, endpt - start);
+                    cls = Class.forName(name, false, ClassLoader.getSystemClassLoader());
                 }
                 catch (Exception e) {
                     throw new ParseException(line, start, "cannot get class for type specifier", e);
                 }
+            // convert to array type for arrays
+            for (; ndim > 0; ndim--)
+                cls = cls.arrayType();
 
             return new ParsableTypeSpecifier(cls, chars, offset, end, length);
         }
