@@ -727,13 +727,28 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                 }
                 if (end == -1)
                     throw KofiLog.exception(src, new ParseException(line, start + 1, "object is not enclosed"));
-
-                // TODO type specifier
-
-                // list of parsable name/value pairs in the object
+                // index of object characters
+                int i = start + 1;
+                // skip whitespace until first significant character
+                while (i < end - 1) {
+                    if (isWhitespace(chars[i]))
+                        i++;
+                    else
+                        break;
+                }
+                // parsable component type of object, if any
+                final ParsableTypeSpecifier typeSpecifier = parseTypeSpecifier(chars, i, end - 1, line);
+                // list of parsable entries in the object
                 final ArrayList<Parsable<?>> entries = new ArrayList<>();
+                // true if parsing a value, false if expecting an object entry separator
                 boolean parse = true;
-                for (int i = start + 1; i < end - 1; ) {
+                // update i and parse if type specifier is present
+                if (typeSpecifier != null) {
+                    i = typeSpecifier.length;
+                    parse = false;
+                }
+                // parse object entries
+                while ( i < end - 1) {
                     if (parse) {
                         // get name - stops at index of separator or consumes all remaining chars
                         final ParsableEntryName name = parseEntryName(chars, i, end - 1);
@@ -745,13 +760,11 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                                 throw KofiLog.exception(src, new ParseException(line, name.end,
                                         "object name-value separator ':' expected"));
                             }
-                            // name is empty but object is already populated
-                            else if (!entries.isEmpty()) {
-                                throw KofiLog.exception(src, new ParseException(line, i + 1, "object entry expected"));
-                            }
-                            // object is empty
-                            else
+                            // allow empty objects, but not empty entries in populated objects
+                            else if (entries.isEmpty())
                                 break;
+                            else
+                                throw KofiLog.exception(src, new ParseException(line, i + 1, "object entry expected"));
                         }
 
                         // get value
@@ -774,6 +787,11 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
                                 "object entry separator ',' expected"));
                 }
 
+                if (typeSpecifier != null ) {
+                    final Class<?> objectType = typeSpecifier.getValue();
+                    return new ParsableKofiObject(objectType, chars, start, end, length, entries);
+                }
+                else
                 return new ParsableKofiObject(chars, start, end, length, entries);
             }
 
@@ -1469,18 +1487,33 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
     protected static class ParsableKofiObject extends Parsable<KofiObject> {
 
         /**
+         * The runtime type of the object type, can be {@code null}.
+         */
+        @Nullable
+        private final Class<?> cls;
+        /**
          * List of name-value pairs (entries) in this object.
          */
         @NotNull
         private final ArrayList<Parsable<?>> entries;
 
         /**
-         * Constructs a new {@code ParsableKofiObject}.
+         * DOC
          */
         @Contract(pure = true)
         public ParsableKofiObject(final char[] chars, final int start, final int end, final int len,
                 @NotNull final ArrayList<Parsable<?>> entries) {
+            this(null, chars, start, end, len, entries);
+        }
+
+        /**
+         * Constructs a new {@code ParsableKofiObject}.
+         */
+        @Contract(pure = true)
+        public ParsableKofiObject(@Nullable final Class<?> cls,  final char[] chars, final int start, final int end, final int len,
+                @NotNull final ArrayList<Parsable<?>> entries) {
             super(chars, start, end, len);
+            this.cls = cls;
             this.entries = entries;
         }
 
@@ -1495,7 +1528,10 @@ public class KofiCodec implements DocumentFileReader, DocumentFileWriter, Docume
             for (int i = 0; i < entries.size(); i += 2)
                 builder.put((String) entries.get(i).getValue(),
                         entries.get(i + 1).getValue());
-            return builder.build();
+            final KofiObject rv =  builder.build();
+            if (cls != null)
+                rv.setObjectType(cls);
+            return rv;
         }
 
         /**
