@@ -56,10 +56,10 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
     public static KofiObject reflect(@NotNull final Object object) {
         Objects.requireNonNull(object, "object is null");
         // class for reflection
-        final Class<?> cl = object.getClass();
+        final Class<?> cls = object.getClass();
         // map of field names and values
         final HashMap<String, Object> map = new HashMap<>();
-        for (Field field : cl.getFields())
+        for (Field field : cls.getFields())
             if (!Modifier.isStatic(field.getModifiers()))
                 if (field.canAccess(object) || field.trySetAccessible()) {
                     // get field value
@@ -80,7 +80,8 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
                             + object.getClass().getName() + ", " + field.getName() + "}");
 
         final KofiObject rv = new KofiObject(map);
-        rv.objectType = object.getClass();
+        // TEST is it possible to get invalid objectType here?
+        // rv.objectType = cls;
         return rv;
     }
 
@@ -98,7 +99,6 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
      * The runtime type of this object when it was reflected, or {@code null}
      * if unknown.
      */
-    // TODO set objectType when constructing -- requires object type to be serialized
     protected Class<?> objectType;
 
     /**
@@ -398,9 +398,17 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
      * be determined at compile time.
      *
      * @param objectType the object type, can be {@code null}
+     * @throws IllegalArgumentException if {@code objectType} is not
+     *                                  {@code null} and represents a class
+     *                                  that cannot be constructed
      */
     @Contract(mutates = "this")
     public void setObjectType(@Nullable final Class<?> objectType) {
+        // TODO what about record classes?
+        if (objectType != null && (objectType.isInterface() || objectType.isEnum()
+                || objectType.isAnonymousClass() || objectType.isArray() // || objectType.isRecord()
+                || objectType.isPrimitive() || objectType.isLocalClass() || objectType.isHidden()))
+            throw new IllegalArgumentException("invalid objectType {" + objectType + "}");
         this.objectType = objectType;
     }
 
