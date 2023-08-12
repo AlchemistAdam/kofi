@@ -57,6 +57,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
         Objects.requireNonNull(object, "object is null");
         // class for reflection
         final Class<?> cls = object.getClass();
+        // TODO check if object is array instance
         // map of field names and values
         final HashMap<String, Object> map = new HashMap<>();
         for (Field field : cls.getFields())
@@ -81,7 +82,8 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
 
         final KofiObject rv = new KofiObject(map);
         // TEST is it possible to get invalid objectType here?
-        // rv.objectType = cls;
+        //  anonymous classes maybe?
+         rv.setObjectType(cls);
         return rv;
     }
 
@@ -99,7 +101,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
      * The runtime type of this object when it was reflected, or {@code null}
      * if unknown.
      */
-    protected Class<?> objectType;
+    protected Class<?> objectType = null;
 
     /**
      * Construct a new, empty {@code KofiObject}.
@@ -381,6 +383,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
     @Contract(mutates = "this")
     public void setObjectType(@Nullable final Class<?> objectType) {
         // TODO what about record classes?
+        // TEST setObjectType
         if (objectType != null && (objectType.isInterface() || objectType.isEnum()
                 || objectType.isAnonymousClass() || objectType.isArray() // || objectType.isRecord()
                 || objectType.isPrimitive() || objectType.isLocalClass() || objectType.isHidden()))
