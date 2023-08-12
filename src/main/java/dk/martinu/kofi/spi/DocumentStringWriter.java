@@ -17,7 +17,6 @@
 
 package dk.martinu.kofi.spi;
 
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -46,7 +45,6 @@ public interface DocumentStringWriter {
      * @throws IOException          if an error occurs is while writing the
      *                              document
      */
-    @Contract(pure = true)
     @NotNull
     String writeString(@NotNull final Document document) throws IOException;
 }

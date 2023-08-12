@@ -28,6 +28,6 @@ module dk.martinu.kofi.test {
 
     uses KofiCodec;
 
-    // module must be visible to JUnit framework
+    // test classes must be visible to JUnit framework
     opens dk.martinu.test;
 }

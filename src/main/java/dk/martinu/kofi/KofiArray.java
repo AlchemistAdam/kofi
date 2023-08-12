@@ -17,8 +17,6 @@
 
 package dk.martinu.kofi;
 
-import dk.martinu.kofi.properties.ArrayProperty;
-
 import org.jetbrains.annotations.*;
 
 import java.io.Serial;

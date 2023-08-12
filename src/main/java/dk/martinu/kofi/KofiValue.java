@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 /**
+ * DOC revise
  * An abstract KoFi value implementation. This class does not restrict what
  * value types can be represented, but is intended for complex value types,
  * such as arrays and objects.
