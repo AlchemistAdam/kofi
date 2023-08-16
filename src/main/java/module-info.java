@@ -31,9 +31,10 @@ module dk.martinu.kofi {
     uses DocumentStringWriter;
 
     exports dk.martinu.kofi;
+    exports dk.martinu.kofi.properties;
+    exports dk.martinu.kofi.annotations;
     exports dk.martinu.kofi.spi;
     exports dk.martinu.kofi.codecs;
-    exports dk.martinu.kofi.properties;
 
     provides DocumentFileReader with KofiCodec, SerFileCodec;
     provides DocumentFileWriter with KofiCodec, SerFileCodec;
