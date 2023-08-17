@@ -17,6 +17,8 @@
 
 package dk.martinu.kofi;
 
+import dk.martinu.kofi.annotations.KofiSerialize;
+
 import org.jetbrains.annotations.*;
 
 import java.io.Serial;
@@ -55,9 +57,44 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
     @NotNull
     public static KofiObject reflect(@NotNull final Object object) {
         Objects.requireNonNull(object, "object is null");
+
         // class for reflection
         final Class<?> cls = object.getClass();
-        // TODO check if object is array instance
+        if (cls.isArray())
+            throw new IllegalArgumentException("object is array instance");
+
+        // use custom serializer if present
+        KofiSerialize serialize = cls.getAnnotation(KofiSerialize.class);
+        if (serialize != null) {
+            Class<? extends KofiSerializer> serializerClass = serialize.with();
+            Method instanceMethod;
+            try {
+                instanceMethod = serializerClass.getMethod(INSTANCE_METHOD_NAME);
+            }
+            catch (NoSuchMethodException e) {
+                throw new RuntimeException(); // TODO wrap and throw
+            }
+            if (!Modifier.isStatic(instanceMethod.getModifiers()) ||
+                    !KofiSerializer.class.isAssignableFrom(instanceMethod.getReturnType()))
+                throw new RuntimeException(); // TODO throw
+            KofiSerializer instance;
+            try {
+                instance = (KofiSerializer) instanceMethod.invoke(null);
+            }
+            catch (IllegalAccessException e) {
+                throw new RuntimeException(e);// TODO wrap and throw
+            }
+            catch (InvocationTargetException e) {
+                throw new RuntimeException(e);// TODO wrap and throw
+            }
+            try {
+                return instance.serialize(object);
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);// TODO wrap and throw
+            }
+        }
+
         // map of field names and values
         final HashMap<String, Object> map = new HashMap<>();
         for (Field field : cls.getFields())
@@ -81,7 +118,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
                             + object.getClass().getName() + ", " + field.getName() + "}");
 
         final KofiObject rv = new KofiObject(map);
-        // TEST is it possible to get invalid objectType here?
+        // TESTME is it possible to get invalid objectType here?
         //  anonymous classes maybe?
          rv.setObjectType(cls);
         return rv;
@@ -121,7 +158,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
      */
     @Contract(pure = true)
     public KofiObject(@Nullable final Map<String, Object> map) {
-        if (map != null && map.size() > 0)
+        if (map != null && !map.isEmpty())
             entries = map.entrySet().parallelStream()
                     .map(entry -> new Entry(entry.getKey(), entry.getValue()))
                     .sorted()
@@ -371,7 +408,7 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
      * object.
      * <p>
      * <b>NOTE:</b> this method is inherently unsafe, as it allows the object
-     * to contain entries that cannot be converted to fields of the object
+     * to contain entries that cannot be converted to properties of the object
      * type. This method should only be called when the object type could not
      * be determined at compile time.
      *
