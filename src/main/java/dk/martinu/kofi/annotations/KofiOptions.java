@@ -36,5 +36,5 @@ public @interface KofiOptions {
      *
      * @see IncludeType
      */
-    IncludeType includeType() default IncludeType.SUBCLASS;
+    IncludeType includeType() default IncludeType.SUBTYPE;
 }

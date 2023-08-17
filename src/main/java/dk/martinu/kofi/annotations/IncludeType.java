@@ -28,10 +28,10 @@ package dk.martinu.kofi.annotations;
  */
 public enum IncludeType {
     /**
-     * Indicates the type of an object should be included when the type is a
-     * subclass (or implementer) of the destination type.
+     * Indicates the type of an object should be included when the type extends
+     * or implements the destination type.
      */
-    SUBCLASS,
+    SUBTYPE,
     /**
      * Indicates the type of an object should always be included regardless of
      * the destination type.
