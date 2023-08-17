@@ -102,29 +102,6 @@ public class ObjectProperty extends Property<KofiObject> implements Cloneable, S
     }
 
     /**
-     * Returns a combined hash code of this property's key, in upper-case, and
-     * value. The returned value is equal to:
-     * <pre>
-     *     keyHash | valueHash &lt;&lt; 16
-     * </pre>
-     */
-    @Contract(pure = true)
-    @Override
-    public int hashCode() {
-        // key hash is immutable and is cached
-        int h = hash;
-        if (h == 0 && !hashIsZero) {
-            h = key.toUpperCase(Locale.ROOT).hashCode();
-            if (h == 0)
-                hashIsZero = true;
-            else
-                hash = h;
-        }
-        // value hash is mutable and must be computed each time
-        return h | value.hashCode() << 16;
-    }
-
-    /**
      * Returns an iterator over the entries in this property's
      * {@code KofiObject} value.
      *
