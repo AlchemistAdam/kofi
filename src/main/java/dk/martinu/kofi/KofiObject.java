@@ -139,6 +139,14 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
      * if unknown.
      */
     protected Class<?> objectType = null;
+    /**
+     * Cached hash code.
+     */
+    protected transient int hash = 0;
+    /**
+     * {@code true} if the computed hash code is {@code 0}.
+     */
+    protected transient boolean hashIsZero = false;
 
     /**
      * Construct a new, empty {@code KofiObject}.
@@ -447,7 +455,15 @@ public class KofiObject extends KofiValue implements Iterable<KofiObject.Entry>,
      */
     @Override
     public int hashCode() {
-        return Arrays.hashCode(entries);
+        int h = hash;
+        if (h == 0 && !hashIsZero) {
+            h = Arrays.hashCode(entries);
+            if (h == 0)
+                hashIsZero = true;
+            else
+                hash = h;
+        }
+        return h;
     }
 
     /**

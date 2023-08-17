@@ -104,6 +104,14 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      */
     @Nullable
     protected Class<?> arrayType;
+    /**
+     * Cached hash code.
+     */
+    protected transient int hash = 0;
+    /**
+     * {@code true} if the computed hash code is {@code 0}.
+     */
+    protected transient boolean hashIsZero = false;
 
     /**
      * Construct a new, empty {@code KofiArray}.
@@ -488,6 +496,7 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
      * @throws ArrayIndexOutOfBoundsException if {@code index} is out of bounds
      *                                        {@code (index < 0 || index >= length())}
      */
+    // todo replace method calls in class
     @Contract(pure = true)
     @Nullable
     public Object get(@Range(from = 0, to = Integer.MAX_VALUE) final int index) {
@@ -559,7 +568,15 @@ public class KofiArray extends KofiValue implements Iterable<Object>, Serializab
     @Contract(pure = true)
     @Override
     public int hashCode() {
-        return Arrays.hashCode(array);
+        int h = hash;
+        if (h == 0 && !hashIsZero) {
+            h = Arrays.hashCode(array);
+            if (h == 0)
+                hashIsZero = true;
+            else
+                hash = h;
+        }
+        return h;
     }
 
     /**
