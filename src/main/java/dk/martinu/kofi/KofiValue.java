@@ -36,6 +36,12 @@ import java.util.Objects;
 public abstract class KofiValue {
 
     /**
+     * Name of the method to get an instance of a custom serializer or
+     * deserializer for properties that are marked as such.
+     */
+    public static final String INSTANCE_METHOD_NAME = "instance";
+
+    /**
      * Returns a string representation of this value as it would appear in a
      * textual context, such as a file or graphical user interface.
      */
