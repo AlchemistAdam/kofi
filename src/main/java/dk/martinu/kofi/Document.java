@@ -1507,7 +1507,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @return An array of all properties in the section, or {@code null}
      * @see Section#matches(String)
      */
-    @Contract(value = "_ -> new", pure = true)
+    @Contract(pure = true)
     @Nullable
     public List<Property<?>> getProperties(@Nullable final String section) {
         final int index = getElementsIndex(section);
@@ -1539,7 +1539,7 @@ public class Document implements Iterable<Element>, Cloneable, Serializable {
      * @see Section#matches(String)
      */
     @SuppressWarnings("unchecked")
-    @Contract(value = "_, _ -> new", pure = true)
+    @Contract(pure = true)
     @Nullable
     public <V> List<Property<V>> getProperties(@Nullable final String section, @Nullable Class<V> valueType) {
         final int index = getElementsIndex(section);
